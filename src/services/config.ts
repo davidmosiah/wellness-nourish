@@ -17,7 +17,7 @@ function numberFromEnv(value: string | undefined, fallback: number): number {
 }
 
 export function getConfig(): NourishConfig {
-  const local_dir = join(homedir(), LOCAL_DIR_NAME);
+  const local_dir = process.env.NOURISH_LOCAL_DIR ?? join(homedir(), LOCAL_DIR_NAME);
   const usda_api_key = process.env.FDC_API_KEY ?? process.env.USDA_FDC_API_KEY;
   mkdirSync(local_dir, { recursive: true });
 
