@@ -17,8 +17,9 @@ assert.equal(search.foods[0].source, "usda");
 assert.equal(search.foods[0].name, "Bananas, raw");
 assert.equal(search.foods[0].nutrients_per_100g.calories_kcal, 89);
 
-const detail = await getUsdaFood("173944");
+const detail = await getUsdaFood(search.foods[0].source_id);
 assert.equal(detail.source_id, "173944");
 assert.equal(detail.license.share_alike, false);
+await assert.rejects(() => getUsdaFood("999999"), /fixture not found/i);
 
 console.log("provider fixture tests ok");

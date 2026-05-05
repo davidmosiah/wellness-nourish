@@ -229,10 +229,13 @@ export async function searchUsdaFoods(
 
 export async function getUsdaFood(sourceId: string): Promise<FoodItem> {
   const config = getConfig();
-  const food =
-    config.fixture_mode
-      ? await readFixture<UsdaFoodDetail>("food-banana.json")
-      : await fetchJson<UsdaFoodDetail>(`/food/${encodeURIComponent(sourceId)}`, {});
+  const food = config.fixture_mode
+    ? await readFixture<UsdaFoodDetail>("food-banana.json")
+    : await fetchJson<UsdaFoodDetail>(`/food/${encodeURIComponent(sourceId)}`, {});
+
+  if (config.fixture_mode && String(food.fdcId) !== sourceId) {
+    throw new Error(`USDA fixture not found for source_id ${sourceId}`);
+  }
 
   return mapFood(food);
 }
