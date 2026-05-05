@@ -17,7 +17,22 @@ const NutrientMapSchema = z
     sodium_mg: z.number().optional(),
   })
   .strict();
-const CustomFoodSchema = z.record(z.string(), z.unknown());
+const ProviderSourceSchema = z.enum(["usda", "open_food_facts", "manual", "estimate"]);
+const FoodRefSchema = z
+  .object({
+    source: ProviderSourceSchema,
+    source_id: z.string().trim().min(1),
+    name: z.string().trim().min(1),
+  })
+  .strict();
+const CustomFoodSchema = z
+  .object({
+    source: ProviderSourceSchema,
+    source_id: z.string().trim().min(1),
+    name: z.string().trim().min(1),
+    nutrients_per_100g: NutrientMapSchema,
+  })
+  .passthrough();
 
 export const ResponseOnlyInputSchema = z
   .object({
@@ -74,14 +89,7 @@ export const IntakeLogInputSchema = z
     food: z.unknown().optional(),
     timestamp: z.string().datetime().optional(),
     meal_type: MealTypeSchema,
-    food_ref: z
-      .object({
-        source: z.enum(["usda", "open_food_facts", "manual", "estimate"]),
-        source_id: z.string().trim().min(1),
-        name: z.string().trim().min(1),
-      })
-      .strict()
-      .optional(),
+    food_ref: FoodRefSchema.optional(),
     custom_food: CustomFoodSchema.optional(),
     quantity: z.number().positive().optional(),
     unit: z.string().trim().min(1).optional(),
@@ -102,8 +110,7 @@ export const IntakeLogInputSchema = z
       !Array.isArray(input.food) &&
       (hasNonEmptyStringProperty(input.food, "source_id") ||
         hasNonEmptyStringProperty(input.food, "name"));
-    const hasMeaningfulCustomFood =
-      input.custom_food !== undefined && Object.keys(input.custom_food).length > 0;
+    const hasMeaningfulCustomFood = input.custom_food !== undefined;
 
     if (!input.text && !input.food_ref && !hasMeaningfulCustomFood && !hasMeaningfulFood) {
       ctx.addIssue({

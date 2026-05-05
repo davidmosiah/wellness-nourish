@@ -23,11 +23,19 @@ export function makeResponse(
   };
 }
 
+export function makeError(message: string): McpTextResponse;
 export function makeError(
+  code: string,
   message: string,
-  code = "NOURISH_ERROR",
+  responseFormat?: ResponseFormat,
+): McpTextResponse;
+export function makeError(
+  first: string,
+  second?: string,
   responseFormat: ResponseFormat = "json",
 ): McpTextResponse {
+  const code = second === undefined ? "NOURISH_ERROR" : first;
+  const message = second ?? first;
   const payload = {
     ok: false,
     error: {

@@ -25,6 +25,11 @@ assert.deepEqual(JSON.parse(errorResponse.content[0].text), {
   ok: false,
   error: { code: "NOURISH_ERROR", message: "bad" },
 });
+const explicitErrorResponse = makeError("BAD_CODE", "bad");
+assert.deepEqual(JSON.parse(explicitErrorResponse.content[0].text), {
+  ok: false,
+  error: { code: "BAD_CODE", message: "bad" },
+});
 assert.throws(() => IntakeLogInputSchema.parse({}));
 assert.throws(() => IntakeLogInputSchema.parse({ quantity: 1, unit: "serving" }));
 assert.equal(IntakeLogInputSchema.parse({ text: "banana", explicit_user_intent: true }).tags.length, 0);
@@ -34,6 +39,18 @@ assert.equal(
     explicit_user_intent: true,
   }).food_ref.name,
   "Bananas, raw",
+);
+assert.equal(
+  IntakeLogInputSchema.parse({
+    custom_food: {
+      source: "manual",
+      source_id: "custom-banana",
+      name: "Banana",
+      nutrients_per_100g: { calories_kcal: 89 },
+    },
+    explicit_user_intent: true,
+  }).custom_food.name,
+  "Banana",
 );
 assert.throws(() => IntakeLogInputSchema.parse({ food: {}, explicit_user_intent: true }));
 
