@@ -1,0 +1,50 @@
+{
+  "name": "wellness-nourish",
+  "version": "0.1.0",
+  "description": "Standalone MCP server for nutrition search, intake, and meal summaries.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "wellness-nourish": "dist/index.js",
+    "nourish-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "smoke": "tsx scripts/smoke.ts",
+    "smoke:http": "tsx scripts/smoke-http.ts",
+    "test:normalization": "tsx scripts/test-normalization.ts",
+    "test:providers": "tsx scripts/test-providers.ts",
+    "test:intake-store": "tsx scripts/test-intake-store.ts",
+    "test:meal-estimator": "tsx scripts/test-meal-estimator.ts",
+    "test:summary": "tsx scripts/test-summary.ts",
+    "test:cli-ux": "tsx scripts/test-cli-ux.ts",
+    "test:agent-readiness": "tsx scripts/test-agent-readiness.ts",
+    "test:hermes-agent": "tsx scripts/test-hermes-agent.ts",
+    "test:privacy": "tsx scripts/test-privacy.ts",
+    "test": "npm run typecheck && npm run build && npm run smoke && npm run smoke:http && npm run test:normalization && npm run test:providers && npm run test:intake-store && npm run test:meal-estimator && npm run test:summary && npm run test:cli-ux && npm run test:agent-readiness && npm run test:hermes-agent && npm run test:privacy"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "homepage": "https://wellness.delx.ai/connectors/nourish",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davidmosiah/wellness-nourish.git"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.21.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.6.0",
+    "tsx": "^4.20.6",
+    "typescript": "^6.0.3"
+  }
+}

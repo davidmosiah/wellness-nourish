@@ -1,0 +1,10 @@
+src/
+scripts/
+.github/
+env/
+.env*
+coverage/
+node_modules/
+fixtures/private/
+logs/
+.DS_Store

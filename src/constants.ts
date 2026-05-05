@@ -1,0 +1,8 @@
+export const SERVER_NAME = "nourish-mcp";
+export const SERVER_VERSION = "0.1.0";
+export const DEFAULT_HOST = "127.0.0.1";
+export const DEFAULT_PORT = 3000;
+export const LOCAL_DIR_NAME = ".wellness-nourish";
+export const USER_AGENT = "wellness-nourish/0.1.0 (https://wellness.delx.ai; contact: david@delx.ai)";
+export const USDA_BASE_URL = "https://api.nal.usda.gov/fdc/v1";
+export const OFF_BASE_URL = "https://world.openfoodfacts.org";
