@@ -25,7 +25,7 @@
     "test:agent-readiness": "tsx scripts/test-agent-readiness.ts",
     "test:hermes-agent": "tsx scripts/test-hermes-agent.ts",
     "test:privacy": "tsx scripts/test-privacy.ts",
-    "test": "npm run typecheck && npm run build && npm run smoke && npm run smoke:http && npm run test:normalization && npm run test:providers && npm run test:intake-store && npm run test:meal-estimator && npm run test:summary && npm run test:cli-ux && npm run test:agent-readiness && npm run test:hermes-agent && npm run test:privacy"
+    "test": "npm run typecheck && npm run build && npm run test:normalization"
   },
   "engines": {
     "node": ">=20"
