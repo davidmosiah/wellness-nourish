@@ -19,8 +19,14 @@ const expectedTools = [
   "nourish_get_food",
   "nourish_estimate_meal",
   "nourish_log_intake",
+  "nourish_list_intake",
   "nourish_update_intake",
   "nourish_delete_intake",
+  "nourish_clear_day",
+  "nourish_log_water",
+  "nourish_hydration_summary",
+  "nourish_get_goals",
+  "nourish_set_goals",
   "nourish_daily_summary",
   "nourish_weekly_summary",
   "nourish_export_data",
@@ -58,6 +64,7 @@ try {
   assert.deepEqual(missingTools, [], `Missing tools: ${missingTools.join(", ")}`);
   assertSearchSchemaHonest(result.tools);
   assertBarcodeSchemaHonest(result.tools);
+  await assertResourceSurface();
 
   const nutrientlessLog = await client.callTool({
     name: "nourish_log_intake",
@@ -95,6 +102,16 @@ function assertBarcodeSchemaHonest(tools) {
     Object.hasOwn(barcodeTool.inputSchema?.properties ?? {}, "fallback_search"),
     false,
   );
+}
+
+async function assertResourceSurface() {
+  const resources = await client.listResources();
+  const uris = resources.resources.map((resource) => resource.uri);
+
+  assert.ok(uris.includes("nourish://usage-guide"));
+  const guide = await client.readResource({ uri: "nourish://usage-guide" });
+  assert.match(guide.contents[0]?.text ?? "", /preview/i);
+  assert.match(guide.contents[0]?.text ?? "", /explicit user intent/i);
 }
 
 function findTool(tools, name) {

@@ -63,6 +63,11 @@ assert.deepEqual(scaleNutrients({ calories_kcal: 100, protein_g: 10 }, 0.5), {
 });
 assert.equal(gramsForQuantity(2, "g"), 2);
 assert.equal(gramsForQuantity(1, "oz"), 28.35);
+assert.equal(gramsForQuantity(1, "cup"), 240);
+assert.equal(gramsForQuantity(2, "tbsp"), 30);
+assert.equal(gramsForQuantity(3, "tsp"), 15);
+assert.equal(gramsForQuantity(2, "slices"), 60);
+assert.equal(gramsForQuantity(1, "piece", 118), 118);
 assert.deepEqual(nutrientsForGrams({ calories_kcal: 200, protein_g: 20 }, 50), {
   calories_kcal: 100,
   protein_g: 10,

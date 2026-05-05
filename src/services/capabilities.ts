@@ -24,6 +24,8 @@ export function buildCapabilities(): NourishCapabilities {
       "barcode lookup",
       "meal estimation",
       "local intake logging",
+      "intake list, edit, delete, and clear-day workflows",
+      "hydration and local nutrition goals",
       "daily and weekly summaries",
       "wearable-aware wellness context",
     ],

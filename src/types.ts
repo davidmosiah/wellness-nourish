@@ -74,6 +74,29 @@ export interface IntakeEntry {
   wellness_context_refs: string[];
 }
 
+export interface HydrationEntry {
+  id: string;
+  timestamp: string;
+  date: string;
+  amount_ml: number;
+  source: "manual" | "agent";
+  notes?: string;
+}
+
+export interface HydrationSummary {
+  date: string;
+  total_ml: number;
+  goal_ml?: number;
+  progress_percent?: number;
+  entries: HydrationEntry[];
+}
+
+export interface NourishGoals {
+  daily: NutrientMap;
+  hydration_ml?: number;
+  updated_at?: string;
+}
+
 export interface NourishConfig {
   local_dir: string;
   fixture_mode: boolean;

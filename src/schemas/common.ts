@@ -40,6 +40,82 @@ export const ResponseOnlyInputSchema = z
   })
   .strict();
 
+export const IntakeListInputSchema = z
+  .object({
+    date: DateSchema.optional(),
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
+export const ClearDayInputSchema = z
+  .object({
+    date: DateSchema,
+    explicit_user_intent: z.boolean().default(false),
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict()
+  .superRefine((input, ctx) => {
+    if (input.explicit_user_intent !== true) {
+      ctx.addIssue({
+        code: "custom",
+        message: "explicit_user_intent must be true to clear a day.",
+        path: ["explicit_user_intent"],
+      });
+    }
+  });
+
+export const HydrationLogInputSchema = z
+  .object({
+    amount_ml: z.number().positive(),
+    timestamp: z.string().datetime().optional(),
+    date: DateSchema.optional(),
+    notes: z.string().trim().optional(),
+    explicit_user_intent: z.boolean().default(false),
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict()
+  .superRefine((input, ctx) => {
+    if (input.explicit_user_intent !== true) {
+      ctx.addIssue({
+        code: "custom",
+        message: "explicit_user_intent must be true to log hydration.",
+        path: ["explicit_user_intent"],
+      });
+    }
+  });
+
+export const GoalsSetInputSchema = z
+  .object({
+    daily: NutrientMapSchema.optional(),
+    hydration_ml: z.number().positive().optional(),
+    explicit_user_intent: z.boolean().default(false),
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict()
+  .superRefine((input, ctx) => {
+    if (input.explicit_user_intent !== true) {
+      ctx.addIssue({
+        code: "custom",
+        message: "explicit_user_intent must be true to update goals.",
+        path: ["explicit_user_intent"],
+      });
+    }
+    if (input.daily === undefined && input.hydration_ml === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Provide daily nutrients or hydration_ml.",
+        path: ["daily"],
+      });
+    }
+  });
+
+export const ExportInputSchema = z
+  .object({
+    export_format: z.enum(["jsonl", "csv"]).default("jsonl"),
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
 export const AgentManifestInputSchema = z
   .object({
     client: z

@@ -4,9 +4,14 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import {
   AgentManifestInputSchema,
   BarcodeLookupInputSchema,
+  ClearDayInputSchema,
+  ExportInputSchema,
   FoodGetInputSchema,
   FoodSearchInputSchema,
+  GoalsSetInputSchema,
+  HydrationLogInputSchema,
   IntakeDeleteInputSchema,
+  IntakeListInputSchema,
   IntakeLogInputSchema,
   IntakeUpdateInputSchema,
   MealEstimateInputSchema,
@@ -22,11 +27,16 @@ import { buildConnectionStatus } from "../services/connection-status.js";
 import { makeError, makeResponse, bulletList, compactTable, type McpTextResponse } from "../services/format.js";
 import {
   addIntakeEntry,
+  clearIntakeDay,
   deleteIntakeEntry,
+  exportIntakeCsvData,
   exportIntakeData,
+  listIntakeEntries,
   updateIntakeEntry,
   type AddIntakeEntryInput,
 } from "../services/intake-store.js";
+import { buildHydrationSummary, logWater } from "../services/hydration-store.js";
+import { getGoals, updateGoals } from "../services/goals-store.js";
 import { estimateMeal } from "../services/meal-estimator.js";
 import { buildPrivacyAudit } from "../services/privacy-audit.js";
 import { buildDailySummary, buildWeeklySummary } from "../services/summary.js";
@@ -275,6 +285,27 @@ export function registerNourishTools(server: McpServer): void {
   );
 
   server.registerTool(
+    "nourish_list_intake",
+    {
+      title: "List intake",
+      description: "List local intake entries, optionally filtered by date.",
+      inputSchema: IntakeListInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = IntakeListInputSchema.parse(input);
+        const entries = await listIntakeEntries(params.date === undefined ? {} : { date: params.date });
+        const markdown = compactIntakeTable(entries);
+
+        return toolResponse(makeResponse({ entries }, params.response_format, markdown));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
     "nourish_delete_intake",
     {
       title: "Delete intake",
@@ -293,6 +324,134 @@ export function registerNourishTools(server: McpServer): void {
         const deleted = await deleteIntakeEntry(params.id);
 
         return toolResponse(makeResponse({ ok: true, deleted, id: params.id }, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_clear_day",
+    {
+      title: "Clear day",
+      description: "Delete all local intake entries for a date after explicit user intent.",
+      inputSchema: ClearDayInputSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async (input) => {
+      try {
+        const params = ClearDayInputSchema.parse(input);
+        const result = await clearIntakeDay(params.date);
+
+        return toolResponse(makeResponse(result, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_log_water",
+    {
+      title: "Log water",
+      description: "Log local hydration in milliliters after explicit user intent.",
+      inputSchema: HydrationLogInputSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async (input) => {
+      try {
+        const params = HydrationLogInputSchema.parse(input);
+        const waterInput: Parameters<typeof logWater>[0] = {
+          amount_ml: params.amount_ml,
+          source: "agent",
+        };
+        const timestamp = params.timestamp ?? dateToNoonTimestamp(params.date);
+        if (timestamp !== undefined) {
+          waterInput.timestamp = timestamp;
+        }
+        if (params.notes !== undefined) {
+          waterInput.notes = params.notes;
+        }
+        const entry = await logWater(waterInput);
+
+        return toolResponse(makeResponse(entry, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_hydration_summary",
+    {
+      title: "Hydration summary",
+      description: "Summarize local hydration for a date.",
+      inputSchema: SummaryInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = SummaryInputSchema.parse(input);
+        const summary = await buildHydrationSummary(params.date);
+
+        return toolResponse(makeResponse(summary, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_get_goals",
+    {
+      title: "Get goals",
+      description: "Read local calorie, macro, and hydration goals.",
+      inputSchema: ResponseOnlyInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = ResponseOnlyInputSchema.parse(input);
+
+        return toolResponse(makeResponse(await getGoals(), params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_set_goals",
+    {
+      title: "Set goals",
+      description: "Set local calorie, macro, and hydration goals after explicit user intent.",
+      inputSchema: GoalsSetInputSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async (input) => {
+      try {
+        const params = GoalsSetInputSchema.parse(input);
+        const result = await updateGoals({
+          ...(params.daily === undefined ? {} : { daily: cleanNutrients(params.daily) }),
+          ...(params.hydration_ml === undefined ? {} : { hydration_ml: params.hydration_ml }),
+        });
+
+        return toolResponse(makeResponse(result, params.response_format));
       } catch (error) {
         return toolError(error);
       }
@@ -343,16 +502,23 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_export_data",
     {
       title: "Export intake data",
-      description: "Export local intake JSONL data without provider secrets or tokens.",
-      inputSchema: ResponseOnlyInputSchema.shape,
+      description: "Export local intake data as JSONL or CSV without provider secrets or tokens.",
+      inputSchema: ExportInputSchema.shape,
       annotations: readOnlyAnnotation(),
     },
     async (input) => {
       try {
-        const params = ResponseOnlyInputSchema.parse(input);
-        const jsonl = await exportIntakeData();
+        const params = ExportInputSchema.parse(input);
+        const exportText =
+          params.export_format === "csv" ? await exportIntakeCsvData() : await exportIntakeData();
 
-        return toolResponse(makeResponse({ jsonl }, params.response_format, jsonl));
+        return toolResponse(
+          makeResponse(
+            params.export_format === "csv" ? { csv: exportText } : { jsonl: exportText },
+            params.response_format,
+            exportText,
+          ),
+        );
       } catch (error) {
         return toolError(error);
       }
@@ -385,6 +551,20 @@ function compactFoodTable(foods: FoodItem[]): string {
       protein: food.nutrients_per_100g.protein_g,
     })),
     ["name", "source", "calories", "protein"],
+  );
+}
+
+function compactIntakeTable(entries: IntakeEntry[]): string {
+  return compactTable(
+    entries.map((entry) => ({
+      id: entry.id,
+      date: entry.date,
+      meal: entry.meal_type,
+      food: entry.food_ref?.name ?? entry.custom_food?.name ?? "",
+      calories: entry.nutrients.calories_kcal,
+      confidence: entry.confidence,
+    })),
+    ["id", "date", "meal", "food", "calories", "confidence"],
   );
 }
 
@@ -602,6 +782,10 @@ function sumGrams(items: Array<{ grams: number }>): number | undefined {
 
 function stableEstimateId(text: string): string {
   return `estimate:${Buffer.from(text).toString("base64url").slice(0, 48)}`;
+}
+
+function dateToNoonTimestamp(date: string | undefined): string | undefined {
+  return date === undefined ? undefined : `${date}T12:00:00.000Z`;
 }
 
 function toolError(error: unknown, responseFormat: ResponseFormat = "json"): CallToolResult {

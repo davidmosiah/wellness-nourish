@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { buildAgentManifest } from "../services/agent-manifest.js";
 import { buildCapabilities } from "../services/capabilities.js";
 import { buildPrivacyAudit } from "../services/privacy-audit.js";
+import { buildUsageGuide } from "../services/usage-guide.js";
 
 export function registerNourishResources(server: McpServer): void {
   registerJsonResource(
@@ -30,6 +31,15 @@ export function registerNourishResources(server: McpServer): void {
     "Nourish privacy audit",
     "Local storage, secret handling, safety, and source license boundaries.",
     buildPrivacyAudit(),
+  );
+
+  registerJsonResource(
+    server,
+    "nourish-usage-guide",
+    "nourish://usage-guide",
+    "Nourish usage guide",
+    "Agent and human workflows for safe previews, writes, edits, hydration, goals, and exports.",
+    buildUsageGuide(),
   );
 }
 

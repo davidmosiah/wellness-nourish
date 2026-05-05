@@ -36,4 +36,17 @@ const bananaBread = await estimateMeal({
 
 assert.equal(bananaBread.items.length, 0);
 
+const portionEstimate = await estimateMeal({
+  text: "1 cup rice and 4 oz chicken",
+  meal_type: "lunch",
+  locale: "en-US",
+});
+
+assert.equal(portionEstimate.items.length, 2);
+assert.equal(portionEstimate.items[0].name, "rice");
+assert.equal(portionEstimate.items[0].grams, 240);
+assert.equal(portionEstimate.items[1].name, "chicken");
+assert.equal(portionEstimate.items[1].grams, 113.4);
+assert.ok(portionEstimate.total_nutrients.protein_g > 30);
+
 console.log("meal estimator tests ok");

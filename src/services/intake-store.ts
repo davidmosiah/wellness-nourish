@@ -128,6 +128,24 @@ export async function deleteIntakeEntry(id: string): Promise<boolean> {
   });
 }
 
+export async function clearIntakeDay(date: string): Promise<{ date: string; deleted_entries: number }> {
+  return withMutationLock(async () => {
+    const path = storePath();
+    const entries = await readEntries(path);
+    const nextEntries = entries.filter((entry) => entry.date !== date);
+    const deletedEntries = entries.length - nextEntries.length;
+
+    if (deletedEntries > 0) {
+      await writeEntriesAtomically(nextEntries, path);
+    }
+
+    return {
+      date,
+      deleted_entries: deletedEntries,
+    };
+  });
+}
+
 export async function exportIntakeData(): Promise<string> {
   try {
     return await fs.readFile(storePath(), "utf8");
@@ -138,4 +156,55 @@ export async function exportIntakeData(): Promise<string> {
 
     throw error;
   }
+}
+
+export async function exportIntakeCsvData(): Promise<string> {
+  const entries = await listIntakeEntries();
+  const headers = [
+    "id",
+    "timestamp",
+    "date",
+    "meal_type",
+    "food_name",
+    "quantity",
+    "unit",
+    "grams_estimate",
+    "calories_kcal",
+    "protein_g",
+    "carbohydrates_g",
+    "fat_g",
+    "confidence",
+    "source_trace",
+    "notes",
+  ];
+  const rows = entries.map((entry) =>
+    [
+      entry.id,
+      entry.timestamp,
+      entry.date,
+      entry.meal_type,
+      entry.food_ref?.name ?? entry.custom_food?.name ?? "",
+      entry.quantity,
+      entry.unit,
+      entry.grams_estimate ?? "",
+      entry.nutrients.calories_kcal ?? "",
+      entry.nutrients.protein_g ?? "",
+      entry.nutrients.carbohydrates_g ?? "",
+      entry.nutrients.fat_g ?? "",
+      entry.confidence,
+      entry.source_trace,
+      entry.notes ?? "",
+    ].map(csvCell),
+  );
+
+  return `${headers.join(",")}\n${rows.map((row) => row.join(",")).join("\n")}${rows.length > 0 ? "\n" : ""}`;
+}
+
+function csvCell(value: unknown): string {
+  const text = String(value);
+  if (!/[",\n]/.test(text)) {
+    return text;
+  }
+
+  return `"${text.replaceAll("\"", "\"\"")}"`;
 }
