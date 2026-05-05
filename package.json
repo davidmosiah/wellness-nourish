@@ -17,7 +17,7 @@
     "smoke": "tsx scripts/smoke.ts",
     "smoke:http": "tsx scripts/smoke-http.ts",
     "test:normalization": "node scripts/test-normalization.mjs",
-    "test:providers": "tsx scripts/test-providers.ts",
+    "test:providers": "node scripts/test-providers.mjs",
     "test:intake-store": "tsx scripts/test-intake-store.ts",
     "test:meal-estimator": "tsx scripts/test-meal-estimator.ts",
     "test:summary": "tsx scripts/test-summary.ts",
@@ -25,7 +25,7 @@
     "test:agent-readiness": "tsx scripts/test-agent-readiness.ts",
     "test:hermes-agent": "tsx scripts/test-hermes-agent.ts",
     "test:privacy": "tsx scripts/test-privacy.ts",
-    "test": "npm run typecheck && npm run build && npm run test:normalization"
+    "test": "npm run typecheck && npm run build && npm run test:normalization && npm run test:providers"
   },
   "engines": {
     "node": ">=20"

@@ -1,0 +1,16 @@
+{
+  "fdcId": 173944,
+  "description": "Bananas, raw",
+  "dataType": "SR Legacy",
+  "foodNutrients": [
+    { "nutrient": { "id": 1008 }, "amount": 89 },
+    { "nutrient": { "id": 1003 }, "amount": 1.09 },
+    { "nutrient": { "id": 1005 }, "amount": 22.84 },
+    { "nutrient": { "id": 1004 }, "amount": 0.33 },
+    { "nutrient": { "id": 1079 }, "amount": 2.6 },
+    { "nutrient": { "id": 1063 }, "amount": 12.23 }
+  ],
+  "foodPortions": [
+    { "gramWeight": 118, "modifier": "1 medium" }
+  ]
+}
