@@ -7,6 +7,22 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 
 execFileSync("npm", ["run", "build"], { stdio: "inherit" });
 
+const expectedTools = [
+  "nourish_agent_manifest",
+  "nourish_capabilities",
+  "nourish_connection_status",
+  "nourish_privacy_audit",
+  "nourish_search_food",
+  "nourish_lookup_barcode",
+  "nourish_get_food",
+  "nourish_estimate_meal",
+  "nourish_log_intake",
+  "nourish_update_intake",
+  "nourish_delete_intake",
+  "nourish_daily_summary",
+  "nourish_weekly_summary",
+  "nourish_export_data",
+];
 const fixtureDir = resolve("fixtures");
 const client = new Client(
   {
@@ -33,9 +49,9 @@ try {
   await client.connect(transport);
   const result = await client.listTools();
   const toolNames = result.tools.map((tool) => tool.name);
+  const missingTools = expectedTools.filter((toolName) => !toolNames.includes(toolName));
 
-  assert.ok(toolNames.includes("nourish_search_food"));
-  assert.ok(toolNames.includes("nourish_agent_manifest"));
+  assert.deepEqual(missingTools, [], `Missing tools: ${missingTools.join(", ")}`);
 } finally {
   await client.close();
 }
