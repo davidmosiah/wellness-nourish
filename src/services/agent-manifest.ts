@@ -1,4 +1,4 @@
-import { SERVER_NAME, SERVER_VERSION } from "../constants.js";
+import { NPM_PACKAGE_NAME, PINNED_NPM_PACKAGE, SERVER_NAME, SERVER_VERSION } from "../constants.js";
 import { buildCapabilities } from "./capabilities.js";
 import { buildPrivacyAudit, type NourishPrivacyAudit } from "./privacy-audit.js";
 
@@ -29,6 +29,21 @@ export interface NourishAgentManifest {
     reload_after_config_change: string;
     use_direct_tools: boolean;
     avoid_terminal_workarounds: boolean;
+    no_gateway_restart_for_data_access: boolean;
+    common_tool_names: string[];
+    recommended_config: {
+      mcp_servers: {
+        nourish: {
+          command: string;
+          args: string[];
+          env: {
+            NOURISH_LOCAL_DIR: string;
+            NOURISH_OFF_ENABLED: string;
+          };
+        };
+      };
+    };
+    personal_telegram_contract: string[];
   };
   agent_rules: string[];
   capabilities: ReturnType<typeof buildCapabilities>;
@@ -82,7 +97,7 @@ export function buildAgentManifest(client: string): NourishAgentManifest {
     supported_clients: SUPPORTED_CLIENTS,
     install: {
       command: "npx",
-      args: ["-y", "wellness-nourish"],
+      args: ["-y", NPM_PACKAGE_NAME],
       optional_env: ["FDC_API_KEY", "NOURISH_OFF_ENABLED", "NOURISH_LOCAL_DIR"],
     },
     recommended_first_calls: RECOMMENDED_FIRST_CALLS,
@@ -98,12 +113,37 @@ export function buildAgentManifest(client: string): NourishAgentManifest {
       reload_after_config_change: "/reload-mcp or hermes mcp test nourish",
       use_direct_tools: true,
       avoid_terminal_workarounds: true,
+      no_gateway_restart_for_data_access: true,
+      common_tool_names: [
+        "mcp_nourish_nourish_connection_status",
+        "mcp_nourish_nourish_estimate_meal",
+        "mcp_nourish_nourish_log_intake",
+        "mcp_nourish_nourish_daily_summary",
+      ],
+      recommended_config: {
+        mcp_servers: {
+          nourish: {
+            command: "npx",
+            args: ["-y", PINNED_NPM_PACKAGE],
+            env: {
+              NOURISH_LOCAL_DIR: "/root/.hermes/nourish/personal",
+              NOURISH_OFF_ENABLED: "1",
+            },
+          },
+        },
+      },
+      personal_telegram_contract: [
+        "Preview natural-language meals before writing unless the user explicitly says to save/register/log.",
+        "Use direct MCP tools from Telegram; avoid shell workarounds for normal nutrition access.",
+        "Return compact Markdown with calories, protein, confidence, warnings, and a confirmation question.",
+      ],
     },
     agent_rules: [
       "Call nourish_connection_status before provider-backed tools.",
       "Use exact search or barcode lookup before estimating nutrition.",
       "Preserve confidence values and source quality warnings in user-facing summaries.",
       "Ask confirmation before logging intake unless the user explicitly requested logging.",
+      "For Hermes Telegram usage, use preview -> confirm -> log as the default meal flow.",
       "Use preview/list/update/delete tools instead of overwriting private logs blindly.",
       "Use hydration and goals tools only for local tracking context, never for clinical advice.",
       "Never ask users to paste secrets, raw health exports, provider tokens, or private food logs.",

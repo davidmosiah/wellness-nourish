@@ -1,5 +1,7 @@
 import { lookupOpenFoodFactsBarcode } from "../providers/open-food-facts.js";
 import { searchUsdaFoods } from "../providers/usda.js";
+import { NPM_PACKAGE_NAME } from "../constants.js";
+import { inspectHermes, setupHermes } from "./hermes.js";
 import { buildConnectionStatus } from "../services/connection-status.js";
 import { getGoals, updateGoals } from "../services/goals-store.js";
 import { buildHydrationSummary, logWater } from "../services/hydration-store.js";
@@ -60,7 +62,7 @@ export async function runCliCommand(args: string[]): Promise<number> {
       case "status":
         return printStatus();
       case "doctor":
-        return doctorCommand();
+        return doctorCommand(rest);
       case "setup":
         return setupCommand(rest);
       case "search":
@@ -103,12 +105,17 @@ function printStatus(): number {
   return 0;
 }
 
-function doctorCommand(): number {
+function doctorCommand(args: string[]): number {
+  const parsed = parseArgs(args);
   const status = buildConnectionStatus();
+  const client = optionString(parsed, "client");
+  const hermes = client === "hermes" ? inspectHermes({ homeDir: optionString(parsed, "home-dir") }) : undefined;
+
   console.log(
     JSON.stringify(
       {
         ok: true,
+        ...(client === undefined ? {} : { client }),
         checks: [
           {
             name: "storage",
@@ -132,6 +139,7 @@ function doctorCommand(): number {
           },
         ],
         status,
+        ...(hermes === undefined ? {} : { client_checks: { hermes } }),
       },
       null,
       2,
@@ -143,11 +151,26 @@ function doctorCommand(): number {
 function setupCommand(args: string[]): number {
   const parsed = parseArgs(args);
   const client = optionString(parsed, "client") ?? "generic";
+  if (client === "hermes") {
+    console.log(
+      JSON.stringify(
+        setupHermes({
+          homeDir: optionString(parsed, "home-dir"),
+          localDir: optionString(parsed, "local-dir"),
+          profile: optionString(parsed, "profile"),
+        }),
+        null,
+        2,
+      ),
+    );
+    return 0;
+  }
+
   const config = {
     mcpServers: {
       nourish: {
         command: "npx",
-        args: ["-y", "wellness-nourish"],
+        args: ["-y", NPM_PACKAGE_NAME],
         env: {
           FDC_API_KEY: "${FDC_API_KEY}",
           NOURISH_OFF_ENABLED: "1",
@@ -163,7 +186,7 @@ function setupCommand(args: string[]): number {
         client,
         config,
         next_steps: [
-          "Run nourish-mcp doctor.",
+          "Run wellness-nourish doctor.",
           "In agents, call nourish_connection_status before provider-backed tools.",
           "Use preview before write for food logs.",
         ],

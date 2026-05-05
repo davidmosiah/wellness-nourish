@@ -1,6 +1,6 @@
 {
   "name": "wellness-nourish",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Standalone MCP server for nutrition search, intake, and meal summaries.",
   "license": "MIT",
   "type": "module",
@@ -31,7 +31,7 @@
   "engines": {
     "node": ">=20"
   },
-  "homepage": "https://wellness.delx.ai/connectors/nourish",
+  "homepage": "https://wellness.delx.ai/nutrition",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/davidmosiah/wellness-nourish.git"

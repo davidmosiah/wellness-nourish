@@ -22,7 +22,7 @@ assert.match(search, /Bananas, raw/);
 assert.match(search, /usda/);
 
 const version = run(["--version"]);
-assert.match(version, /nourish-mcp 0\.1\.0/);
+assert.match(version, /nourish-mcp 0\.1\.1/);
 
 const help = run(["--help"]);
 assert.match(help, /usage/i);

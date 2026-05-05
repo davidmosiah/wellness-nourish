@@ -1,7 +1,7 @@
 {
   "name": "io.github.davidmosiah/wellness-nourish",
   "package": "wellness-nourish",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local MCP server for nutrition search, barcode lookup, intake logging, hydration, goals, exports, and meal summaries.",
   "repository": {
     "type": "git",

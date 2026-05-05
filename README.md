@@ -39,23 +39,23 @@ Agents should never ask users to paste API keys, tokens, raw health exports, or 
 ## CLI Commands
 
 ```bash
-nourish-mcp status
-nourish-mcp doctor
-nourish-mcp setup --client claude
-nourish-mcp search banana
-nourish-mcp barcode 0000000000000
-nourish-mcp log --preview --meal breakfast "2 eggs and banana"
-nourish-mcp log "2 eggs and banana"
-nourish-mcp list 2026-05-05
-nourish-mcp edit --entry intake_id --meal snack --notes "corrected"
-nourish-mcp today --format markdown
-nourish-mcp weekly --format markdown
-nourish-mcp goals --set-calories 2200 --set-protein 120 --set-water 2500
-nourish-mcp water 500 --date 2026-05-05
-nourish-mcp water today --date 2026-05-05
-nourish-mcp export --format csv
-nourish-mcp clear-day 2026-05-05 --yes
-nourish-mcp delete --entry intake_id
+wellness-nourish status
+wellness-nourish doctor
+wellness-nourish setup --client claude
+wellness-nourish search banana
+wellness-nourish barcode 0000000000000
+wellness-nourish log --preview --meal breakfast "2 eggs and banana"
+wellness-nourish log "2 eggs and banana"
+wellness-nourish list 2026-05-05
+wellness-nourish edit --entry intake_id --meal snack --notes "corrected"
+wellness-nourish today --format markdown
+wellness-nourish weekly --format markdown
+wellness-nourish goals --set-calories 2200 --set-protein 120 --set-water 2500
+wellness-nourish water 500 --date 2026-05-05
+wellness-nourish water today --date 2026-05-05
+wellness-nourish export --format csv
+wellness-nourish clear-day 2026-05-05 --yes
+wellness-nourish delete --entry intake_id
 ```
 
 No arguments start the stdio MCP server. `--http` starts HTTP transport, `--version` prints the package version, and `--help` prints usage.
@@ -73,6 +73,7 @@ Ready-to-use examples live in `examples/`:
 - `examples/cursor.json`
 - `examples/windsurf.json`
 - `examples/hermes.md`
+- `examples/hermes-skill.md`
 - `examples/openclaw.md`
 
 Claude Desktop style:
@@ -91,6 +92,26 @@ Claude Desktop style:
   }
 }
 ```
+
+## Hermes / Telegram Personal Setup
+
+For a personal Hermes server connected to your Telegram bot, let the package write the Hermes config and skill:
+
+```bash
+npx -y wellness-nourish setup --client hermes --profile david --local-dir /root/.hermes/nourish/david
+npx -y wellness-nourish doctor --client hermes --json
+hermes mcp test nourish
+```
+
+This adds a `nourish` MCP server block to `~/.hermes/config.yaml`, installs `~/.hermes/skills/nourish-mcp/SKILL.md`, and pins the npm package version. After config changes, use `/reload-mcp` or `hermes mcp test nourish`.
+
+Recommended Telegram flow:
+
+1. User says what they ate.
+2. Hermes calls `nourish_estimate_meal` and replies with calories, protein, confidence and warnings.
+3. User confirms saving.
+4. Hermes calls `nourish_log_intake` with `explicit_user_intent: true`.
+5. User can ask for `today`, weekly summaries, goals, hydration, edits, deletes or exports.
 
 Local build:
 
@@ -143,4 +164,4 @@ NOURISH_FIXTURE_MODE=1 NOURISH_FIXTURE_DIR=fixtures npm run test:cli-ux
 
 ## Delx Wellness
 
-Project page: <https://wellness.delx.ai/connectors/nourish>
+Project page: <https://wellness.delx.ai/nutrition>

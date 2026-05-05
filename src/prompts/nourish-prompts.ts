@@ -20,4 +20,24 @@ export function registerNourishPrompts(server: McpServer): void {
       ],
     }),
   );
+
+  server.registerPrompt(
+    "nourish_telegram_meal_log",
+    {
+      title: "Nourish Telegram meal log",
+      description: "Handle a Telegram meal message with preview-before-write safety.",
+    },
+    async () => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              "For a Telegram meal message, call nourish_connection_status if needed, then use nourish_estimate_meal first. Reply with a compact Markdown preview: calories, protein, confidence, unresolved items, and warnings. If the user clearly asked to save/register/log, call nourish_log_intake with explicit_user_intent true. Otherwise ask for confirmation before logging. Do not provide medical advice.",
+          },
+        },
+      ],
+    }),
+  );
 }

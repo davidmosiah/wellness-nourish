@@ -28,6 +28,8 @@ assert.deepEqual(manifest.install.optional_env, [
 assert.equal(Object.hasOwn(manifest, "optional_env"), false);
 assert.ok(manifest.agent_rules.some((rule) => /confirmation/i.test(rule)));
 assert.ok(manifest.agent_rules.some((rule) => /medical advice/i.test(rule)));
+assert.ok(manifest.hermes.common_tool_names.includes("mcp_nourish_nourish_daily_summary"));
+assert.ok(JSON.stringify(manifest.hermes.recommended_config).includes("wellness-nourish@0.1.1"));
 
 const examples = [
   "examples/claude-desktop.json",
@@ -35,6 +37,7 @@ const examples = [
   "examples/cursor.json",
   "examples/windsurf.json",
   "examples/hermes.md",
+  "examples/hermes-skill.md",
   "examples/openclaw.md",
 ];
 for (const example of examples) {
