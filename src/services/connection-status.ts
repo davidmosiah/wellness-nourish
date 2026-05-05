@@ -30,23 +30,10 @@ export function buildConnectionStatus(): NourishConnectionStatus {
     open_food_facts_enabled: config.off_enabled,
     cache_ttl_seconds: config.cache_ttl_seconds,
     max_results: config.max_results,
-    next_steps: buildNextSteps(usdaApiKeyConfigured, config.off_enabled),
+    next_steps: [
+      "Use nourish_search_food for generic foods.",
+      "Use nourish_lookup_barcode for packaged foods.",
+      "Confirm before logging estimated meals.",
+    ],
   };
-}
-
-function buildNextSteps(usdaApiKeyConfigured: boolean, openFoodFactsEnabled: boolean): string[] {
-  const nextSteps = [
-    "Call nourish_capabilities to inspect supported nutrition workflows.",
-    "Use nourish_search_food for exact USDA search before estimating a meal.",
-  ];
-
-  if (!usdaApiKeyConfigured) {
-    nextSteps.push("Set FDC_API_KEY for higher USDA FoodData Central quota when needed.");
-  }
-
-  if (!openFoodFactsEnabled) {
-    nextSteps.push("Set NOURISH_OFF_ENABLED=1 to allow Open Food Facts barcode lookups.");
-  }
-
-  return nextSteps;
 }

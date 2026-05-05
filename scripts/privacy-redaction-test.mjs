@@ -14,8 +14,12 @@ const output = JSON.stringify([
   buildAgentManifest("codex"),
   buildConnectionStatus(),
 ]);
+const status = buildConnectionStatus();
 
 assert.doesNotMatch(output, /SECRET_SHOULD_NOT_LEAK/);
 assert.match(output, /raw health exports/);
+assert.ok(status.next_steps.some((step) => /nourish_search_food.*generic foods/i.test(step)));
+assert.ok(status.next_steps.some((step) => /nourish_lookup_barcode.*packaged foods/i.test(step)));
+assert.ok(status.next_steps.some((step) => /confirm.*logging estimated meals/i.test(step)));
 
 console.log("privacy redaction ok");

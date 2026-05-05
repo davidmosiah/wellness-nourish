@@ -19,8 +19,8 @@ export interface NourishAgentManifest {
   install: {
     command: string;
     args: string[];
+    optional_env: string[];
   };
-  optional_env: string[];
   recommended_first_calls: string[];
   tools: string[];
   resources: string[];
@@ -65,8 +65,7 @@ const TOOLS = [
   "nourish_delete_intake",
   "nourish_daily_summary",
   "nourish_weekly_summary",
-  "nourish_wellness_context",
-  "nourish_usage_guide",
+  "nourish_export_data",
 ];
 
 export function buildAgentManifest(client: string): NourishAgentManifest {
@@ -78,8 +77,8 @@ export function buildAgentManifest(client: string): NourishAgentManifest {
     install: {
       command: "npx",
       args: ["-y", "wellness-nourish"],
+      optional_env: ["FDC_API_KEY", "NOURISH_OFF_ENABLED", "NOURISH_LOCAL_DIR"],
     },
-    optional_env: ["FDC_API_KEY", "NOURISH_OFF_ENABLED", "NOURISH_LOCAL_DIR"],
     recommended_first_calls: RECOMMENDED_FIRST_CALLS,
     tools: TOOLS,
     resources: [
