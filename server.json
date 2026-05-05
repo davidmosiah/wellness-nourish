@@ -1,16 +1,20 @@
 {
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.davidmosiah/wellness-nourish",
-  "package": "wellness-nourish",
-  "version": "0.1.2",
-  "description": "Local MCP server for nutrition search, barcode photo lookup, meal photo estimates, intake logging, hydration, goals, exports, and meal summaries.",
+  "description": "Local-first MCP for nutrition: food search, barcode lookup, intake logging, hydration.",
   "repository": {
-    "type": "git",
-    "url": "https://github.com/davidmosiah/wellness-nourish"
+    "url": "https://github.com/davidmosiah/wellness-nourish",
+    "source": "github"
   },
-  "command": "npx",
-  "args": [
-    "-y",
-    "wellness-nourish"
-  ],
-  "status": "active"
+  "version": "0.1.2",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "wellness-nourish",
+      "version": "0.1.2",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
 }
