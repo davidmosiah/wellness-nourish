@@ -5,6 +5,8 @@ execFileSync("npm", ["run", "build"], { stdio: "inherit" });
 
 const { IntakeLogInputSchema, ResponseOnlyInputSchema } = await import("../dist/schemas/common.js");
 const { bulletList, makeError, makeResponse } = await import("../dist/services/format.js");
+const { roundNutrient, scaleNutrients } = await import("../dist/services/nutrients.js");
+const { gramsForQuantity, nutrientsForGrams } = await import("../dist/services/portion-engine.js");
 
 assert.equal(ResponseOnlyInputSchema.parse({}).response_format, "json");
 assert.equal(
@@ -53,5 +55,17 @@ assert.equal(
   "Banana",
 );
 assert.throws(() => IntakeLogInputSchema.parse({ food: {}, explicit_user_intent: true }));
+
+assert.equal(roundNutrient(12.345), 12.35);
+assert.deepEqual(scaleNutrients({ calories_kcal: 100, protein_g: 10 }, 0.5), {
+  calories_kcal: 50,
+  protein_g: 5,
+});
+assert.equal(gramsForQuantity(2, "g"), 2);
+assert.equal(gramsForQuantity(1, "oz"), 28.35);
+assert.deepEqual(nutrientsForGrams({ calories_kcal: 200, protein_g: 20 }, 50), {
+  calories_kcal: 100,
+  protein_g: 10,
+});
 
 console.log("normalization/schema smoke ok");
