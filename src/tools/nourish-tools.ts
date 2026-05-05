@@ -438,18 +438,26 @@ async function buildIntakeEntryInput(
 
   const customFood = asFoodItem(params.custom_food);
   const customFoodRef = foodRefFromUnknown(params.custom_food);
+  const foodNutrients = nutrientsFromUnknown(params.food);
   const foodRef =
     params.food_ref ?? foodRefFromUnknown(params.food) ?? foodRefFromFood(customFood) ?? customFoodRef;
   const nutrients =
-    params.nutrients ?? bestFoodNutrients(customFood) ?? nutrientsFromUnknown(params.custom_food);
+    params.nutrients ?? bestFoodNutrients(customFood) ?? nutrientsFromUnknown(params.custom_food) ?? foodNutrients;
+  const clean = cleanNutrients(nutrients);
+
+  if (!hasMeaningfulNutrients(clean)) {
+    throw new Error(
+      "Non-text intake logs require meaningful nutrients. Provide nutrients, custom_food.nutrients_per_100g, or a food object with nutrients.",
+    );
+  }
 
   const input: AddIntakeEntryInput = {
     meal_type: params.meal_type,
     quantity: params.quantity ?? 1,
     unit: params.unit ?? "serving",
-    nutrients: cleanNutrients(nutrients),
+    nutrients: clean,
     confidence: params.confidence ?? customFood?.data_quality.confidence ?? 0.5,
-    source_trace: customFood === undefined && params.food_ref === undefined ? "manual" : "exact_food",
+    source_trace: sourceTraceFor(foodRef, customFood),
     tags: params.tags,
     wellness_context_refs: params.wellness_context_refs,
   };
@@ -473,19 +481,51 @@ async function buildIntakeEntryInput(
   return input;
 }
 
-function bestFoodNutrients(food: FoodItem | undefined): NutrientMap {
-  return food?.nutrients_per_serving ?? food?.nutrients_per_100g ?? {};
+function bestFoodNutrients(food: FoodItem | undefined): NutrientMap | undefined {
+  return food?.nutrients_per_serving ?? food?.nutrients_per_100g;
 }
 
-function nutrientsFromUnknown(value: unknown): NutrientMap {
-  if (!isRecord(value) || !isRecord(value.nutrients_per_100g)) {
+function nutrientsFromUnknown(value: unknown): NutrientMap | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  if (isRecord(value.nutrients_per_100g)) {
+    return cleanNutrients(value.nutrients_per_100g);
+  }
+
+  if (isRecord(value.nutrients)) {
+    return cleanNutrients(value.nutrients);
+  }
+
+  return undefined;
+}
+
+function hasMeaningfulNutrients(nutrients: NutrientMap): boolean {
+  return Object.values(nutrients).some((value) => typeof value === "number" && Number.isFinite(value));
+}
+
+function sourceTraceFor(foodRef: IntakeEntry["food_ref"], customFood: FoodItem | undefined): IntakeEntry["source_trace"] {
+  if (customFood !== undefined || foodRef?.source === "usda") {
+    return "exact_food";
+  }
+
+  if (foodRef?.source === "open_food_facts") {
+    return "barcode";
+  }
+
+  if (foodRef?.source === "estimate") {
+    return "estimate";
+  }
+
+  return "manual";
+}
+
+function cleanNutrients(nutrients: Partial<Record<keyof NutrientMap, number | undefined>> | undefined): NutrientMap {
+  if (nutrients === undefined) {
     return {};
   }
 
-  return cleanNutrients(value.nutrients_per_100g);
-}
-
-function cleanNutrients(nutrients: Partial<Record<keyof NutrientMap, number | undefined>>): NutrientMap {
   const clean: NutrientMap = {};
 
   for (const key of Object.keys(nutrients) as Array<keyof NutrientMap>) {

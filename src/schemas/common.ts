@@ -53,7 +53,7 @@ export const FoodSearchInputSchema = z
   .object({
     query: z.string().trim().min(1),
     limit: z.number().int().min(1).max(25).default(10),
-    provider: z.enum(["all", "usda", "open_food_facts"]).default("all"),
+    provider: z.enum(["usda"]).default("usda"),
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
@@ -61,7 +61,6 @@ export const FoodSearchInputSchema = z
 export const BarcodeLookupInputSchema = z
   .object({
     barcode: z.string().regex(/^[0-9]{6,18}$/),
-    fallback_search: z.boolean().default(false),
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
