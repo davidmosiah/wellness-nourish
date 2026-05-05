@@ -44,6 +44,25 @@ try {
   assert.equal(updated.quantity, 125);
   assert.equal(updated.notes, "updated fixture");
 
+  const concurrentEntries = await Promise.all(
+    [...Array(5)].map((_, index) =>
+      addIntakeEntry({
+        timestamp: `2024-01-01T00:00:0${index}.000Z`,
+        meal_type: "snack",
+        quantity: 10 + index,
+        unit: "g",
+        nutrients: { calories_kcal: 20 + index },
+        confidence: 0.8,
+        source_trace: "manual",
+        tags: ["fixture", "concurrent"],
+        wellness_context_refs: [],
+      }),
+    ),
+  );
+  assert.equal(concurrentEntries.length, 5);
+  assert.equal((await listIntakeEntries()).length, 6);
+  assert.equal((await listIntakeEntries({ date: "2024-01-01" })).length, 5);
+
   const exported = await exportIntakeData();
   assert.match(exported, /snack/);
 
