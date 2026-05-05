@@ -3,6 +3,8 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 import {
   AgentManifestInputSchema,
+  BarcodeImageDecodeInputSchema,
+  BarcodeImageLookupInputSchema,
   BarcodeLookupInputSchema,
   ClearDayInputSchema,
   ExportInputSchema,
@@ -15,6 +17,7 @@ import {
   IntakeLogInputSchema,
   IntakeUpdateInputSchema,
   MealEstimateInputSchema,
+  PhotoMealEstimateInputSchema,
   ResponseOnlyInputSchema,
   SummaryInputSchema,
   WeeklySummaryInputSchema,
@@ -37,7 +40,9 @@ import {
 } from "../services/intake-store.js";
 import { buildHydrationSummary, logWater } from "../services/hydration-store.js";
 import { getGoals, updateGoals } from "../services/goals-store.js";
+import { decodeBarcodeImage } from "../services/image-decoder.js";
 import { estimateMeal } from "../services/meal-estimator.js";
+import { estimateMealFromPhotoObservation } from "../services/photo-meal-estimator.js";
 import { buildPrivacyAudit } from "../services/privacy-audit.js";
 import { buildDailySummary, buildWeeklySummary } from "../services/summary.js";
 import type { FoodItem, IntakeEntry, NutrientMap, ProviderSource, ResponseFormat } from "../types.js";
@@ -168,6 +173,67 @@ export function registerNourishTools(server: McpServer): void {
   );
 
   server.registerTool(
+    "nourish_decode_barcode_image",
+    {
+      title: "Decode barcode image",
+      description: "Decode a barcode from an image path, base64 image, or data URI without logging intake.",
+      inputSchema: BarcodeImageDecodeInputSchema.shape,
+      annotations: readOnlyOpenWorldAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = BarcodeImageDecodeInputSchema.parse(input);
+        const result = await decodeBarcodeImage(params);
+
+        return toolResponse(makeResponse(result, params.response_format, barcodeDecodeMarkdown(result)));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_lookup_barcode_image",
+    {
+      title: "Lookup barcode image",
+      description: "Decode a packaged-food barcode image, then lookup the product in Open Food Facts.",
+      inputSchema: BarcodeImageLookupInputSchema.shape,
+      annotations: readOnlyOpenWorldAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = BarcodeImageLookupInputSchema.parse(input);
+        const decode = await decodeBarcodeImage(params);
+        if (!decode.ok || decode.barcodes[0] === undefined) {
+          const result = {
+            ok: false,
+            provider: "open_food_facts" as const,
+            decode,
+            lookup: null,
+            warnings: decode.warnings,
+          };
+
+          return toolResponse(makeResponse(result, params.response_format, barcodeLookupImageMarkdown(result)));
+        }
+
+        const lookup = await lookupOpenFoodFactsBarcode(decode.barcodes[0].text);
+        const result = {
+          ok: true,
+          provider: "open_food_facts" as const,
+          barcode: decode.barcodes[0],
+          decode,
+          lookup,
+          warnings: decode.warnings,
+        };
+
+        return toolResponse(makeResponse(result, params.response_format, barcodeLookupImageMarkdown(result)));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
     "nourish_get_food",
     {
       title: "Get food",
@@ -204,6 +270,26 @@ export function registerNourishTools(server: McpServer): void {
         const estimate = await estimateMeal(params);
 
         return toolResponse(makeResponse(estimate, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_estimate_meal_photo",
+    {
+      title: "Estimate meal photo",
+      description: "Estimate meal nutrition from an agent-provided photo observation; always requires user confirmation before logging.",
+      inputSchema: PhotoMealEstimateInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = PhotoMealEstimateInputSchema.parse(input);
+        const estimate = await estimateMealFromPhotoObservation(params);
+
+        return toolResponse(makeResponse(estimate, params.response_format, photoMealEstimateMarkdown(estimate)));
       } catch (error) {
         return toolError(error);
       }
@@ -552,6 +638,62 @@ function compactFoodTable(foods: FoodItem[]): string {
     })),
     ["name", "source", "calories", "protein"],
   );
+}
+
+function barcodeDecodeMarkdown(result: Awaited<ReturnType<typeof decodeBarcodeImage>>): string {
+  const barcode = result.barcodes[0];
+  if (barcode === undefined) {
+    return bulletList("Barcode Image", {
+      ok: result.ok,
+      source: result.image.source,
+      warnings: result.warnings,
+    });
+  }
+
+  return bulletList("Barcode Image", {
+    ok: result.ok,
+    barcode: barcode.text,
+    format: barcode.format,
+    rotation_degrees: barcode.rotation_degrees,
+    source: result.image.source,
+  });
+}
+
+function barcodeLookupImageMarkdown(result: {
+  ok: boolean;
+  barcode?: Awaited<ReturnType<typeof decodeBarcodeImage>>["barcodes"][number];
+  lookup: Awaited<ReturnType<typeof lookupOpenFoodFactsBarcode>> | null;
+  warnings: string[];
+}): string {
+  if (!result.ok || result.lookup === null) {
+    return bulletList("Barcode Image Lookup", {
+      ok: false,
+      warnings: result.warnings,
+    });
+  }
+
+  return bulletList("Barcode Image Lookup", {
+    ok: true,
+    barcode: result.barcode?.text,
+    food: result.lookup.food.name,
+    calories_per_100g: result.lookup.food.nutrients_per_100g.calories_kcal,
+    protein_per_100g: result.lookup.food.nutrients_per_100g.protein_g,
+    source: result.lookup.food.source,
+  });
+}
+
+function photoMealEstimateMarkdown(
+  result: Awaited<ReturnType<typeof estimateMealFromPhotoObservation>>,
+): string {
+  return bulletList("Photo Meal Estimate", {
+    calories: result.estimate.total_nutrients.calories_kcal,
+    protein_g: result.estimate.total_nutrients.protein_g,
+    confidence: result.estimate.confidence,
+    requires_confirmation: result.requires_confirmation,
+    can_log_without_confirmation: result.can_log_without_confirmation,
+    detected_items: result.detected_items.map((item) => item.name),
+    warnings: result.warnings,
+  });
 }
 
 function compactIntakeTable(entries: IntakeEntry[]): string {

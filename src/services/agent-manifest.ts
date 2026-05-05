@@ -73,8 +73,11 @@ const TOOLS = [
   "nourish_connection_status",
   "nourish_search_food",
   "nourish_lookup_barcode",
+  "nourish_decode_barcode_image",
+  "nourish_lookup_barcode_image",
   "nourish_get_food",
   "nourish_estimate_meal",
+  "nourish_estimate_meal_photo",
   "nourish_log_intake",
   "nourish_list_intake",
   "nourish_update_intake",
@@ -117,6 +120,8 @@ export function buildAgentManifest(client: string): NourishAgentManifest {
       common_tool_names: [
         "mcp_nourish_nourish_connection_status",
         "mcp_nourish_nourish_estimate_meal",
+        "mcp_nourish_nourish_estimate_meal_photo",
+        "mcp_nourish_nourish_lookup_barcode_image",
         "mcp_nourish_nourish_log_intake",
         "mcp_nourish_nourish_daily_summary",
       ],
@@ -134,6 +139,8 @@ export function buildAgentManifest(client: string): NourishAgentManifest {
       },
       personal_telegram_contract: [
         "Preview natural-language meals before writing unless the user explicitly says to save/register/log.",
+        "For barcode photos, decode and lookup with nourish_lookup_barcode_image when Hermes can pass an image path, base64 image, or data URI.",
+        "For meal photos, convert the visual observation into detected_items, call nourish_estimate_meal_photo, then ask for portion confirmation before logging.",
         "Use direct MCP tools from Telegram; avoid shell workarounds for normal nutrition access.",
         "Return compact Markdown with calories, protein, confidence, warnings, and a confirmation question.",
       ],
@@ -141,6 +148,8 @@ export function buildAgentManifest(client: string): NourishAgentManifest {
     agent_rules: [
       "Call nourish_connection_status before provider-backed tools.",
       "Use exact search or barcode lookup before estimating nutrition.",
+      "Use barcode image decoding for packaged-food photos when image bytes are available.",
+      "Use meal photo estimation only from an agent-provided visual observation and never log it without confirmation.",
       "Preserve confidence values and source quality warnings in user-facing summaries.",
       "Ask confirmation before logging intake unless the user explicitly requested logging.",
       "For Hermes Telegram usage, use preview -> confirm -> log as the default meal flow.",

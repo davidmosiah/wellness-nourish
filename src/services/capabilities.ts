@@ -4,6 +4,8 @@ export interface NourishCapabilities {
   providers: {
     primary: string;
     optional_barcode: string;
+    local_image_decode: string;
+    vision_bridge: string;
     bulk_imports: string;
   };
   workflows: string[];
@@ -17,12 +19,16 @@ export function buildCapabilities(): NourishCapabilities {
     providers: {
       primary: "USDA FoodData Central",
       optional_barcode: "Open Food Facts",
+      local_image_decode: "ZXing barcode decoding from local image paths, base64 images, or data URIs",
+      vision_bridge: "Agent-provided photo observations for approximate meal estimates; no automatic image upload or autonomous logging",
       bulk_imports: "OpenNutrition/Open Food Facts imports are separate opt-in flows",
     },
     workflows: [
       "food search",
       "barcode lookup",
+      "barcode image decode and Open Food Facts lookup",
       "meal estimation",
+      "photo-assisted meal estimation with confirmation-before-log",
       "local intake logging",
       "intake list, edit, delete, and clear-day workflows",
       "hydration and local nutrition goals",

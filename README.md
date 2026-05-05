@@ -2,9 +2,9 @@
 
 ## Overview
 
-Wellness Nourish is a local MCP server for nutrition search, barcode lookup, meal estimation, intake logging, hydration, goals, exports, and daily or weekly summaries. It runs over stdio by default for MCP clients and can also run a Streamable HTTP endpoint at `POST /mcp`.
+Wellness Nourish is a local MCP server for nutrition search, barcode lookup, barcode photo lookup, photo-assisted meal estimation, intake logging, hydration, goals, exports, and daily or weekly summaries. It runs over stdio by default for MCP clients and can also run a Streamable HTTP endpoint at `POST /mcp`.
 
-The connector uses USDA FoodData Central as the primary food search provider. Open Food Facts is used for packaged-food barcode lookup when enabled. It does not provide hosted sync, photo analysis, recipe generation, or medical advice.
+The connector uses USDA FoodData Central as the primary food search provider. Open Food Facts is used for packaged-food barcode lookup when enabled. Local barcode image decoding is supported with ZXing. Meal photos are estimated only from an agent-provided visual observation and always require confirmation before logging. It does not provide hosted sync, autonomous photo upload, recipe generation, or medical advice.
 
 ## Install
 
@@ -109,9 +109,11 @@ Recommended Telegram flow:
 
 1. User says what they ate.
 2. Hermes calls `nourish_estimate_meal` and replies with calories, protein, confidence and warnings.
-3. User confirms saving.
-4. Hermes calls `nourish_log_intake` with `explicit_user_intent: true`.
-5. User can ask for `today`, weekly summaries, goals, hydration, edits, deletes or exports.
+3. For barcode photos, Hermes calls `nourish_lookup_barcode_image` when it has an image path, base64 image, or data URI.
+4. For meal photos, Hermes describes visible food and portions, calls `nourish_estimate_meal_photo`, and asks for portion confirmation.
+5. User confirms saving.
+6. Hermes calls `nourish_log_intake` with `explicit_user_intent: true`.
+7. User can ask for `today`, weekly summaries, goals, hydration, edits, deletes or exports.
 
 Local build:
 

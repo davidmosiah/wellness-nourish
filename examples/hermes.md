@@ -16,7 +16,7 @@ The resulting MCP server block uses this shape:
 {
   "name": "nourish",
   "command": "npx",
-  "args": ["-y", "wellness-nourish@0.1.1"],
+  "args": ["-y", "wellness-nourish@0.1.2"],
   "env": {
     "NOURISH_OFF_ENABLED": "1",
     "NOURISH_LOCAL_DIR": "/root/.hermes/nourish/david"
@@ -29,6 +29,8 @@ After config changes, reload MCP and call `nourish_connection_status`, `nourish_
 Telegram flow:
 
 1. Preview with `nourish_estimate_meal`.
-2. Ask for confirmation unless the user clearly asked to save/register/log.
-3. Save with `nourish_log_intake` and `explicit_user_intent: true`.
-4. Summarize with `nourish_daily_summary` or `nourish_weekly_summary`.
+2. For barcode photos, use `nourish_lookup_barcode_image` when Hermes has an image path, base64 image, or data URI.
+3. For meal photos, use `nourish_estimate_meal_photo` from the visual observation and ask for portion confirmation.
+4. Ask for confirmation unless the user clearly asked to save/register/log and the estimate is already confirmed.
+5. Save with `nourish_log_intake` and `explicit_user_intent: true`.
+6. Summarize with `nourish_daily_summary` or `nourish_weekly_summary`.

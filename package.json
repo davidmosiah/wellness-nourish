@@ -1,6 +1,6 @@
 {
   "name": "wellness-nourish",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Standalone MCP server for nutrition search, intake, and meal summaries.",
   "license": "MIT",
   "type": "module",
@@ -21,12 +21,13 @@
     "test:intake-store": "node scripts/test-intake-store.mjs",
     "test:hydration-goals": "node scripts/test-hydration-goals.mjs",
     "test:meal-estimator": "node scripts/test-meal-estimator.mjs",
+    "test:image-tools": "node scripts/test-image-tools.mjs",
     "test:summary": "node scripts/test-summary.mjs",
     "test:cli-ux": "node scripts/cli-ux-test.mjs",
     "test:agent-readiness": "node scripts/agent-readiness-test.mjs",
     "test:hermes-agent": "node scripts/hermes-agent-manifest-test.mjs",
     "test:privacy": "node scripts/privacy-redaction-test.mjs",
-    "test": "npm run typecheck && npm run build && npm run test:normalization && npm run test:providers && npm run test:intake-store && npm run test:hydration-goals && npm run test:meal-estimator && npm run test:summary && npm run test:privacy && npm run smoke && npm run smoke:http && npm run test:cli-ux && npm run test:agent-readiness && npm run test:hermes-agent && npm run prepack"
+    "test": "npm run typecheck && npm run build && npm run test:normalization && npm run test:providers && npm run test:intake-store && npm run test:hydration-goals && npm run test:meal-estimator && npm run test:image-tools && npm run test:summary && npm run test:privacy && npm run smoke && npm run smoke:http && npm run test:cli-ux && npm run test:agent-readiness && npm run test:hermes-agent && npm run prepack"
   },
   "engines": {
     "node": ">=20"
@@ -38,8 +39,10 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.21.0",
+    "@zxing/library": "^0.21.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "sharp": "^0.34.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {

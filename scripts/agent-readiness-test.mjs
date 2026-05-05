@@ -12,6 +12,9 @@ const manifest = buildAgentManifest("codex");
 assert.equal(manifest.name, "nourish-mcp");
 assert.ok(manifest.supported_clients.includes("codex"));
 assert.ok(manifest.tools.includes("nourish_search_food"));
+assert.ok(manifest.tools.includes("nourish_decode_barcode_image"));
+assert.ok(manifest.tools.includes("nourish_lookup_barcode_image"));
+assert.ok(manifest.tools.includes("nourish_estimate_meal_photo"));
 assert.ok(manifest.tools.includes("nourish_export_data"));
 assert.ok(manifest.tools.includes("nourish_list_intake"));
 assert.ok(manifest.tools.includes("nourish_log_water"));
@@ -29,7 +32,7 @@ assert.equal(Object.hasOwn(manifest, "optional_env"), false);
 assert.ok(manifest.agent_rules.some((rule) => /confirmation/i.test(rule)));
 assert.ok(manifest.agent_rules.some((rule) => /medical advice/i.test(rule)));
 assert.ok(manifest.hermes.common_tool_names.includes("mcp_nourish_nourish_daily_summary"));
-assert.ok(JSON.stringify(manifest.hermes.recommended_config).includes("wellness-nourish@0.1.1"));
+assert.ok(JSON.stringify(manifest.hermes.recommended_config).includes("wellness-nourish@0.1.2"));
 
 const examples = [
   "examples/claude-desktop.json",

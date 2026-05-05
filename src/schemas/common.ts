@@ -141,6 +141,29 @@ export const BarcodeLookupInputSchema = z
   })
   .strict();
 
+const ImageInputFields = {
+  image_path: z.string().trim().min(1).optional(),
+  image_base64: z.string().trim().min(1).optional(),
+  image_data_uri: z.string().trim().min(1).optional(),
+  image_mime_type: z.string().trim().min(1).optional(),
+} as const;
+
+export const BarcodeImageDecodeInputSchema = z
+  .object({
+    ...ImageInputFields,
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict()
+  .superRefine(requireExactlyOneImageInput);
+
+export const BarcodeImageLookupInputSchema = z
+  .object({
+    ...ImageInputFields,
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict()
+  .superRefine(requireExactlyOneImageInput);
+
 export const FoodGetInputSchema = z
   .object({
     source: z.enum(["usda", "open_food_facts"]),
@@ -152,6 +175,26 @@ export const FoodGetInputSchema = z
 export const MealEstimateInputSchema = z
   .object({
     text: z.string().trim().min(1),
+    locale: z.string().trim().min(2).default("en-US"),
+    meal_type: MealTypeSchema,
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
+const PhotoMealDetectedItemSchema = z
+  .object({
+    name: z.string().trim().min(1),
+    quantity: z.number().positive().optional(),
+    unit: z.string().trim().min(1).optional(),
+    grams_estimate: z.number().positive().optional(),
+    confidence: z.number().min(0).max(1).optional(),
+  })
+  .strict();
+
+export const PhotoMealEstimateInputSchema = z
+  .object({
+    image_description: z.string().trim().min(1),
+    detected_items: z.array(PhotoMealDetectedItemSchema).max(25).default([]),
     locale: z.string().trim().min(2).default("en-US"),
     meal_type: MealTypeSchema,
     response_format: ResponseFormatSchema.default("json"),
@@ -208,6 +251,27 @@ function hasNonEmptyStringProperty(value: object, key: string): boolean {
   const property = (value as Record<string, unknown>)[key];
 
   return typeof property === "string" && property.trim().length > 0;
+}
+
+function requireExactlyOneImageInput(
+  input: {
+    image_path?: string | undefined;
+    image_base64?: string | undefined;
+    image_data_uri?: string | undefined;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  const count = [input.image_path, input.image_base64, input.image_data_uri].filter(
+    (value) => value !== undefined && value.trim().length > 0,
+  ).length;
+
+  if (count !== 1) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Provide exactly one of image_path, image_base64, or image_data_uri.",
+      path: ["image_path"],
+    });
+  }
 }
 
 export const IntakeUpdateInputSchema = z

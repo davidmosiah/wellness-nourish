@@ -34,7 +34,7 @@ export function registerNourishPrompts(server: McpServer): void {
           content: {
             type: "text",
             text:
-              "For a Telegram meal message, call nourish_connection_status if needed, then use nourish_estimate_meal first. Reply with a compact Markdown preview: calories, protein, confidence, unresolved items, and warnings. If the user clearly asked to save/register/log, call nourish_log_intake with explicit_user_intent true. Otherwise ask for confirmation before logging. Do not provide medical advice.",
+              "For a Telegram meal message, call nourish_connection_status if needed. For plain text meals, use nourish_estimate_meal first. For barcode photos with image_path, image_base64, or image_data_uri, use nourish_lookup_barcode_image. For meal photos, describe the visible food/portions as detected_items and call nourish_estimate_meal_photo. Reply with a compact Markdown preview: calories, protein, confidence, unresolved items, and warnings. If the user clearly asked to save/register/log and the estimate is already confirmed, call nourish_log_intake with explicit_user_intent true. Otherwise ask for confirmation before logging. Do not provide medical advice.",
           },
         },
       ],
