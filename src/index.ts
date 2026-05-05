@@ -1,12 +1,148 @@
 #!/usr/bin/env node
 
-import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
+import http from "node:http";
 
-const message =
-  "Nourish MCP entrypoint is installed; MCP transport wiring lands in the next implementation task.";
+import cors from "cors";
+import express from "express";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+
+import { DEFAULT_HOST, DEFAULT_PORT, SERVER_NAME, SERVER_VERSION } from "./constants.js";
+import { registerNourishPrompts } from "./prompts/nourish-prompts.js";
+import { registerNourishResources } from "./resources/nourish-resources.js";
+import { registerNourishTools } from "./tools/nourish-tools.js";
+
+export function createServer(): McpServer {
+  const server = new McpServer({
+    name: SERVER_NAME,
+    version: SERVER_VERSION,
+  });
+
+  registerNourishTools(server);
+  registerNourishResources(server);
+  registerNourishPrompts(server);
+
+  return server;
+}
+
+function helpText(): string {
+  return [
+    "Usage: nourish-mcp [--http] [--help] [--version]",
+    "",
+    "Starts the Nourish MCP server over stdio by default.",
+    "",
+    "Options:",
+    "  --http     Start Streamable HTTP transport at POST /mcp.",
+    "  --help     Print this usage text without starting the server.",
+    "  --version  Print the package name and version.",
+  ].join("\n");
+}
+
+async function startStdio(): Promise<void> {
+  const server = createServer();
+  const transport = new StdioServerTransport();
+
+  await server.connect(transport);
+}
+
+async function startHttp(): Promise<void> {
+  const host = process.env.NOURISH_MCP_HOST ?? DEFAULT_HOST;
+  const port = parsePort(process.env.NOURISH_MCP_PORT);
+  const allowedOrigin = process.env.NOURISH_MCP_ALLOWED_ORIGIN ?? `http://${host}:${port}`;
+  const app = express();
+
+  app.use(
+    cors({
+      origin: allowedOrigin,
+    }),
+  );
+  app.use(express.json({ limit: "1mb" }));
+
+  app.get("/health", (_req, res) => {
+    res.json({
+      ok: true,
+      name: SERVER_NAME,
+      version: SERVER_VERSION,
+    });
+  });
+
+  app.post("/mcp", async (req, res) => {
+    const server = createServer();
+    const transportOptions = {
+      enableJsonResponse: true,
+      sessionIdGenerator: undefined,
+    } as unknown as ConstructorParameters<typeof StreamableHTTPServerTransport>[0];
+    const transport = new StreamableHTTPServerTransport(transportOptions);
+
+    let closed = false;
+    const close = async () => {
+      if (closed) {
+        return;
+      }
+
+      closed = true;
+      await transport.close();
+      await server.close();
+    };
+
+    res.on("close", () => {
+      void close();
+    });
+
+    try {
+      await server.connect(transport as unknown as Transport);
+      await transport.handleRequest(req, res, req.body);
+    } catch (error) {
+      if (!res.headersSent) {
+        res.status(500).json({
+          jsonrpc: "2.0",
+          error: {
+            code: -32603,
+            message: error instanceof Error ? error.message : "Internal server error",
+          },
+          id: null,
+        });
+      }
+
+      await close();
+    }
+  });
+
+  const httpServer = http.createServer(app);
+
+  await new Promise<void>((resolve, reject) => {
+    httpServer.once("error", reject);
+    httpServer.listen(port, host, () => {
+      httpServer.off("error", reject);
+      resolve();
+    });
+  });
+
+  process.on("SIGTERM", () => {
+    httpServer.close(() => process.exit(0));
+  });
+  process.on("SIGINT", () => {
+    httpServer.close(() => process.exit(0));
+  });
+}
+
+function parsePort(value: string | undefined): number {
+  if (value === undefined) {
+    return DEFAULT_PORT;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_PORT;
+}
 
 if (process.argv.includes("--version")) {
   console.log(`${SERVER_NAME} ${SERVER_VERSION}`);
+} else if (process.argv.includes("--help") || process.argv.includes("-h")) {
+  console.log(helpText());
+} else if (process.argv.includes("--http") || process.env.NOURISH_MCP_TRANSPORT === "http") {
+  await startHttp();
 } else {
-  console.log(message);
+  await startStdio();
 }
