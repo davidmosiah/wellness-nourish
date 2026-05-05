@@ -1,0 +1,23 @@
+{
+  "code": "737628064502",
+  "status": 1,
+  "product": {
+    "code": "737628064502",
+    "product_name": "Peanut Butter",
+    "brands": "Fixture Foods",
+    "url": "https://world.openfoodfacts.org/product/737628064502",
+    "quantity": "454 g",
+    "serving_size": "2 tbsp (32 g)",
+    "serving_quantity": 32,
+    "nutriments": {
+      "energy-kcal_100g": 588,
+      "proteins_100g": 25,
+      "carbohydrates_100g": 20,
+      "fat_100g": 50,
+      "fiber_100g": 6,
+      "sugars_100g": 9,
+      "saturated-fat_100g": 10,
+      "sodium_100g": 0.4
+    }
+  }
+}

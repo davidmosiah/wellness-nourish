@@ -22,4 +22,12 @@ assert.equal(detail.source_id, "173944");
 assert.equal(detail.license.share_alike, false);
 await assert.rejects(() => getUsdaFood("999999"), /fixture not found/i);
 
+const { lookupOpenFoodFactsBarcode } = await import("../dist/providers/open-food-facts.js");
+const off = await lookupOpenFoodFactsBarcode("737628064502");
+assert.equal(off.food.source, "open_food_facts");
+assert.equal(off.food.barcode, "737628064502");
+assert.equal(off.food.license.share_alike, true);
+assert.match(off.food.license.attribution, /Open Food Facts/);
+await assert.rejects(() => lookupOpenFoodFactsBarcode("999999"), /fixture not found/i);
+
 console.log("provider fixture tests ok");
