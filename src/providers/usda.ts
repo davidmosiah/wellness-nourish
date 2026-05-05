@@ -223,7 +223,7 @@ export async function searchUsdaFoods(
 
   return {
     provider: "usda",
-    foods: (search.foods ?? []).slice(0, limit).map(mapFood),
+    foods: rankSearchFoods(query, search.foods ?? []).slice(0, limit).map(mapFood),
   };
 }
 
@@ -238,4 +238,43 @@ export async function getUsdaFood(sourceId: string): Promise<FoodItem> {
   }
 
   return mapFood(food);
+}
+
+function rankSearchFoods(query: string, foods: UsdaSearchFood[]): UsdaSearchFood[] {
+  return [...foods].sort((left, right) => foodSearchScore(query, left) - foodSearchScore(query, right));
+}
+
+function foodSearchScore(query: string, food: UsdaSearchFood): number {
+  const description = (food.description ?? "").toLowerCase();
+  const dataType = (food.dataType ?? "").toLowerCase();
+  const normalizedQuery = query.toLowerCase().trim();
+  let score = 0;
+
+  if (dataType.includes("branded")) {
+    score += 60;
+  }
+  if (dataType.includes("foundation")) {
+    score -= 12;
+  }
+  if (dataType.includes("sr legacy")) {
+    score -= 10;
+  }
+  if (dataType.includes("survey")) {
+    score -= 6;
+  }
+
+  if (description === normalizedQuery || description === `${normalizedQuery}s`) {
+    score -= 4;
+  }
+  if (description.includes(", raw") && !normalizedQuery.includes("cooked") && !normalizedQuery.includes("cozido")) {
+    score -= 8;
+  }
+  if ((normalizedQuery.includes("cooked") || normalizedQuery.includes("cozido")) && description.includes("cooked")) {
+    score -= 8;
+  }
+  if (/^[A-Z0-9\s,.-]+$/.test(food.description ?? "") && dataType.includes("branded")) {
+    score += 8;
+  }
+
+  return score;
 }

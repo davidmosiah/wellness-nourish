@@ -27,7 +27,14 @@ import { lookupOpenFoodFactsBarcode } from "../providers/open-food-facts.js";
 import { buildAgentManifest } from "../services/agent-manifest.js";
 import { buildCapabilities } from "../services/capabilities.js";
 import { buildConnectionStatus } from "../services/connection-status.js";
-import { makeError, makeResponse, bulletList, compactTable, type McpTextResponse } from "../services/format.js";
+import {
+  makeActionRequired,
+  makeError,
+  makeResponse,
+  bulletList,
+  compactTable,
+  type McpTextResponse,
+} from "../services/format.js";
 import {
   addIntakeEntry,
   clearIntakeDay,
@@ -313,7 +320,7 @@ export function registerNourishTools(server: McpServer): void {
       try {
         const params = IntakeLogInputSchema.parse(input);
         if (params.explicit_user_intent !== true) {
-          return toolResponse(makeError("explicit_user_intent must be true to log intake."));
+          return explicitIntentRequired("explicit_user_intent must be true to log intake.", params.response_format);
         }
 
         const entry = await addIntakeEntry(await buildIntakeEntryInput(params));
@@ -432,6 +439,9 @@ export function registerNourishTools(server: McpServer): void {
     async (input) => {
       try {
         const params = ClearDayInputSchema.parse(input);
+        if (params.explicit_user_intent !== true) {
+          return explicitIntentRequired("explicit_user_intent must be true to clear a day.", params.response_format);
+        }
         const result = await clearIntakeDay(params.date);
 
         return toolResponse(makeResponse(result, params.response_format));
@@ -457,6 +467,9 @@ export function registerNourishTools(server: McpServer): void {
     async (input) => {
       try {
         const params = HydrationLogInputSchema.parse(input);
+        if (params.explicit_user_intent !== true) {
+          return explicitIntentRequired("explicit_user_intent must be true to log hydration.", params.response_format);
+        }
         const waterInput: Parameters<typeof logWater>[0] = {
           amount_ml: params.amount_ml,
           source: "agent",
@@ -532,6 +545,9 @@ export function registerNourishTools(server: McpServer): void {
     async (input) => {
       try {
         const params = GoalsSetInputSchema.parse(input);
+        if (params.explicit_user_intent !== true) {
+          return explicitIntentRequired("explicit_user_intent must be true to update goals.", params.response_format);
+        }
         const result = await updateGoals({
           ...(params.daily === undefined ? {} : { daily: cleanNutrients(params.daily) }),
           ...(params.hydration_ml === undefined ? {} : { hydration_ml: params.hydration_ml }),
@@ -712,6 +728,10 @@ function compactIntakeTable(entries: IntakeEntry[]): string {
 
 function toolResponse(response: McpTextResponse): CallToolResult {
   return response as unknown as CallToolResult;
+}
+
+function explicitIntentRequired(message: string, responseFormat: ResponseFormat): CallToolResult {
+  return toolResponse(makeActionRequired(message, responseFormat));
 }
 
 async function buildIntakeEntryInput(

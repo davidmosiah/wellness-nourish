@@ -20,6 +20,8 @@ Use this skill whenever a user asks Hermes, including through Telegram, to searc
 - If the user only says what they ate, first call `mcp_nourish_nourish_estimate_meal`, return a compact preview with calories, protein, confidence and warnings, then ask whether to save it.
 - If the user sends a barcode photo and Hermes has an image path, base64 image, or data URI, call `mcp_nourish_nourish_lookup_barcode_image`; if only visible digits are available, call `mcp_nourish_nourish_lookup_barcode`.
 - If the user sends a meal photo, describe the visible food and portions as `detected_items`, call `mcp_nourish_nourish_estimate_meal_photo`, then ask the user to confirm portions before logging.
+- For Portuguese/Brazilian meals, preserve explicit quantities such as `200g arroz`, `120g feijão`, `150g frango`, call estimate with `locale: pt-BR`, and ask one concise clarification only for unresolved foods.
+- If a tool returns `USER_ACTION_REQUIRED`, treat it as a normal confirmation guard, not as a server outage.
 - Preserve uncertainty. Include confidence and unresolved items instead of pretending estimates are exact.
 - Use `response_format: markdown` for Telegram-facing summaries when available.
 

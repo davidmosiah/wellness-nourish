@@ -22,6 +22,7 @@ export function buildUsageGuide(): NourishUsageGuide {
       "Read nourish://usage-guide.",
       "Use nourish_search_food or nourish_lookup_barcode before estimating whenever possible.",
       "Use nourish_lookup_barcode_image for barcode photos and nourish_estimate_meal_photo for meal photos when the agent has image context.",
+      "For Brazilian Portuguese meals, preserve explicit grams and common aliases such as arroz branco cozido, feijão carioca, peito de frango grelhado, salada simples and ovos.",
     ],
     agent_workflows: [
       {
@@ -46,6 +47,14 @@ export function buildUsageGuide(): NourishUsageGuide {
           "Describe the visible food and detected portions from the agent vision layer.",
           "Call nourish_estimate_meal_photo with image_description and detected_items.",
           "Show the approximate estimate and ask the user to confirm portions before calling nourish_log_intake.",
+        ],
+      },
+      {
+        name: "Brazilian Portuguese meal text",
+        steps: [
+          "Pass the original pt-BR meal text to nourish_estimate_meal with locale pt-BR.",
+          "Keep explicit gram quantities such as 200g arroz or 150g frango when present.",
+          "If a common Brazilian food is still unresolved, ask one compact clarification instead of logging.",
         ],
       },
       {

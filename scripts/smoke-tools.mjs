@@ -68,6 +68,7 @@ try {
   assertSearchSchemaHonest(result.tools);
   assertBarcodeSchemaHonest(result.tools);
   await assertResourceSurface();
+  await assertConfirmationGuardsAreUserActionRequired();
 
   const nutrientlessLog = await client.callTool({
     name: "nourish_log_intake",
@@ -88,6 +89,36 @@ try {
 }
 
 console.log("stdio tool smoke ok");
+
+async function assertConfirmationGuardsAreUserActionRequired() {
+  for (const call of [
+    {
+      name: "nourish_log_intake",
+      arguments: {
+        text: "TESTE QA - 1 banana",
+      },
+    },
+    {
+      name: "nourish_log_water",
+      arguments: {
+        amount_ml: 250,
+      },
+    },
+    {
+      name: "nourish_set_goals",
+      arguments: {
+        hydration_ml: 2500,
+      },
+    },
+  ]) {
+    const result = await client.callTool(call);
+    assert.notEqual(result.isError, true, `${call.name} confirmation guard should not mark transport/server error`);
+    const payload = JSON.parse(textFromToolResult(result));
+    assert.equal(payload.ok, false);
+    assert.equal(payload.error.code, "USER_ACTION_REQUIRED");
+    assert.match(payload.error.message, /explicit_user_intent/i);
+  }
+}
 
 function assertSearchSchemaHonest(tools) {
   const searchTool = findTool(tools, "nourish_search_food");

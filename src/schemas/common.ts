@@ -53,16 +53,7 @@ export const ClearDayInputSchema = z
     explicit_user_intent: z.boolean().default(false),
     response_format: ResponseFormatSchema.default("json"),
   })
-  .strict()
-  .superRefine((input, ctx) => {
-    if (input.explicit_user_intent !== true) {
-      ctx.addIssue({
-        code: "custom",
-        message: "explicit_user_intent must be true to clear a day.",
-        path: ["explicit_user_intent"],
-      });
-    }
-  });
+  .strict();
 
 export const HydrationLogInputSchema = z
   .object({
@@ -73,16 +64,7 @@ export const HydrationLogInputSchema = z
     explicit_user_intent: z.boolean().default(false),
     response_format: ResponseFormatSchema.default("json"),
   })
-  .strict()
-  .superRefine((input, ctx) => {
-    if (input.explicit_user_intent !== true) {
-      ctx.addIssue({
-        code: "custom",
-        message: "explicit_user_intent must be true to log hydration.",
-        path: ["explicit_user_intent"],
-      });
-    }
-  });
+  .strict();
 
 export const GoalsSetInputSchema = z
   .object({
@@ -93,13 +75,6 @@ export const GoalsSetInputSchema = z
   })
   .strict()
   .superRefine((input, ctx) => {
-    if (input.explicit_user_intent !== true) {
-      ctx.addIssue({
-        code: "custom",
-        message: "explicit_user_intent must be true to update goals.",
-        path: ["explicit_user_intent"],
-      });
-    }
     if (input.daily === undefined && input.hydration_ml === undefined) {
       ctx.addIssue({
         code: "custom",
@@ -238,13 +213,6 @@ export const IntakeLogInputSchema = z
       });
     }
 
-    if (input.explicit_user_intent !== true) {
-      ctx.addIssue({
-        code: "custom",
-        message: "explicit_user_intent must be true to log intake.",
-        path: ["explicit_user_intent"],
-      });
-    }
   });
 
 function hasNonEmptyStringProperty(value: object, key: string): boolean {

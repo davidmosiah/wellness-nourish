@@ -1,6 +1,17 @@
 {
   "foods": [
     {
+      "fdcId": 999001,
+      "description": "BANANA",
+      "dataType": "Branded",
+      "foodNutrients": [
+        { "nutrientId": 1008, "value": 312 },
+        { "nutrientId": 1003, "value": 2 },
+        { "nutrientId": 1005, "value": 71 },
+        { "nutrientId": 1004, "value": 1 }
+      ]
+    },
+    {
       "fdcId": 173944,
       "description": "Bananas, raw",
       "dataType": "SR Legacy",

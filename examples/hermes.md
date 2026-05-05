@@ -9,14 +9,14 @@ hermes mcp test nourish
 ```
 
 This writes `~/.hermes/config.yaml` and `~/.hermes/skills/nourish-mcp/SKILL.md`.
+It also writes `~/.hermes/scripts/nourish-mcp-wrapper.sh`, which sources `~/.hermes/secrets/nourish.env` when present before executing the pinned package.
 
 The resulting MCP server block uses this shape:
 
 ```json
 {
   "name": "nourish",
-  "command": "npx",
-  "args": ["-y", "wellness-nourish@0.1.2"],
+  "command": "/root/.hermes/scripts/nourish-mcp-wrapper.sh",
   "env": {
     "NOURISH_OFF_ENABLED": "1",
     "NOURISH_LOCAL_DIR": "/root/.hermes/nourish/david"

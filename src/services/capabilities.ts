@@ -6,6 +6,7 @@ export interface NourishCapabilities {
     optional_barcode: string;
     local_image_decode: string;
     vision_bridge: string;
+    local_estimator: string;
     bulk_imports: string;
   };
   workflows: string[];
@@ -21,6 +22,7 @@ export function buildCapabilities(): NourishCapabilities {
       optional_barcode: "Open Food Facts",
       local_image_decode: "ZXing barcode decoding from local image paths, base64 images, or data URIs",
       vision_bridge: "Agent-provided photo observations for approximate meal estimates; no automatic image upload or autonomous logging",
+      local_estimator: "Deterministic simple-food estimator with common English and Brazilian Portuguese aliases and explicit gram parsing",
       bulk_imports: "OpenNutrition/Open Food Facts imports are separate opt-in flows",
     },
     workflows: [
@@ -29,6 +31,7 @@ export function buildCapabilities(): NourishCapabilities {
       "barcode image decode and Open Food Facts lookup",
       "meal estimation",
       "photo-assisted meal estimation with confirmation-before-log",
+      "Brazilian Portuguese meal phrases for common foods and gram quantities",
       "local intake logging",
       "intake list, edit, delete, and clear-day workflows",
       "hydration and local nutrition goals",

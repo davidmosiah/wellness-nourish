@@ -46,6 +46,24 @@ assert.ok((meal.estimate.total_nutrients.calories_kcal ?? 0) > 300);
 assert.ok(meal.estimate.confidence < 0.55);
 assert.ok(meal.warnings.some((warning) => /photo/i.test(warning)));
 
+const brazilianPhotoMeal = await estimateMealFromPhotoObservation({
+  image_description: "Foto do Telegram mostra arroz branco cozido, feijão carioca, peito de frango grelhado e salada simples.",
+  detected_items: [
+    { name: "arroz branco cozido", grams_estimate: 200, confidence: 0.7 },
+    { name: "feijão carioca", grams_estimate: 120, confidence: 0.65 },
+    { name: "peito de frango grelhado", grams_estimate: 150, confidence: 0.7 },
+    { name: "salada simples", quantity: 1, unit: "serving", confidence: 0.55 },
+  ],
+  meal_type: "lunch",
+  locale: "pt-BR",
+});
+
+assert.equal(brazilianPhotoMeal.requires_confirmation, true);
+assert.equal(brazilianPhotoMeal.can_log_without_confirmation, false);
+assert.match(brazilianPhotoMeal.estimate.text, /arroz/);
+assert.ok((brazilianPhotoMeal.estimate.total_nutrients.calories_kcal ?? 0) > 550);
+assert.ok((brazilianPhotoMeal.estimate.total_nutrients.protein_g ?? 0) > 55);
+
 console.log("image tools ok");
 
 function ean13Svg(code) {

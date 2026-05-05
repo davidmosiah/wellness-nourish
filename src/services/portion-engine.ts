@@ -14,9 +14,15 @@ export const UNIT_TO_GRAMS: Readonly<Record<string, number>> = {
   l: 1000,
   cup: 240,
   cups: 240,
+  "xícara": 240,
+  "xícaras": 240,
+  xicara: 240,
+  xicaras: 240,
   tbsp: 15,
   tablespoon: 15,
   tablespoons: 15,
+  colher: 15,
+  colheres: 15,
   tsp: 5,
   teaspoon: 5,
   teaspoons: 5,
@@ -24,6 +30,12 @@ export const UNIT_TO_GRAMS: Readonly<Record<string, number>> = {
   slices: 30,
   piece: 1,
   pieces: 1,
+  unidade: 1,
+  unidades: 1,
+  concha: 100,
+  conchas: 100,
+  prato: 350,
+  pratos: 350,
 };
 
 export function gramsForQuantity(

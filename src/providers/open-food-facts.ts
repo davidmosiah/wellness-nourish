@@ -27,6 +27,8 @@ type OpenFoodFactsResponse = {
   product?: OpenFoodFactsProduct;
 };
 
+type OpenFoodFactsLookupResult = { food: FoodItem; provider: "open_food_facts" };
+
 const OFF_LICENSE = {
   name: "Open Food Facts ODbL",
   attribution: "Food data sourced from Open Food Facts. Open Food Facts data is available under ODbL.",
@@ -43,6 +45,7 @@ const NUTRIENT_KEYS: Readonly<Record<string, keyof NutrientMap>> = {
   sugars_100g: "sugar_g",
   "saturated-fat_100g": "saturated_fat_g",
 };
+const OFF_CACHE = new Map<string, { expires_at: number; result: OpenFoodFactsLookupResult }>();
 
 function finiteNumber(value: unknown): number | undefined {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -84,6 +87,11 @@ async function fetchBarcode(barcode: string): Promise<OpenFoodFactsResponse> {
   });
 
   if (!response.ok) {
+    if (response.status === 429) {
+      throw new Error(
+        "Open Food Facts is rate limiting requests right now. Try again in a few minutes, or provide the product name, label photo, or visible nutrition facts manually.",
+      );
+    }
     throw new Error(`Open Food Facts request failed: ${response.status} ${response.statusText}`);
   }
 
@@ -176,21 +184,92 @@ function mapProduct(response: OpenFoodFactsResponse, barcode: string): FoodItem 
 
 export async function lookupOpenFoodFactsBarcode(
   barcode: string,
-): Promise<{ food: FoodItem; provider: "open_food_facts" }> {
+): Promise<OpenFoodFactsLookupResult> {
   const config = getConfig();
 
   if (!config.off_enabled) {
     throw new Error("Open Food Facts provider is disabled");
   }
 
-  const response = config.fixture_mode ? await readFixture(barcode) : await fetchBarcode(barcode);
+  const cached = getCachedLookup(barcode);
+  let response: OpenFoodFactsResponse;
+  try {
+    response = config.fixture_mode ? await readFixture(barcode) : await fetchBarcode(barcode);
+  } catch (error) {
+    if (cached !== undefined && isRateLimitError(error)) {
+      return cloneLookupResult(
+        cached,
+        "Returned cached Open Food Facts result because the provider is rate limiting requests right now.",
+      );
+    }
+    throw error;
+  }
 
   if (response.product === undefined || response.status === 0) {
     throw new Error(`Open Food Facts product not found for barcode ${barcode}`);
   }
 
-  return {
+  const result: OpenFoodFactsLookupResult = {
     provider: "open_food_facts",
     food: mapProduct(response, barcode),
   };
+  setCachedLookup(barcode, result, config.cache_ttl_seconds);
+
+  return cloneLookupResult(result);
+}
+
+function getCachedLookup(barcode: string): OpenFoodFactsLookupResult | undefined {
+  const cached = OFF_CACHE.get(barcode);
+  if (cached === undefined) {
+    return undefined;
+  }
+
+  if (cached.expires_at <= Date.now()) {
+    OFF_CACHE.delete(barcode);
+    return undefined;
+  }
+
+  return cached.result;
+}
+
+function setCachedLookup(barcode: string, result: OpenFoodFactsLookupResult, ttlSeconds: number): void {
+  OFF_CACHE.set(barcode, {
+    expires_at: Date.now() + Math.max(ttlSeconds, 1) * 1000,
+    result: cloneLookupResult(result),
+  });
+}
+
+function cloneLookupResult(
+  result: OpenFoodFactsLookupResult,
+  warning?: string,
+): OpenFoodFactsLookupResult {
+  const food: FoodItem = {
+    ...result.food,
+    available_portions: result.food.available_portions.map((portion) => ({ ...portion })),
+    nutrients_per_100g: { ...result.food.nutrients_per_100g },
+    data_quality: {
+      ...result.food.data_quality,
+      warnings: warning === undefined
+        ? [...result.food.data_quality.warnings]
+        : [...result.food.data_quality.warnings, warning],
+    },
+    license: { ...result.food.license },
+  };
+
+  if (result.food.serving !== undefined) {
+    food.serving = { ...result.food.serving };
+  }
+
+  if (result.food.nutrients_per_serving !== undefined) {
+    food.nutrients_per_serving = { ...result.food.nutrients_per_serving };
+  }
+
+  return {
+    provider: result.provider,
+    food,
+  };
+}
+
+function isRateLimitError(error: unknown): boolean {
+  return error instanceof Error && /rate limiting|429|Too Many Requests/i.test(error.message);
 }

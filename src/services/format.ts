@@ -52,6 +52,20 @@ export function makeError(
   };
 }
 
+export function makeActionRequired(message: string, responseFormat: ResponseFormat = "json"): McpTextResponse {
+  const payload = {
+    ok: false,
+    error: {
+      code: "USER_ACTION_REQUIRED",
+      message,
+    },
+    action_required: true,
+  };
+  const markdown = `# Action Required\n\n- **code**: USER_ACTION_REQUIRED\n- **message**: ${message}`;
+
+  return makeResponse(payload, responseFormat, markdown);
+}
+
 export function bulletList(title: string, values: Record<string, unknown> | unknown): string {
   const lines = [`# ${title}`];
   const entries =

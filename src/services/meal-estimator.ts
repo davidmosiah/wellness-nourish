@@ -30,7 +30,7 @@ export interface MealEstimate {
 const SIMPLE_FOODS: readonly SimpleFood[] = [
   {
     canonical: "egg",
-    aliases: ["eggs", "egg"],
+    aliases: ["boiled eggs", "boiled egg", "ovos cozidos", "ovo cozido", "eggs", "egg", "ovos", "ovo"],
     servingGrams: 50,
     nutrientsPer100g: {
       calories_kcal: 143,
@@ -41,7 +41,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "banana",
-    aliases: ["banana"],
+    aliases: ["banana prata", "banana-prata", "banana"],
     servingGrams: 118,
     nutrientsPer100g: {
       calories_kcal: 89,
@@ -54,7 +54,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "toast",
-    aliases: ["toast", "bread"],
+    aliases: ["pão francês", "pao frances", "french bread", "toast", "bread", "pão", "pao"],
     servingGrams: 30,
     nutrientsPer100g: {
       calories_kcal: 313,
@@ -65,7 +65,15 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "rice",
-    aliases: ["rice", "white rice", "brown rice"],
+    aliases: [
+      "arroz branco cozido",
+      "arroz cozido",
+      "cooked white rice",
+      "white rice",
+      "brown rice",
+      "arroz",
+      "rice",
+    ],
     servingGrams: 158,
     nutrientsPer100g: {
       calories_kcal: 130,
@@ -76,13 +84,67 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "chicken",
-    aliases: ["chicken", "chicken breast"],
+    aliases: [
+      "peito de frango grelhado",
+      "frango grelhado",
+      "grilled chicken breast",
+      "chicken breast",
+      "peito de frango",
+      "frango",
+      "chicken",
+    ],
     servingGrams: 100,
     nutrientsPer100g: {
       calories_kcal: 165,
       protein_g: 31,
       carbohydrates_g: 0,
       fat_g: 3.6,
+    },
+  },
+  {
+    canonical: "pinto beans",
+    aliases: [
+      "feijão carioca cozido",
+      "feijao carioca cozido",
+      "feijão carioca",
+      "feijao carioca",
+      "cooked pinto beans",
+      "pinto beans",
+      "feijão",
+      "feijao",
+      "beans",
+    ],
+    servingGrams: 120,
+    nutrientsPer100g: {
+      calories_kcal: 76,
+      protein_g: 4.8,
+      carbohydrates_g: 13.6,
+      fat_g: 0.5,
+      fiber_g: 8.5,
+    },
+  },
+  {
+    canonical: "black beans",
+    aliases: ["feijão preto cozido", "feijao preto cozido", "feijão preto", "feijao preto", "black beans"],
+    servingGrams: 120,
+    nutrientsPer100g: {
+      calories_kcal: 77,
+      protein_g: 4.5,
+      carbohydrates_g: 14,
+      fat_g: 0.5,
+      fiber_g: 8.4,
+    },
+  },
+  {
+    canonical: "salad",
+    aliases: ["salada simples", "simple salad", "salada", "salad"],
+    servingGrams: 80,
+    nutrientsPer100g: {
+      calories_kcal: 20,
+      protein_g: 1.2,
+      carbohydrates_g: 3.5,
+      fat_g: 0.2,
+      fiber_g: 1.6,
     },
   },
   {
@@ -141,8 +203,20 @@ const UNIT_PATTERN = [
   "piece",
   "cups",
   "cup",
+  "xícaras",
+  "xícara",
+  "xicaras",
+  "xicara",
   "tbsp",
   "tsp",
+  "colheres",
+  "colher",
+  "conchas",
+  "concha",
+  "pratos",
+  "prato",
+  "unidades",
+  "unidade",
   "ounces",
   "ounce",
   "oz",
@@ -155,7 +229,7 @@ const UNIT_PATTERN = [
   "l",
 ].join("|");
 const FOOD_PATTERN = new RegExp(
-  String.raw`(?:^|(?<=[^\p{L}\p{N}_\/-]))(?:(${QUANTITY_PATTERN})\s+)?(?:(${UNIT_PATTERN})\s+)?(${[...FOOD_BY_ALIAS.keys()]
+  String.raw`(?:^|(?<=[^\p{L}\p{N}_\/-]))(?:(${QUANTITY_PATTERN})\s*)?(?:(${UNIT_PATTERN})\s+)?(${[...FOOD_BY_ALIAS.keys()]
     .sort((a, b) => b.length - a.length)
     .join("|")})(?=$|[^\p{L}\p{N}_-])`,
   "giu",

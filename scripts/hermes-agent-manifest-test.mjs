@@ -7,6 +7,8 @@ import { join } from "node:path";
 execFileSync("npm", ["run", "build"], { stdio: "inherit" });
 
 const { buildAgentManifest } = await import("../dist/services/agent-manifest.js");
+const packageVersion = JSON.parse(readFileSync("package.json", "utf8")).version;
+const pinnedPackage = `wellness-nourish@${packageVersion}`;
 
 const manifest = buildAgentManifest("hermes");
 
@@ -15,7 +17,7 @@ assert.equal(manifest.hermes.use_direct_tools, true);
 assert.match(manifest.hermes.reload_after_config_change, /hermes mcp test nourish/);
 assert.equal(manifest.hermes.no_gateway_restart_for_data_access, true);
 assert.ok(manifest.hermes.common_tool_names.includes("mcp_nourish_nourish_connection_status"));
-assert.ok(JSON.stringify(manifest.hermes.recommended_config).includes("wellness-nourish@0.1.2"));
+assert.ok(JSON.stringify(manifest.hermes.recommended_config).includes(pinnedPackage));
 
 const dir = mkdtempSync(join(tmpdir(), "nourish-mcp-hermes-agent-"));
 const mergeDir = mkdtempSync(join(tmpdir(), "nourish-mcp-hermes-merge-"));
@@ -41,11 +43,17 @@ try {
   assert.equal(setupPayload.personal_telegram_ready, true);
   assert.ok(setupPayload.hermes_skill_path.endsWith(".hermes/skills/nourish-mcp/SKILL.md"));
   assert.ok(existsSync(setupPayload.hermes_skill_path), "Hermes setup should write the packaged Hermes skill.");
+  assert.ok(setupPayload.nourish_wrapper_path.endsWith(".hermes/scripts/nourish-mcp-wrapper.sh"));
+  assert.ok(existsSync(setupPayload.nourish_wrapper_path), "Hermes setup should write a wrapper that can source local secrets.");
 
   const hermesConfig = readFileSync(setupPayload.client_config_path, "utf8");
   assert.match(hermesConfig, /nourish:/);
-  assert.match(hermesConfig, /wellness-nourish@0\.1\.2/);
+  assert.match(hermesConfig, /nourish-mcp-wrapper\.sh/);
   assert.match(hermesConfig, /NOURISH_LOCAL_DIR/);
+  const wrapper = readFileSync(setupPayload.nourish_wrapper_path, "utf8");
+  assert.match(wrapper, /nourish\.env/);
+  assert.match(wrapper, new RegExp(pinnedPackage.replace(".", "\\.")));
+  assert.match(wrapper, /exec npx -y/);
   assert.match(readFileSync(setupPayload.hermes_skill_path, "utf8"), /mcp_nourish_nourish_connection_status/);
   assert.match(readFileSync(setupPayload.hermes_skill_path, "utf8"), /Telegram Meal Logging/);
 
@@ -98,7 +106,7 @@ try {
   assert.equal((mergedConfig.match(/^mcp_servers:/gm) ?? []).length, 1, "Hermes setup should merge into an existing mcp_servers block instead of duplicating it.");
   assert.match(mergedConfig, /whoop:/);
   assert.match(mergedConfig, /nourish:/);
-  assert.match(mergedConfig, /wellness-nourish@0\.1\.2/);
+  assert.match(mergedConfig, /nourish-mcp-wrapper\.sh/);
 } finally {
   rmSync(dir, { recursive: true, force: true });
   rmSync(mergeDir, { recursive: true, force: true });

@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { statSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 
 execFileSync("npm", ["run", "build"], { stdio: "inherit" });
 execFileSync("npm", ["run", "prepack"], { stdio: "inherit" });
 
 const { buildAgentManifest } = await import("../dist/services/agent-manifest.js");
+const packageVersion = JSON.parse(readFileSync("package.json", "utf8")).version;
 
 const manifest = buildAgentManifest("codex");
 
@@ -32,7 +33,7 @@ assert.equal(Object.hasOwn(manifest, "optional_env"), false);
 assert.ok(manifest.agent_rules.some((rule) => /confirmation/i.test(rule)));
 assert.ok(manifest.agent_rules.some((rule) => /medical advice/i.test(rule)));
 assert.ok(manifest.hermes.common_tool_names.includes("mcp_nourish_nourish_daily_summary"));
-assert.ok(JSON.stringify(manifest.hermes.recommended_config).includes("wellness-nourish@0.1.2"));
+assert.ok(JSON.stringify(manifest.hermes.recommended_config).includes(`wellness-nourish@${packageVersion}`));
 
 const examples = [
   "examples/claude-desktop.json",
