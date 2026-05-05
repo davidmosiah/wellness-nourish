@@ -69,11 +69,12 @@ const FOOD_BY_ALIAS = new Map<string, SimpleFood>(
   SIMPLE_FOODS.flatMap((food) => food.aliases.map((alias) => [alias, food] as const)),
 );
 
+const QUANTITY_PATTERN = String.raw`\d+(?:\.\d+)?(?:\/\d+(?:\.\d+)?)?`;
 const FOOD_PATTERN = new RegExp(
-  String.raw`\b(?:(\d+(?:\.\d+)?)\s+)?(${[...FOOD_BY_ALIAS.keys()]
+  String.raw`(?:^|(?<=[^\p{L}\p{N}_\/-]))(?:(${QUANTITY_PATTERN})\s+)?(${[...FOOD_BY_ALIAS.keys()]
     .sort((a, b) => b.length - a.length)
-    .join("|")})\b`,
-  "gi",
+    .join("|")})(?=$|[^\p{L}\p{N}_-])`,
+  "giu",
 );
 
 export async function estimateMeal(input: {
@@ -124,6 +125,15 @@ function parseQuantity(raw: string | undefined): number {
     return 1;
   }
 
-  const quantity = Number.parseFloat(raw);
+  const [numerator, denominator] = raw.split("/");
+  if (numerator === undefined) {
+    return 1;
+  }
+
+  const quantity =
+    denominator === undefined
+      ? Number.parseFloat(numerator)
+      : Number.parseFloat(numerator) / Number.parseFloat(denominator);
+
   return Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
 }
