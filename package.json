@@ -16,7 +16,7 @@
     "dev": "tsx src/index.ts",
     "smoke": "tsx scripts/smoke.ts",
     "smoke:http": "tsx scripts/smoke-http.ts",
-    "test:normalization": "tsx scripts/test-normalization.ts",
+    "test:normalization": "node scripts/test-normalization.mjs",
     "test:providers": "tsx scripts/test-providers.ts",
     "test:intake-store": "tsx scripts/test-intake-store.ts",
     "test:meal-estimator": "tsx scripts/test-meal-estimator.ts",

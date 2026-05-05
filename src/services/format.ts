@@ -1,6 +1,7 @@
 import type { ResponseFormat } from "../types.js";
 
 export interface McpTextResponse {
+  isError?: boolean;
   content: Array<{
     type: "text";
     text: string;
@@ -27,15 +28,13 @@ export function makeError(
   message: string,
   responseFormat: ResponseFormat = "json",
 ): McpTextResponse {
-  const payload = {
-    ok: false,
-    error: {
-      code,
-      message,
-    },
-  };
+  void code;
+  void responseFormat;
 
-  return makeResponse(payload, responseFormat, `# Error\n\n- code: ${code}\n- message: ${message}`);
+  return {
+    isError: true,
+    content: [{ type: "text", text: message }],
+  };
 }
 
 export function bulletList(title: string, values: Record<string, unknown> | unknown): string {

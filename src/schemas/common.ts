@@ -69,6 +69,19 @@ export const MealEstimateInputSchema = z
 
 export const IntakeLogInputSchema = z
   .object({
+    text: z.string().trim().min(1).optional(),
+    food: z
+      .union([
+        z.string().trim().min(1),
+        z
+          .object({
+            source: z.enum(["usda", "open_food_facts", "manual", "estimate"]).optional(),
+            source_id: z.string().trim().min(1).optional(),
+            name: z.string().trim().min(1).optional(),
+          })
+          .strict(),
+      ])
+      .optional(),
     timestamp: z.string().datetime().optional(),
     meal_type: MealTypeSchema,
     food_ref: z
@@ -79,8 +92,8 @@ export const IntakeLogInputSchema = z
       .strict()
       .optional(),
     custom_food: z.string().trim().min(1).optional(),
-    quantity: z.number().positive(),
-    unit: z.string().trim().min(1),
+    quantity: z.number().positive().optional(),
+    unit: z.string().trim().min(1).optional(),
     grams_estimate: z.number().positive().optional(),
     nutrients: NutrientMapSchema.optional(),
     confidence: z.number().min(0).max(1).optional(),
@@ -90,7 +103,24 @@ export const IntakeLogInputSchema = z
     wellness_context_refs: z.array(z.string().trim().min(1)).default([]),
     response_format: ResponseFormatSchema.default("json"),
   })
-  .strict();
+  .strict()
+  .superRefine((input, ctx) => {
+    if (!input.text && !input.food) {
+      ctx.addIssue({
+        code: "custom",
+        message: "At least one of text or food is required.",
+        path: ["text"],
+      });
+    }
+
+    if (input.explicit_user_intent !== true) {
+      ctx.addIssue({
+        code: "custom",
+        message: "explicit_user_intent must be true to log intake.",
+        path: ["explicit_user_intent"],
+      });
+    }
+  });
 
 export const IntakeUpdateInputSchema = z
   .object({
@@ -125,4 +155,3 @@ export const WeeklySummaryInputSchema = z
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
-
