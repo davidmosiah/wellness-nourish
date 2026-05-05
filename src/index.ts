@@ -9,6 +9,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 
+import { isCliCommand, isUnknownCliCommand, runCliCommand } from "./cli/commands.js";
 import { DEFAULT_HOST, DEFAULT_PORT, SERVER_NAME, SERVER_VERSION } from "./constants.js";
 import { registerNourishPrompts } from "./prompts/nourish-prompts.js";
 import { registerNourishResources } from "./resources/nourish-resources.js";
@@ -30,6 +31,7 @@ export function createServer(): McpServer {
 function helpText(): string {
   return [
     "Usage: nourish-mcp [--http] [--help] [--version]",
+    "       nourish-mcp <command> [args]",
     "",
     "Starts the Nourish MCP server over stdio by default.",
     "",
@@ -37,6 +39,15 @@ function helpText(): string {
     "  --http     Start Streamable HTTP transport at POST /mcp.",
     "  --help     Print this usage text without starting the server.",
     "  --version  Print the package name and version.",
+    "",
+    "Commands:",
+    "  status              Print connection status.",
+    "  search <query>      Search USDA foods.",
+    "  barcode <barcode>   Lookup an Open Food Facts barcode.",
+    "  log <text...>       Estimate and log a meal.",
+    "  today               Print today's intake summary.",
+    "  export              Print raw intake JSONL.",
+    "  delete --entry <id> Delete an intake entry.",
   ].join("\n");
 }
 
@@ -137,11 +148,18 @@ function parsePort(value: string | undefined): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_PORT;
 }
 
-if (process.argv.includes("--version")) {
+const args = process.argv.slice(2);
+
+if (args.includes("--version")) {
   console.log(`${SERVER_NAME} ${SERVER_VERSION}`);
-} else if (process.argv.includes("--help") || process.argv.includes("-h")) {
+} else if (args.includes("--help") || args.includes("-h")) {
   console.log(helpText());
-} else if (process.argv.includes("--http") || process.env.NOURISH_MCP_TRANSPORT === "http") {
+} else if (isCliCommand(args)) {
+  process.exitCode = await runCliCommand(args);
+} else if (isUnknownCliCommand(args)) {
+  console.error("Unknown command");
+  process.exitCode = 1;
+} else if (args.includes("--http") || process.env.NOURISH_MCP_TRANSPORT === "http") {
   await startHttp();
 } else {
   await startStdio();
