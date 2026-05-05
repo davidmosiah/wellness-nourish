@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 
 execFileSync("npm", ["run", "build"], { stdio: "inherit" });
+execFileSync("npm", ["run", "prepack"], { stdio: "inherit" });
 
 const { buildAgentManifest } = await import("../dist/services/agent-manifest.js");
 
@@ -13,6 +14,8 @@ assert.ok(manifest.tools.includes("nourish_search_food"));
 assert.ok(manifest.tools.includes("nourish_export_data"));
 assert.ok(!manifest.tools.includes("nourish_wellness_context"));
 assert.ok(!manifest.tools.includes("nourish_usage_guide"));
+assert.equal(manifest.install.command, "npx");
+assert.deepEqual(manifest.install.args, ["-y", "wellness-nourish"]);
 assert.deepEqual(manifest.install.optional_env, [
   "FDC_API_KEY",
   "NOURISH_OFF_ENABLED",

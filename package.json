@@ -25,7 +25,7 @@
     "test:agent-readiness": "node scripts/agent-readiness-test.mjs",
     "test:hermes-agent": "node scripts/hermes-agent-manifest-test.mjs",
     "test:privacy": "node scripts/privacy-redaction-test.mjs",
-    "test": "npm run typecheck && npm run build && npm run test:normalization && npm run test:providers && npm run test:intake-store && npm run test:meal-estimator && npm run test:summary && npm run test:agent-readiness && npm run test:hermes-agent && npm run test:privacy"
+    "test": "npm run typecheck && npm run build && npm run prepack && npm run test:normalization && npm run test:providers && npm run test:intake-store && npm run test:meal-estimator && npm run test:summary && npm run test:agent-readiness && npm run test:hermes-agent && npm run test:privacy"
   },
   "engines": {
     "node": ">=20"
