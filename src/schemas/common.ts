@@ -17,6 +17,7 @@ const NutrientMapSchema = z
     sodium_mg: z.number().optional(),
   })
   .strict();
+const CustomFoodSchema = z.record(z.string(), z.unknown());
 
 export const ResponseOnlyInputSchema = z
   .object({
@@ -70,28 +71,18 @@ export const MealEstimateInputSchema = z
 export const IntakeLogInputSchema = z
   .object({
     text: z.string().trim().min(1).optional(),
-    food: z
-      .union([
-        z.string().trim().min(1),
-        z
-          .object({
-            source: z.enum(["usda", "open_food_facts", "manual", "estimate"]).optional(),
-            source_id: z.string().trim().min(1).optional(),
-            name: z.string().trim().min(1).optional(),
-          })
-          .strict(),
-      ])
-      .optional(),
+    food: z.unknown().optional(),
     timestamp: z.string().datetime().optional(),
     meal_type: MealTypeSchema,
     food_ref: z
       .object({
-        source: z.enum(["usda", "open_food_facts"]),
+        source: z.enum(["usda", "open_food_facts", "manual", "estimate"]),
         source_id: z.string().trim().min(1),
+        name: z.string().trim().min(1),
       })
       .strict()
       .optional(),
-    custom_food: z.string().trim().min(1).optional(),
+    custom_food: CustomFoodSchema.optional(),
     quantity: z.number().positive().optional(),
     unit: z.string().trim().min(1).optional(),
     grams_estimate: z.number().positive().optional(),
@@ -105,10 +96,19 @@ export const IntakeLogInputSchema = z
   })
   .strict()
   .superRefine((input, ctx) => {
-    if (!input.text && !input.food) {
+    const hasMeaningfulFood =
+      typeof input.food === "object" &&
+      input.food !== null &&
+      !Array.isArray(input.food) &&
+      (hasNonEmptyStringProperty(input.food, "source_id") ||
+        hasNonEmptyStringProperty(input.food, "name"));
+    const hasMeaningfulCustomFood =
+      input.custom_food !== undefined && Object.keys(input.custom_food).length > 0;
+
+    if (!input.text && !input.food_ref && !hasMeaningfulCustomFood && !hasMeaningfulFood) {
       ctx.addIssue({
         code: "custom",
-        message: "At least one of text or food is required.",
+        message: "At least one meaningful intake input is required.",
         path: ["text"],
       });
     }
@@ -121,6 +121,12 @@ export const IntakeLogInputSchema = z
       });
     }
   });
+
+function hasNonEmptyStringProperty(value: object, key: string): boolean {
+  const property = (value as Record<string, unknown>)[key];
+
+  return typeof property === "string" && property.trim().length > 0;
+}
 
 export const IntakeUpdateInputSchema = z
   .object({

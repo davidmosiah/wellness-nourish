@@ -24,16 +24,23 @@ export function makeResponse(
 }
 
 export function makeError(
-  code: string,
   message: string,
+  code = "NOURISH_ERROR",
   responseFormat: ResponseFormat = "json",
 ): McpTextResponse {
-  void code;
-  void responseFormat;
+  const payload = {
+    ok: false,
+    error: {
+      code,
+      message,
+    },
+  };
+  const markdown = `# Error\n\n- **code**: ${code}\n- **message**: ${message}`;
+  const response = makeResponse(payload, responseFormat, markdown);
 
   return {
+    ...response,
     isError: true,
-    content: [{ type: "text", text: message }],
   };
 }
 
