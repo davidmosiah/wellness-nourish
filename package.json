@@ -19,13 +19,13 @@
     "test:normalization": "node scripts/test-normalization.mjs",
     "test:providers": "node scripts/test-providers.mjs",
     "test:intake-store": "node scripts/test-intake-store.mjs",
-    "test:meal-estimator": "tsx scripts/test-meal-estimator.ts",
-    "test:summary": "tsx scripts/test-summary.ts",
+    "test:meal-estimator": "node scripts/test-meal-estimator.mjs",
+    "test:summary": "node scripts/test-summary.mjs",
     "test:cli-ux": "tsx scripts/test-cli-ux.ts",
     "test:agent-readiness": "tsx scripts/test-agent-readiness.ts",
     "test:hermes-agent": "tsx scripts/test-hermes-agent.ts",
     "test:privacy": "tsx scripts/test-privacy.ts",
-    "test": "npm run typecheck && npm run build && npm run test:normalization && npm run test:providers && npm run test:intake-store"
+    "test": "npm run typecheck && npm run build && npm run test:normalization && npm run test:providers && npm run test:intake-store && npm run test:meal-estimator && npm run test:summary"
   },
   "engines": {
     "node": ">=20"
