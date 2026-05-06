@@ -65,10 +65,14 @@ try {
   const missingTools = expectedTools.filter((toolName) => !toolNames.includes(toolName));
 
   assert.deepEqual(missingTools, [], `Missing tools: ${missingTools.join(", ")}`);
+  assertInitializeInstructions();
   assertSearchSchemaHonest(result.tools);
   assertBarcodeSchemaHonest(result.tools);
+  assertSchemaDx(result.tools);
   await assertResourceSurface();
   await assertConfirmationGuardsAreUserActionRequired();
+  await assertValidationErrorsAreStructured();
+  await assertMealTextAliasWorks();
 
   const nutrientlessLog = await client.callTool({
     name: "nourish_log_intake",
@@ -99,6 +103,12 @@ async function assertConfirmationGuardsAreUserActionRequired() {
       },
     },
     {
+      name: "nourish_log_intake",
+      arguments: {
+        meal_text: "TESTE QA - 1 banana",
+      },
+    },
+    {
       name: "nourish_log_water",
       arguments: {
         amount_ml: 250,
@@ -110,6 +120,12 @@ async function assertConfirmationGuardsAreUserActionRequired() {
         hydration_ml: 2500,
       },
     },
+    {
+      name: "nourish_set_goals",
+      arguments: {
+        calories_kcal: 2200,
+      },
+    },
   ]) {
     const result = await client.callTool(call);
     assert.notEqual(result.isError, true, `${call.name} confirmation guard should not mark transport/server error`);
@@ -118,6 +134,57 @@ async function assertConfirmationGuardsAreUserActionRequired() {
     assert.equal(payload.error.code, "USER_ACTION_REQUIRED");
     assert.match(payload.error.message, /explicit_user_intent/i);
   }
+}
+
+function assertInitializeInstructions() {
+  const instructions = client.getInstructions() ?? "";
+
+  assert.ok(instructions.length > 300);
+  assert.match(instructions, /nourish_agent_manifest/);
+  assert.match(instructions, /explicit_user_intent/);
+  assert.match(instructions, /unresolved/i);
+}
+
+function assertSchemaDx(tools) {
+  const logIntake = findTool(tools, "nourish_log_intake");
+  const logWater = findTool(tools, "nourish_log_water");
+  const setGoals = findTool(tools, "nourish_set_goals");
+
+  assert.match(logIntake.inputSchema?.properties?.text?.description ?? "", /meal text/i);
+  assert.match(logIntake.inputSchema?.properties?.meal_text?.description ?? "", /alias/i);
+  assert.match(logIntake.inputSchema?.properties?.explicit_user_intent?.description ?? "", /Pass true/i);
+  assert.match(logWater.inputSchema?.properties?.explicit_user_intent?.description ?? "", /Pass true/i);
+  assert.match(setGoals.inputSchema?.properties?.daily?.description ?? "", /nested/i);
+  assert.match(setGoals.inputSchema?.properties?.calories_kcal?.description ?? "", /flat/i);
+}
+
+async function assertValidationErrorsAreStructured() {
+  const result = await client.callTool({
+    name: "nourish_log_intake",
+    arguments: {
+      explicit_user_intent: true,
+    },
+  });
+  const payload = JSON.parse(textFromToolResult(result));
+
+  assert.equal(result.isError, true);
+  assert.equal(payload.error.code, "VALIDATION_ERROR");
+  assert.ok(Array.isArray(payload.error.errors));
+  assert.ok(payload.error.errors.some((entry) => entry.path === "text"));
+}
+
+async function assertMealTextAliasWorks() {
+  const result = await client.callTool({
+    name: "nourish_estimate_meal",
+    arguments: {
+      meal_text: "banana",
+      meal_type: "snack",
+    },
+  });
+  const payload = JSON.parse(textFromToolResult(result));
+
+  assert.equal(result.isError, undefined);
+  assert.equal(payload.items[0].name, "banana");
 }
 
 function assertSearchSchemaHonest(tools) {

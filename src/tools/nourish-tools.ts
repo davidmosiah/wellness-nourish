@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { z } from "zod";
 
 import {
   AgentManifestInputSchema,
@@ -30,6 +31,7 @@ import { buildConnectionStatus } from "../services/connection-status.js";
 import {
   makeActionRequired,
   makeError,
+  makeValidationError,
   makeResponse,
   bulletList,
   compactTable,
@@ -267,14 +269,18 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_estimate_meal",
     {
       title: "Estimate meal",
-      description: "Estimate nutrition for a short meal text using local deterministic defaults.",
+      description: "Estimate nutrition for a short meal text using local deterministic defaults. Accepts text or meal_text; preserve unresolved and confidence.",
       inputSchema: MealEstimateInputSchema.shape,
       annotations: readOnlyAnnotation(),
     },
     async (input) => {
       try {
         const params = MealEstimateInputSchema.parse(input);
-        const estimate = await estimateMeal(params);
+        const estimate = await estimateMeal({
+          text: params.text ?? params.meal_text ?? "",
+          meal_type: params.meal_type,
+          locale: params.locale,
+        });
 
         return toolResponse(makeResponse(estimate, params.response_format));
       } catch (error) {
@@ -307,7 +313,7 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_log_intake",
     {
       title: "Log intake",
-      description: "Log an intake entry only after explicit user intent, using meal text or structured food data.",
+      description: "Log an intake entry only after explicit user intent. Pass explicit_user_intent: true after the user asks to save/log/register; accepts text or meal_text plus structured food data.",
       inputSchema: IntakeLogInputSchema.shape,
       annotations: {
         readOnlyHint: false,
@@ -455,7 +461,7 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_log_water",
     {
       title: "Log water",
-      description: "Log local hydration in milliliters after explicit user intent.",
+      description: "Log local hydration in milliliters after explicit user intent. Pass explicit_user_intent: true after the user asks to save/log water.",
       inputSchema: HydrationLogInputSchema.shape,
       annotations: {
         readOnlyHint: false,
@@ -533,7 +539,7 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_set_goals",
     {
       title: "Set goals",
-      description: "Set local calorie, macro, and hydration goals after explicit user intent.",
+      description: "Set local calorie, macro, and hydration goals after explicit user intent. Use daily: {...} or flat shortcuts like calories_kcal/protein_g; pass explicit_user_intent: true after confirmation.",
       inputSchema: GoalsSetInputSchema.shape,
       annotations: {
         readOnlyHint: false,
@@ -548,8 +554,20 @@ export function registerNourishTools(server: McpServer): void {
         if (params.explicit_user_intent !== true) {
           return explicitIntentRequired("explicit_user_intent must be true to update goals.", params.response_format);
         }
+        const flatDaily = cleanNutrients({
+          calories_kcal: params.calories_kcal,
+          protein_g: params.protein_g,
+          carbohydrates_g: params.carbohydrates_g,
+          fat_g: params.fat_g,
+          fiber_g: params.fiber_g,
+          sugar_g: params.sugar_g,
+        });
+        const daily = cleanNutrients({
+          ...flatDaily,
+          ...(params.daily ?? {}),
+        });
         const result = await updateGoals({
-          ...(params.daily === undefined ? {} : { daily: cleanNutrients(params.daily) }),
+          ...(hasMeaningfulNutrients(daily) ? { daily } : {}),
           ...(params.hydration_ml === undefined ? {} : { hydration_ml: params.hydration_ml }),
         });
 
@@ -737,9 +755,11 @@ function explicitIntentRequired(message: string, responseFormat: ResponseFormat)
 async function buildIntakeEntryInput(
   params: ReturnType<typeof IntakeLogInputSchema.parse>,
 ): Promise<AddIntakeEntryInput> {
-  if (params.text !== undefined) {
+  const text = params.text ?? params.meal_text;
+
+  if (text !== undefined) {
     const estimate = await estimateMeal({
-      text: params.text,
+      text,
       meal_type: params.meal_type,
       locale: "en-US",
     });
@@ -748,8 +768,8 @@ async function buildIntakeEntryInput(
       meal_type: params.meal_type,
       food_ref: {
         source: "estimate",
-        source_id: stableEstimateId(params.text),
-        name: params.text,
+        source_id: stableEstimateId(text),
+        name: text,
       },
       quantity: params.quantity ?? 1,
       unit: params.unit ?? "meal",
@@ -951,6 +971,17 @@ function dateToNoonTimestamp(date: string | undefined): string | undefined {
 }
 
 function toolError(error: unknown, responseFormat: ResponseFormat = "json"): CallToolResult {
+  if (error instanceof z.ZodError) {
+    return toolResponse(makeValidationError(
+      error.issues.map((issue) => ({
+        path: issue.path.join("."),
+        message: issue.message,
+        code: issue.code,
+      })),
+      responseFormat,
+    ));
+  }
+
   const message = error instanceof Error ? error.message : String(error);
 
   return toolResponse(makeError("NOURISH_ERROR", message, responseFormat));

@@ -17,6 +17,10 @@ const NutrientMapSchema = z
     sodium_mg: z.number().optional(),
   })
   .strict();
+const ExplicitUserIntentSchema = z
+  .boolean()
+  .default(false)
+  .describe("Pass true only after the user explicitly asked to save, log, set, or delete this personal nutrition data.");
 const ProviderSourceSchema = z.enum(["usda", "open_food_facts", "manual", "estimate"]);
 const FoodRefSchema = z
   .object({
@@ -50,7 +54,7 @@ export const IntakeListInputSchema = z
 export const ClearDayInputSchema = z
   .object({
     date: DateSchema,
-    explicit_user_intent: z.boolean().default(false),
+    explicit_user_intent: ExplicitUserIntentSchema,
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
@@ -61,24 +65,39 @@ export const HydrationLogInputSchema = z
     timestamp: z.string().datetime().optional(),
     date: DateSchema.optional(),
     notes: z.string().trim().optional(),
-    explicit_user_intent: z.boolean().default(false),
+    explicit_user_intent: ExplicitUserIntentSchema,
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
 
 export const GoalsSetInputSchema = z
   .object({
-    daily: NutrientMapSchema.optional(),
-    hydration_ml: z.number().positive().optional(),
-    explicit_user_intent: z.boolean().default(false),
+    daily: NutrientMapSchema.optional().describe("Nested daily nutrient goals, for example { calories_kcal, protein_g, carbohydrates_g, fat_g }."),
+    calories_kcal: z.number().positive().optional().describe("Flat shortcut for daily.calories_kcal."),
+    protein_g: z.number().positive().optional().describe("Flat shortcut for daily.protein_g."),
+    carbohydrates_g: z.number().positive().optional().describe("Flat shortcut for daily.carbohydrates_g."),
+    fat_g: z.number().positive().optional().describe("Flat shortcut for daily.fat_g."),
+    fiber_g: z.number().positive().optional().describe("Flat shortcut for daily.fiber_g."),
+    sugar_g: z.number().positive().optional().describe("Flat shortcut for daily.sugar_g."),
+    hydration_ml: z.number().positive().optional().describe("Daily hydration target in milliliters."),
+    explicit_user_intent: ExplicitUserIntentSchema,
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict()
   .superRefine((input, ctx) => {
-    if (input.daily === undefined && input.hydration_ml === undefined) {
+    const hasFlatDaily = [
+      input.calories_kcal,
+      input.protein_g,
+      input.carbohydrates_g,
+      input.fat_g,
+      input.fiber_g,
+      input.sugar_g,
+    ].some((value) => value !== undefined);
+
+    if (input.daily === undefined && input.hydration_ml === undefined && !hasFlatDaily) {
       ctx.addIssue({
         code: "custom",
-        message: "Provide daily nutrients or hydration_ml.",
+        message: "Provide daily nutrients, flat daily nutrient shortcuts, or hydration_ml.",
         path: ["daily"],
       });
     }
@@ -149,12 +168,22 @@ export const FoodGetInputSchema = z
 
 export const MealEstimateInputSchema = z
   .object({
-    text: z.string().trim().min(1),
+    text: z.string().trim().min(1).optional().describe("Meal text to estimate, for example 'pão de queijo, café preto, banana'."),
+    meal_text: z.string().trim().min(1).optional().describe("Alias for text for agents that naturally call this parameter meal_text."),
     locale: z.string().trim().min(2).default("en-US"),
     meal_type: MealTypeSchema,
     response_format: ResponseFormatSchema.default("json"),
   })
-  .strict();
+  .strict()
+  .superRefine((input, ctx) => {
+    if (input.text === undefined && input.meal_text === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Provide text or meal_text.",
+        path: ["text"],
+      });
+    }
+  });
 
 const PhotoMealDetectedItemSchema = z
   .object({
@@ -178,7 +207,8 @@ export const PhotoMealEstimateInputSchema = z
 
 export const IntakeLogInputSchema = z
   .object({
-    text: z.string().trim().min(1).optional(),
+    text: z.string().trim().min(1).optional().describe("Meal text to estimate and log after confirmation."),
+    meal_text: z.string().trim().min(1).optional().describe("Alias for text; use when the agent planned a meal_text argument."),
     food: z.unknown().optional(),
     timestamp: z.string().datetime().optional(),
     meal_type: MealTypeSchema,
@@ -189,7 +219,7 @@ export const IntakeLogInputSchema = z
     grams_estimate: z.number().positive().optional(),
     nutrients: NutrientMapSchema.optional(),
     confidence: z.number().min(0).max(1).optional(),
-    explicit_user_intent: z.boolean().default(false),
+    explicit_user_intent: ExplicitUserIntentSchema,
     notes: z.string().trim().optional(),
     tags: z.array(z.string().trim().min(1)).default([]),
     wellness_context_refs: z.array(z.string().trim().min(1)).default([]),
@@ -205,7 +235,7 @@ export const IntakeLogInputSchema = z
         hasNonEmptyStringProperty(input.food, "name"));
     const hasMeaningfulCustomFood = input.custom_food !== undefined;
 
-    if (!input.text && !input.food_ref && !hasMeaningfulCustomFood && !hasMeaningfulFood) {
+    if (!input.text && !input.meal_text && !input.food_ref && !hasMeaningfulCustomFood && !hasMeaningfulFood) {
       ctx.addIssue({
         code: "custom",
         message: "At least one meaningful intake input is required.",

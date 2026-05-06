@@ -16,16 +16,33 @@ import { registerNourishResources } from "./resources/nourish-resources.js";
 import { registerNourishTools } from "./tools/nourish-tools.js";
 
 export function createServer(): McpServer {
-  const server = new McpServer({
-    name: SERVER_NAME,
-    version: SERVER_VERSION,
-  });
+  const server = new McpServer(
+    {
+      name: SERVER_NAME,
+      version: SERVER_VERSION,
+    },
+    {
+      instructions: serverInstructions(),
+    },
+  );
 
   registerNourishTools(server);
   registerNourishResources(server);
   registerNourishPrompts(server);
 
   return server;
+}
+
+function serverInstructions(): string {
+  return [
+    "Nourish MCP is a local-first nutrition server for agents and humans.",
+    "Start with nourish_agent_manifest, nourish_capabilities, or nourish_connection_status when you need the tool contract or runtime readiness.",
+    "For meal text, call nourish_estimate_meal with text or meal_text. Preserve confidence, warnings, and unresolved items; ask one concise clarification when unresolved is not empty.",
+    "For Portuguese/Brazilian meals, pass locale pt-BR and do not silently replace unknown food terms with unrelated English defaults.",
+    "Only log intake, water, goals, or clear-day after explicit user save intent. Then pass explicit_user_intent: true; otherwise these tools return USER_ACTION_REQUIRED.",
+    "For photos, the agent must describe visible foods/portions and call nourish_estimate_meal_photo, then ask for confirmation before logging.",
+    "This is not medical advice and local storage may contain personal nutrition data.",
+  ].join(" ");
 }
 
 function helpText(): string {

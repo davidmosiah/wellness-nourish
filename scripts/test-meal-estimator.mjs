@@ -75,6 +75,60 @@ assert.equal(brazilianLunch.items[2].grams, 150);
 assert.ok((brazilianLunch.total_nutrients.calories_kcal ?? 0) > 550);
 assert.ok((brazilianLunch.total_nutrients.protein_g ?? 0) > 55);
 
+const brazilianBreakfast = await estimateMeal({
+  text: "pão de queijo, café preto, banana",
+  meal_type: "breakfast",
+  locale: "pt-BR",
+});
+
+assert.deepEqual(brazilianBreakfast.items.map((item) => item.name), ["pão de queijo", "black coffee", "banana"]);
+assert.equal(brazilianBreakfast.unresolved.length, 0);
+assert.equal(brazilianBreakfast.items.some((item) => item.name === "toast"), false);
+assert.ok((brazilianBreakfast.total_nutrients.calories_kcal ?? 0) > 250);
+assert.ok(brazilianBreakfast.confidence >= 0.7);
+
+const partialBrazilianBreakfast = await estimateMeal({
+  text: "pão de queijo, café preto, banana, suco verde misterioso",
+  meal_type: "breakfast",
+  locale: "pt-BR",
+});
+
+assert.deepEqual(partialBrazilianBreakfast.items.map((item) => item.name), [
+  "pão de queijo",
+  "black coffee",
+  "banana",
+]);
+assert.deepEqual(partialBrazilianBreakfast.unresolved, ["suco verde misterioso"]);
+assert.ok(partialBrazilianBreakfast.confidence < brazilianBreakfast.confidence);
+assert.ok(partialBrazilianBreakfast.confidence <= 0.65);
+assert.ok(partialBrazilianBreakfast.warnings.some((warning) => /unresolved/i.test(warning)));
+
+const unknownBrazilianBread = await estimateMeal({
+  text: "pão de batata, banana",
+  meal_type: "snack",
+  locale: "pt-BR",
+});
+
+assert.deepEqual(unknownBrazilianBread.items.map((item) => item.name), ["banana"]);
+assert.deepEqual(unknownBrazilianBread.unresolved, ["pão de batata"]);
+assert.ok(unknownBrazilianBread.confidence <= 0.45);
+
+const brazilianSnack = await estimateMeal({
+  text: "1 tapioca com queijo minas, 1 coxinha, 1 brigadeiro e açaí",
+  meal_type: "snack",
+  locale: "pt-BR",
+});
+
+assert.deepEqual(brazilianSnack.items.map((item) => item.name), [
+  "tapioca",
+  "queijo minas",
+  "coxinha",
+  "brigadeiro",
+  "açaí",
+]);
+assert.equal(brazilianSnack.unresolved.length, 0);
+assert.ok((brazilianSnack.total_nutrients.calories_kcal ?? 0) > 700);
+
 const twoEggsEnglish = await estimateMeal({
   text: "2 boiled eggs",
   meal_type: "snack",

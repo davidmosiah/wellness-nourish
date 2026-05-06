@@ -53,14 +53,104 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
     },
   },
   {
-    canonical: "toast",
-    aliases: ["pão francês", "pao frances", "french bread", "toast", "bread", "pão", "pao"],
+    canonical: "pão francês",
+    aliases: ["pão francês", "pao frances", "french bread", "toast", "bread roll", "bread"],
     servingGrams: 30,
     nutrientsPer100g: {
       calories_kcal: 313,
       protein_g: 13,
       carbohydrates_g: 55,
       fat_g: 4,
+    },
+  },
+  {
+    canonical: "pão de queijo",
+    aliases: ["pão de queijo", "pao de queijo", "cheese bread"],
+    servingGrams: 50,
+    nutrientsPer100g: {
+      calories_kcal: 330,
+      protein_g: 5.1,
+      carbohydrates_g: 34,
+      fat_g: 18,
+    },
+  },
+  {
+    canonical: "black coffee",
+    aliases: ["café preto", "cafe preto", "café sem açúcar", "cafe sem acucar", "black coffee", "coffee"],
+    servingGrams: 240,
+    nutrientsPer100g: {
+      calories_kcal: 1,
+      protein_g: 0.1,
+      carbohydrates_g: 0,
+      fat_g: 0,
+    },
+  },
+  {
+    canonical: "tapioca",
+    aliases: ["tapioca", "goma de tapioca"],
+    servingGrams: 80,
+    nutrientsPer100g: {
+      calories_kcal: 240,
+      protein_g: 0.2,
+      carbohydrates_g: 60,
+      fat_g: 0.1,
+    },
+  },
+  {
+    canonical: "queijo minas",
+    aliases: ["queijo minas", "minas cheese", "queijo branco"],
+    servingGrams: 40,
+    nutrientsPer100g: {
+      calories_kcal: 264,
+      protein_g: 17.4,
+      carbohydrates_g: 3.2,
+      fat_g: 20.2,
+    },
+  },
+  {
+    canonical: "queijo coalho",
+    aliases: ["queijo coalho", "coalho cheese"],
+    servingGrams: 50,
+    nutrientsPer100g: {
+      calories_kcal: 320,
+      protein_g: 21,
+      carbohydrates_g: 2,
+      fat_g: 25,
+    },
+  },
+  {
+    canonical: "coxinha",
+    aliases: ["coxinha", "chicken croquette"],
+    servingGrams: 100,
+    nutrientsPer100g: {
+      calories_kcal: 285,
+      protein_g: 9,
+      carbohydrates_g: 28,
+      fat_g: 15,
+    },
+  },
+  {
+    canonical: "brigadeiro",
+    aliases: ["brigadeiro", "chocolate truffle"],
+    servingGrams: 30,
+    nutrientsPer100g: {
+      calories_kcal: 390,
+      protein_g: 6,
+      carbohydrates_g: 62,
+      fat_g: 13,
+      sugar_g: 52,
+    },
+  },
+  {
+    canonical: "açaí",
+    aliases: ["açaí", "acai", "açaí na tigela", "acai bowl"],
+    servingGrams: 200,
+    nutrientsPer100g: {
+      calories_kcal: 110,
+      protein_g: 1.2,
+      carbohydrates_g: 21,
+      fat_g: 3.8,
+      fiber_g: 2.6,
     },
   },
   {
@@ -136,6 +226,76 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
     },
   },
   {
+    canonical: "cuscuz",
+    aliases: ["cuscuz", "cuscuz nordestino", "couscous"],
+    servingGrams: 150,
+    nutrientsPer100g: {
+      calories_kcal: 112,
+      protein_g: 2.2,
+      carbohydrates_g: 25,
+      fat_g: 0.7,
+      fiber_g: 1.8,
+    },
+  },
+  {
+    canonical: "macaxeira",
+    aliases: ["macaxeira", "aipim", "mandioca", "cassava", "yuca"],
+    servingGrams: 150,
+    nutrientsPer100g: {
+      calories_kcal: 125,
+      protein_g: 0.6,
+      carbohydrates_g: 30,
+      fat_g: 0.3,
+      fiber_g: 1.8,
+    },
+  },
+  {
+    canonical: "batata doce",
+    aliases: ["batata doce", "sweet potato"],
+    servingGrams: 130,
+    nutrientsPer100g: {
+      calories_kcal: 86,
+      protein_g: 1.6,
+      carbohydrates_g: 20.1,
+      fat_g: 0.1,
+      fiber_g: 3,
+    },
+  },
+  {
+    canonical: "carne moída",
+    aliases: ["carne moída", "carne moida", "ground beef"],
+    servingGrams: 100,
+    nutrientsPer100g: {
+      calories_kcal: 250,
+      protein_g: 26,
+      carbohydrates_g: 0,
+      fat_g: 15,
+    },
+  },
+  {
+    canonical: "peixe grelhado",
+    aliases: ["peixe grelhado", "fish", "grilled fish"],
+    servingGrams: 120,
+    nutrientsPer100g: {
+      calories_kcal: 130,
+      protein_g: 26,
+      carbohydrates_g: 0,
+      fat_g: 2.7,
+    },
+  },
+  {
+    canonical: "iogurte natural",
+    aliases: ["iogurte natural", "iogurte", "plain yogurt", "yogurt"],
+    servingGrams: 170,
+    nutrientsPer100g: {
+      calories_kcal: 61,
+      protein_g: 3.5,
+      carbohydrates_g: 4.7,
+      fat_g: 3.3,
+      sugar_g: 4.7,
+    },
+  },
+  {
     canonical: "salad",
     aliases: ["salada simples", "simple salad", "salada", "salad"],
     servingGrams: 80,
@@ -186,7 +346,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
 ];
 
 const FOOD_BY_ALIAS = new Map<string, SimpleFood>(
-  SIMPLE_FOODS.flatMap((food) => food.aliases.map((alias) => [alias, food] as const)),
+  SIMPLE_FOODS.flatMap((food) => food.aliases.map((alias) => [normalizeAlias(alias), food] as const)),
 );
 
 const QUANTITY_PATTERN = String.raw`\d+(?:\.\d+)?(?:\/\d+(?:\.\d+)?)?`;
@@ -231,9 +391,15 @@ const UNIT_PATTERN = [
 const FOOD_PATTERN = new RegExp(
   String.raw`(?:^|(?<=[^\p{L}\p{N}_\/-]))(?:(${QUANTITY_PATTERN})\s*)?(?:(${UNIT_PATTERN})\s+)?(${[...FOOD_BY_ALIAS.keys()]
     .sort((a, b) => b.length - a.length)
+    .map(escapeRegExp)
     .join("|")})(?=$|[^\p{L}\p{N}_-])`,
   "giu",
 );
+
+interface MatchSpan {
+  start: number;
+  end: number;
+}
 
 export async function estimateMeal(input: {
   text: string;
@@ -241,12 +407,13 @@ export async function estimateMeal(input: {
   locale: string;
 }): Promise<MealEstimate> {
   const items: EstimatedMealItem[] = [];
+  const matchSpans: MatchSpan[] = [];
 
   for (const match of input.text.matchAll(FOOD_PATTERN)) {
     const quantity = parseQuantity(match[1]);
     const unit = match[2]?.toLowerCase();
-    const alias = match[3]?.toLowerCase();
-    const food = alias === undefined ? undefined : FOOD_BY_ALIAS.get(alias);
+    const alias = match[3];
+    const food = alias === undefined ? undefined : FOOD_BY_ALIAS.get(normalizeAlias(alias));
 
     if (food === undefined) {
       continue;
@@ -261,9 +428,14 @@ export async function estimateMeal(input: {
       grams,
       nutrients: nutrientsForGrams(food.nutrientsPer100g, grams),
     });
+    const start = match.index ?? 0;
+    matchSpans.push({
+      start,
+      end: start + match[0].length,
+    });
   }
 
-  const foundAny = items.length > 0;
+  const unresolved = findUnresolvedTerms(input.text, matchSpans);
 
   return {
     text: input.text,
@@ -271,14 +443,118 @@ export async function estimateMeal(input: {
     meal_type: input.meal_type,
     items,
     total_nutrients: addNutrients(items.map((item) => item.nutrients)),
-    confidence: foundAny ? 0.55 : 0.2,
-    unresolved: foundAny ? [] : [input.text],
-    warnings: [
-      foundAny
-        ? "Nutrition values are estimates from simple food defaults."
-        : "No simple foods matched; nutrition estimate is incomplete.",
-    ],
+    confidence: estimateConfidence(items.length, unresolved.length),
+    unresolved,
+    warnings: estimateWarnings(items.length, unresolved),
   };
+}
+
+function findUnresolvedTerms(text: string, matchSpans: MatchSpan[]): string[] {
+  const unresolved: string[] = [];
+
+  for (const clause of splitMealClauses(text)) {
+    let residual = clause.text;
+    const localSpans = matchSpans
+      .filter((span) => span.start < clause.end && span.end > clause.start)
+      .map((span) => ({
+        start: Math.max(0, span.start - clause.start),
+        end: Math.min(clause.text.length, span.end - clause.start),
+      }))
+      .sort((left, right) => right.start - left.start);
+
+    for (const span of localSpans) {
+      residual = `${residual.slice(0, span.start)} ${residual.slice(span.end)}`;
+    }
+
+    const cleaned = cleanUnresolvedTerm(residual);
+    if (cleaned !== undefined && !unresolved.includes(cleaned)) {
+      unresolved.push(cleaned);
+    }
+  }
+
+  return unresolved;
+}
+
+function splitMealClauses(text: string): Array<{ text: string; start: number; end: number }> {
+  const clauses: Array<{ text: string; start: number; end: number }> = [];
+  const separators = /,|;|\+|&|\s+\b(?:e|and|com|with)\b\s+/giu;
+  let start = 0;
+
+  for (const match of text.matchAll(separators)) {
+    const end = match.index ?? start;
+    pushClause(clauses, text, start, end);
+    start = end + match[0].length;
+  }
+
+  pushClause(clauses, text, start, text.length);
+
+  return clauses;
+}
+
+function pushClause(
+  clauses: Array<{ text: string; start: number; end: number }>,
+  source: string,
+  start: number,
+  end: number,
+): void {
+  const raw = source.slice(start, end);
+  const trimmedStartOffset = raw.length - raw.trimStart().length;
+  const trimmed = raw.trim();
+
+  if (trimmed.length === 0) {
+    return;
+  }
+
+  clauses.push({
+    text: trimmed,
+    start: start + trimmedStartOffset,
+    end: start + trimmedStartOffset + trimmed.length,
+  });
+}
+
+function cleanUnresolvedTerm(raw: string): string | undefined {
+  const cleaned = raw
+    .replace(new RegExp(String.raw`^\s*(?:${QUANTITY_PATTERN})\s*(?:${UNIT_PATTERN})?\s*`, "iu"), "")
+    .replace(/^[,;:+&\s]+|[,;:+&\s]+$/gu, "")
+    .replace(/\s+/gu, " ")
+    .trim();
+
+  if (!/[\p{L}\p{N}]/u.test(cleaned) || ["e", "and", "com", "with"].includes(cleaned.toLowerCase())) {
+    return undefined;
+  }
+
+  return cleaned;
+}
+
+function estimateConfidence(matchedCount: number, unresolvedCount: number): number {
+  if (matchedCount === 0) {
+    return 0.2;
+  }
+
+  const coverage = matchedCount / Math.max(1, matchedCount + unresolvedCount);
+  return Math.round((0.2 + 0.5 * coverage) * 100) / 100;
+}
+
+function estimateWarnings(matchedCount: number, unresolved: string[]): string[] {
+  const warnings =
+    matchedCount > 0
+      ? ["Nutrition values are estimates from simple food defaults."]
+      : ["No simple foods matched; nutrition estimate is incomplete."];
+
+  if (unresolved.length > 0) {
+    warnings.push(`Unresolved food terms: ${unresolved.join(", ")}.`);
+    warnings.push("Estimate confidence was reduced because some meal text was not matched.");
+  }
+
+  return warnings;
+}
+
+function normalizeAlias(alias: string): string {
+  return alias.toLowerCase();
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function parseQuantity(raw: string | undefined): number {

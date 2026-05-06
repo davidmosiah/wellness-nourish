@@ -66,6 +66,31 @@ export function makeActionRequired(message: string, responseFormat: ResponseForm
   return makeResponse(payload, responseFormat, markdown);
 }
 
+export function makeValidationError(
+  errors: Array<{ path: string; message: string; code?: string | undefined }>,
+  responseFormat: ResponseFormat = "json",
+): McpTextResponse {
+  const payload = {
+    ok: false,
+    error: {
+      code: "VALIDATION_ERROR",
+      message: "Invalid Nourish tool input.",
+      errors,
+    },
+  };
+  const markdown = [
+    "# Validation Error",
+    "",
+    ...errors.map((error) => `- **${error.path || "input"}**: ${error.message}`),
+  ].join("\n");
+  const response = makeResponse(payload, responseFormat, markdown);
+
+  return {
+    ...response,
+    isError: true,
+  };
+}
+
 export function bulletList(title: string, values: Record<string, unknown> | unknown): string {
   const lines = [`# ${title}`];
   const entries =
