@@ -1,8 +1,16 @@
 # Wellness Nourish MCP
 
+[![npm version](https://img.shields.io/npm/v/wellness-nourish?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/wellness-nourish)
+[![npm downloads](https://img.shields.io/npm/dm/wellness-nourish?style=flat-square&color=0ea5a3&logo=npm)](https://www.npmjs.com/package/wellness-nourish)
+[![GitHub stars](https://img.shields.io/github/stars/davidmosiah/wellness-nourish?style=flat-square&logo=github)](https://github.com/davidmosiah/wellness-nourish/stargazers)
+[![Agent-ready MCP](https://img.shields.io/badge/agent--ready-MCP-0ea5a3?style=flat-square)](https://wellness.delx.ai/nutrition)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://opensource.org/licenses/MIT)
+
 ## Overview
 
 Wellness Nourish is a local MCP server for nutrition search, barcode lookup, barcode photo lookup, photo-assisted meal estimation, intake logging, hydration, goals, exports, and daily or weekly summaries. It runs over stdio by default for MCP clients and can also run a Streamable HTTP endpoint at `POST /mcp`.
+
+> If this nutrition layer helps your agent workflow, please star the repo. Stars make the project easier for other AI builders to discover and help Delx keep shipping local-first wellness infrastructure.
 
 The connector uses USDA FoodData Central as the primary food search provider. Open Food Facts is used for packaged-food barcode lookup when enabled. Local barcode image decoding is supported with ZXing. Meal photos are estimated only from an agent-provided visual observation and always require confirmation before logging. The local estimator includes a small pt-BR/Brazilian-food dictionary for common meals such as arroz, feijão, frango, ovos, banana and salada. It does not provide hosted sync, autonomous photo upload, recipe generation, or medical advice.
 
