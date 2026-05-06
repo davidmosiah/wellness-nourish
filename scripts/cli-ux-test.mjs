@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
+import packageJson from "../package.json" with { type: "json" };
 
 execFileSync("npm", ["run", "build"], { stdio: "inherit" });
 
@@ -22,7 +23,7 @@ assert.match(search, /Bananas, raw/);
 assert.match(search, /usda/);
 
 const version = run(["--version"]);
-assert.match(version, /nourish-mcp 0\.1\.7/);
+assert.equal(version.trim(), `nourish-mcp ${packageJson.version}`);
 
 const help = run(["--help"]);
 assert.match(help, /usage/i);
