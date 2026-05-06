@@ -61,14 +61,23 @@ export const ClearDayInputSchema = z
 
 export const HydrationLogInputSchema = z
   .object({
-    amount_ml: z.number().positive(),
+    amount_ml: z.number().describe("Water amount in milliliters. Must be greater than 0."),
     timestamp: z.string().datetime().optional(),
     date: DateSchema.optional(),
     notes: z.string().trim().optional(),
     explicit_user_intent: ExplicitUserIntentSchema,
     response_format: ResponseFormatSchema.default("json"),
   })
-  .strict();
+  .strict()
+  .superRefine((input, ctx) => {
+    if (input.amount_ml <= 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: "amount_ml must be greater than 0.",
+        path: ["amount_ml"],
+      });
+    }
+  });
 
 export const GoalsSetInputSchema = z
   .object({
@@ -130,10 +139,19 @@ export const FoodSearchInputSchema = z
 
 export const BarcodeLookupInputSchema = z
   .object({
-    barcode: z.string().regex(/^[0-9]{6,18}$/),
+    barcode: z.string().describe("Numeric packaged-food barcode with 6 to 18 digits."),
     response_format: ResponseFormatSchema.default("json"),
   })
-  .strict();
+  .strict()
+  .superRefine((input, ctx) => {
+    if (!/^[0-9]{6,18}$/.test(input.barcode)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "barcode must contain 6 to 18 digits.",
+        path: ["barcode"],
+      });
+    }
+  });
 
 const ImageInputFields = {
   image_path: z.string().trim().min(1).optional(),
@@ -278,6 +296,7 @@ export const IntakeUpdateInputSchema = z
     meal_type: z.enum(["breakfast", "lunch", "dinner", "snack", "other"]).optional(),
     quantity: z.number().positive().optional(),
     unit: z.string().trim().min(1).optional(),
+    grams_estimate: z.number().positive().optional(),
     timestamp: z.string().datetime().optional(),
     notes: z.string().trim().optional(),
     tags: z.array(z.string().trim().min(1)).optional(),

@@ -72,22 +72,11 @@ try {
   await assertResourceSurface();
   await assertConfirmationGuardsAreUserActionRequired();
   await assertValidationErrorsAreStructured();
+  await assertSdkVisibleValidationErrorsAreStructured();
   await assertMealTextAliasWorks();
+  await assertFoodRefLogResolvesProviderNutrients();
+  await assertUpdateQuantityRescalesNutrients();
 
-  const nutrientlessLog = await client.callTool({
-    name: "nourish_log_intake",
-    arguments: {
-      explicit_user_intent: true,
-      food_ref: {
-        source: "usda",
-        source_id: "123",
-        name: "Nutrientless food ref",
-      },
-    },
-  });
-
-  assert.equal(nutrientlessLog.isError, true);
-  assert.match(textFromToolResult(nutrientlessLog), /nutrient/i);
 } finally {
   await client.close();
 }
@@ -173,6 +162,33 @@ async function assertValidationErrorsAreStructured() {
   assert.ok(payload.error.errors.some((entry) => entry.path === "text"));
 }
 
+async function assertSdkVisibleValidationErrorsAreStructured() {
+  for (const call of [
+    {
+      name: "nourish_log_water",
+      arguments: {
+        amount_ml: -100,
+        explicit_user_intent: true,
+      },
+      path: "amount_ml",
+    },
+    {
+      name: "nourish_lookup_barcode",
+      arguments: {
+        barcode: "123",
+      },
+      path: "barcode",
+    },
+  ]) {
+    const result = await client.callTool(call);
+    const payload = JSON.parse(textFromToolResult(result));
+
+    assert.equal(result.isError, true);
+    assert.equal(payload.error.code, "VALIDATION_ERROR");
+    assert.ok(payload.error.errors.some((entry) => entry.path === call.path));
+  }
+}
+
 async function assertMealTextAliasWorks() {
   const result = await client.callTool({
     name: "nourish_estimate_meal",
@@ -185,6 +201,58 @@ async function assertMealTextAliasWorks() {
 
   assert.equal(result.isError, undefined);
   assert.equal(payload.items[0].name, "banana");
+}
+
+async function assertFoodRefLogResolvesProviderNutrients() {
+  const result = await client.callTool({
+    name: "nourish_log_intake",
+    arguments: {
+      explicit_user_intent: true,
+      food_ref: {
+        source: "usda",
+        source_id: "173944",
+        name: "Bananas, raw",
+      },
+      quantity: 1,
+      unit: "serving",
+      grams_estimate: 118,
+    },
+  });
+  const payload = JSON.parse(textFromToolResult(result));
+
+  assert.equal(result.isError, undefined);
+  assert.equal(payload.food_ref.name, "Bananas, raw");
+  assert.equal(payload.grams_estimate, 118);
+  assert.equal(payload.nutrients.calories_kcal, 105.02);
+  assert.equal(payload.source_trace, "exact_food");
+}
+
+async function assertUpdateQuantityRescalesNutrients() {
+  const log = await client.callTool({
+    name: "nourish_log_intake",
+    arguments: {
+      explicit_user_intent: true,
+      text: "100g arroz branco",
+      meal_type: "lunch",
+    },
+  });
+  const entry = JSON.parse(textFromToolResult(log));
+
+  assert.equal(entry.nutrients.calories_kcal, 130);
+  assert.equal(entry.grams_estimate, 100);
+
+  const updated = await client.callTool({
+    name: "nourish_update_intake",
+    arguments: {
+      id: entry.id,
+      quantity: 2,
+    },
+  });
+  const payload = JSON.parse(textFromToolResult(updated));
+
+  assert.equal(payload.quantity, 2);
+  assert.equal(payload.grams_estimate, 200);
+  assert.equal(payload.nutrients.calories_kcal, 260);
 }
 
 function assertSearchSchemaHonest(tools) {

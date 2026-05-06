@@ -30,7 +30,21 @@ export interface MealEstimate {
 const SIMPLE_FOODS: readonly SimpleFood[] = [
   {
     canonical: "egg",
-    aliases: ["boiled eggs", "boiled egg", "ovos cozidos", "ovo cozido", "eggs", "egg", "ovos", "ovo"],
+    aliases: [
+      "boiled eggs",
+      "boiled egg",
+      "scrambled eggs",
+      "omelete",
+      "omelet",
+      "ovos mexidos",
+      "ovo mexido",
+      "ovos cozidos",
+      "ovo cozido",
+      "eggs",
+      "egg",
+      "ovos",
+      "ovo",
+    ],
     servingGrams: 50,
     nutrientsPer100g: {
       calories_kcal: 143,
@@ -54,13 +68,39 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "pão francês",
-    aliases: ["pão francês", "pao frances", "french bread", "toast", "bread roll", "bread"],
-    servingGrams: 30,
+    aliases: [
+      "fatia de pão",
+      "fatia de pao",
+      "pão francês",
+      "pao frances",
+      "pão na chapa",
+      "pao na chapa",
+      "misto quente",
+      "bauru",
+      "french bread",
+      "toast",
+      "bread roll",
+      "bread",
+      "pão",
+      "pao",
+    ],
+    servingGrams: 50,
     nutrientsPer100g: {
       calories_kcal: 313,
       protein_g: 13,
       carbohydrates_g: 55,
       fat_g: 4,
+    },
+  },
+  {
+    canonical: "olive oil",
+    aliases: ["azeite de oliva", "azeite", "olive oil"],
+    servingGrams: 15,
+    nutrientsPer100g: {
+      calories_kcal: 884,
+      protein_g: 0,
+      carbohydrates_g: 0,
+      fat_g: 100,
     },
   },
   {
@@ -157,6 +197,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
     canonical: "rice",
     aliases: [
       "arroz branco cozido",
+      "arroz branco",
       "arroz cozido",
       "cooked white rice",
       "white rice",
@@ -284,6 +325,99 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
     },
   },
   {
+    canonical: "picanha",
+    aliases: ["picanha"],
+    servingGrams: 150,
+    nutrientsPer100g: {
+      calories_kcal: 289,
+      protein_g: 26,
+      carbohydrates_g: 0,
+      fat_g: 20,
+    },
+  },
+  {
+    canonical: "alcatra",
+    aliases: ["alcatra"],
+    servingGrams: 150,
+    nutrientsPer100g: {
+      calories_kcal: 220,
+      protein_g: 29,
+      carbohydrates_g: 0,
+      fat_g: 11,
+    },
+  },
+  {
+    canonical: "costela",
+    aliases: ["costela", "beef ribs"],
+    servingGrams: 150,
+    nutrientsPer100g: {
+      calories_kcal: 330,
+      protein_g: 24,
+      carbohydrates_g: 0,
+      fat_g: 26,
+    },
+  },
+  {
+    canonical: "feijoada",
+    aliases: ["feijoada completa", "feijoada"],
+    servingGrams: 250,
+    nutrientsPer100g: {
+      calories_kcal: 150,
+      protein_g: 9,
+      carbohydrates_g: 12,
+      fat_g: 7,
+      fiber_g: 4,
+    },
+  },
+  {
+    canonical: "feijão tropeiro",
+    aliases: ["feijão tropeiro", "feijao tropeiro"],
+    servingGrams: 180,
+    nutrientsPer100g: {
+      calories_kcal: 210,
+      protein_g: 9,
+      carbohydrates_g: 22,
+      fat_g: 10,
+      fiber_g: 5,
+    },
+  },
+  {
+    canonical: "farofa",
+    aliases: ["farofa"],
+    servingGrams: 50,
+    nutrientsPer100g: {
+      calories_kcal: 360,
+      protein_g: 3,
+      carbohydrates_g: 72,
+      fat_g: 7,
+      fiber_g: 5,
+    },
+  },
+  {
+    canonical: "couve refogada",
+    aliases: ["couve refogada", "couve"],
+    servingGrams: 70,
+    nutrientsPer100g: {
+      calories_kcal: 45,
+      protein_g: 2.5,
+      carbohydrates_g: 5,
+      fat_g: 2,
+      fiber_g: 3,
+    },
+  },
+  {
+    canonical: "vinagrete",
+    aliases: ["vinagrete"],
+    servingGrams: 60,
+    nutrientsPer100g: {
+      calories_kcal: 35,
+      protein_g: 1,
+      carbohydrates_g: 6,
+      fat_g: 1,
+      fiber_g: 1.5,
+    },
+  },
+  {
     canonical: "iogurte natural",
     aliases: ["iogurte natural", "iogurte", "plain yogurt", "yogurt"],
     servingGrams: 170,
@@ -331,6 +465,17 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
     },
   },
   {
+    canonical: "cafezinho",
+    aliases: ["cafezinho"],
+    servingGrams: 50,
+    nutrientsPer100g: {
+      calories_kcal: 1,
+      protein_g: 0.1,
+      carbohydrates_g: 0,
+      fat_g: 0,
+    },
+  },
+  {
     canonical: "apple",
     aliases: ["apple", "apples"],
     servingGrams: 182,
@@ -368,9 +513,13 @@ const UNIT_PATTERN = [
   "xicaras",
   "xicara",
   "tbsp",
+  "colheres de sopa",
+  "colher de sopa",
   "tsp",
   "colheres",
   "colher",
+  "fatias",
+  "fatia",
   "conchas",
   "concha",
   "pratos",
@@ -389,7 +538,7 @@ const UNIT_PATTERN = [
   "l",
 ].join("|");
 const FOOD_PATTERN = new RegExp(
-  String.raw`(?:^|(?<=[^\p{L}\p{N}_\/-]))(?:(${QUANTITY_PATTERN})\s*)?(?:(${UNIT_PATTERN})\s+)?(${[...FOOD_BY_ALIAS.keys()]
+  String.raw`(?:^|(?<=[^\p{L}\p{N}_\/-]))(?:(${QUANTITY_PATTERN})\s*)?(?:(${UNIT_PATTERN})\s+(?:de\s+)?)?(${[...FOOD_BY_ALIAS.keys()]
     .sort((a, b) => b.length - a.length)
     .map(escapeRegExp)
     .join("|")})(?=$|[^\p{L}\p{N}_-])`,
@@ -416,6 +565,9 @@ export async function estimateMeal(input: {
     const food = alias === undefined ? undefined : FOOD_BY_ALIAS.get(normalizeAlias(alias));
 
     if (food === undefined) {
+      continue;
+    }
+    if (isAmbiguousBreadFalsePositive(input.text, match)) {
       continue;
     }
 
@@ -519,7 +671,7 @@ function cleanUnresolvedTerm(raw: string): string | undefined {
     .replace(/\s+/gu, " ")
     .trim();
 
-  if (!/[\p{L}\p{N}]/u.test(cleaned) || ["e", "and", "com", "with"].includes(cleaned.toLowerCase())) {
+  if (!/[\p{L}\p{N}]/u.test(cleaned) || isStopword(cleaned)) {
     return undefined;
   }
 
@@ -551,6 +703,22 @@ function estimateWarnings(matchedCount: number, unresolved: string[]): string[] 
 
 function normalizeAlias(alias: string): string {
   return alias.toLowerCase();
+}
+
+function isStopword(value: string): boolean {
+  return ["e", "and", "with", "com", "sem", "de", "da", "do", "das", "dos", "a", "o", "as", "os"].includes(
+    value.toLowerCase(),
+  );
+}
+
+function isAmbiguousBreadFalsePositive(text: string, match: RegExpExecArray): boolean {
+  const alias = normalizeAlias(match[3] ?? "");
+  if (alias !== "pão" && alias !== "pao") {
+    return false;
+  }
+
+  const after = text.slice((match.index ?? 0) + match[0].length);
+  return /^\s+de\s+\p{L}/iu.test(after);
 }
 
 function escapeRegExp(value: string): string {

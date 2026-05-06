@@ -51,6 +51,7 @@ import { buildHydrationSummary, logWater } from "../services/hydration-store.js"
 import { getGoals, updateGoals } from "../services/goals-store.js";
 import { decodeBarcodeImage } from "../services/image-decoder.js";
 import { estimateMeal } from "../services/meal-estimator.js";
+import { gramsForQuantity, nutrientsForGrams } from "../services/portion-engine.js";
 import { estimateMealFromPhotoObservation } from "../services/photo-meal-estimator.js";
 import { buildPrivacyAudit } from "../services/privacy-audit.js";
 import { buildDailySummary, buildWeeklySummary } from "../services/summary.js";
@@ -342,7 +343,7 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_update_intake",
     {
       title: "Update intake",
-      description: "Update non-nutrition metadata for a local intake entry by id.",
+      description: "Update a local intake entry by id. Quantity or grams_estimate changes rescale nutrients to keep summaries consistent.",
       inputSchema: IntakeUpdateInputSchema.shape,
       annotations: {
         readOnlyHint: false,
@@ -363,6 +364,9 @@ export function registerNourishTools(server: McpServer): void {
         }
         if (params.unit !== undefined) {
           patch.unit = params.unit;
+        }
+        if (params.grams_estimate !== undefined) {
+          patch.grams_estimate = params.grams_estimate;
         }
         if (params.timestamp !== undefined) {
           patch.timestamp = params.timestamp;
@@ -799,12 +803,17 @@ async function buildIntakeEntryInput(
   }
 
   const customFood = asFoodItem(params.custom_food);
+  const providedFood = asFoodItem(params.food);
   const customFoodRef = foodRefFromUnknown(params.custom_food);
-  const foodNutrients = nutrientsFromUnknown(params.food);
+  const inputFoodRef = params.food_ref ?? foodRefFromUnknown(params.food) ?? customFoodRef;
+  const resolvedFood = customFood ?? providedFood ?? await resolveFoodRef(inputFoodRef);
   const foodRef =
-    params.food_ref ?? foodRefFromUnknown(params.food) ?? foodRefFromFood(customFood) ?? customFoodRef;
+    inputFoodRef ?? foodRefFromFood(resolvedFood);
   const nutrients =
-    params.nutrients ?? bestFoodNutrients(customFood) ?? nutrientsFromUnknown(params.custom_food) ?? foodNutrients;
+    params.nutrients ??
+    nutrientsForLoggedFood(resolvedFood, params) ??
+    nutrientsFromUnknown(params.custom_food) ??
+    nutrientsFromUnknown(params.food);
   const clean = cleanNutrients(nutrients);
 
   if (!hasMeaningfulNutrients(clean)) {
@@ -818,8 +827,8 @@ async function buildIntakeEntryInput(
     quantity: params.quantity ?? 1,
     unit: params.unit ?? "serving",
     nutrients: clean,
-    confidence: params.confidence ?? customFood?.data_quality.confidence ?? 0.5,
-    source_trace: sourceTraceFor(foodRef, customFood),
+    confidence: params.confidence ?? resolvedFood?.data_quality.confidence ?? 0.5,
+    source_trace: sourceTraceFor(foodRef, resolvedFood),
     tags: params.tags,
     wellness_context_refs: params.wellness_context_refs,
   };
@@ -830,11 +839,13 @@ async function buildIntakeEntryInput(
   if (foodRef !== undefined) {
     input.food_ref = foodRef;
   }
-  if (customFood !== undefined) {
-    input.custom_food = customFood;
+  const storedCustomFood = customFood ?? providedFood;
+  if (storedCustomFood !== undefined) {
+    input.custom_food = storedCustomFood;
   }
-  if (params.grams_estimate !== undefined) {
-    input.grams_estimate = params.grams_estimate;
+  const grams = params.grams_estimate ?? gramsForLoggedFood(resolvedFood, params.quantity, params.unit);
+  if (grams !== undefined) {
+    input.grams_estimate = grams;
   }
   if (params.notes !== undefined) {
     input.notes = params.notes;
@@ -843,8 +854,49 @@ async function buildIntakeEntryInput(
   return input;
 }
 
-function bestFoodNutrients(food: FoodItem | undefined): NutrientMap | undefined {
-  return food?.nutrients_per_serving ?? food?.nutrients_per_100g;
+async function resolveFoodRef(foodRef: IntakeEntry["food_ref"] | undefined): Promise<FoodItem | undefined> {
+  if (foodRef === undefined) {
+    return undefined;
+  }
+
+  if (foodRef.source === "usda") {
+    return getUsdaFood(foodRef.source_id);
+  }
+
+  if (foodRef.source === "open_food_facts") {
+    return (await lookupOpenFoodFactsBarcode(foodRef.source_id)).food;
+  }
+
+  return undefined;
+}
+
+function nutrientsForLoggedFood(
+  food: FoodItem | undefined,
+  params: ReturnType<typeof IntakeLogInputSchema.parse>,
+): NutrientMap | undefined {
+  if (food === undefined) {
+    return undefined;
+  }
+
+  const grams = params.grams_estimate ?? gramsForLoggedFood(food, params.quantity, params.unit);
+  if (grams !== undefined) {
+    return nutrientsForGrams(food.nutrients_per_100g, grams);
+  }
+
+  return food.nutrients_per_serving ?? food.nutrients_per_100g;
+}
+
+function gramsForLoggedFood(
+  food: FoodItem | undefined,
+  quantity: number | undefined,
+  unit: string | undefined,
+): number | undefined {
+  if (food === undefined) {
+    return undefined;
+  }
+
+  const servingGrams = food.serving?.grams ?? food.available_portions[0]?.grams;
+  return gramsForQuantity(quantity ?? 1, unit ?? "serving", servingGrams);
 }
 
 function nutrientsFromUnknown(value: unknown): NutrientMap | undefined {

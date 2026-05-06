@@ -129,6 +129,34 @@ assert.deepEqual(brazilianSnack.items.map((item) => item.name), [
 assert.equal(brazilianSnack.unresolved.length, 0);
 assert.ok((brazilianSnack.total_nutrients.calories_kcal ?? 0) > 700);
 
+const brazilianKitchenUnits = await estimateMeal({
+  text: "1 xícara de arroz branco, 1 colher de sopa de azeite, 1 fatia de pão",
+  meal_type: "breakfast",
+  locale: "pt-BR",
+});
+
+assert.deepEqual(brazilianKitchenUnits.items.map((item) => item.name), ["rice", "olive oil", "pão francês"]);
+assert.deepEqual(brazilianKitchenUnits.unresolved, []);
+assert.equal(brazilianKitchenUnits.items[0].grams, 240);
+assert.equal(brazilianKitchenUnits.items[1].grams, 15);
+assert.equal(brazilianKitchenUnits.items[2].grams, 50);
+
+const brazilianChurrasco = await estimateMeal({
+  text: "150g picanha, 120g feijoada, farofa, couve refogada e vinagrete",
+  meal_type: "lunch",
+  locale: "pt-BR",
+});
+
+assert.deepEqual(brazilianChurrasco.items.map((item) => item.name), [
+  "picanha",
+  "feijoada",
+  "farofa",
+  "couve refogada",
+  "vinagrete",
+]);
+assert.deepEqual(brazilianChurrasco.unresolved, []);
+assert.ok((brazilianChurrasco.total_nutrients.calories_kcal ?? 0) > 700);
+
 const twoEggsEnglish = await estimateMeal({
   text: "2 boiled eggs",
   meal_type: "snack",

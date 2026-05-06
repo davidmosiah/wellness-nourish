@@ -5,13 +5,14 @@ import { randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
 
 import { getConfig } from "./config.js";
+import { scaleNutrients } from "./nutrients.js";
 import type { IntakeEntry } from "../types.js";
 
 export type AddIntakeEntryInput = Omit<IntakeEntry, "id" | "timestamp" | "date"> &
   Partial<Pick<IntakeEntry, "timestamp">>;
 
 export type UpdateIntakeEntryPatch = Partial<
-  Pick<IntakeEntry, "meal_type" | "quantity" | "unit" | "timestamp" | "notes" | "tags">
+  Pick<IntakeEntry, "meal_type" | "quantity" | "unit" | "grams_estimate" | "timestamp" | "notes" | "tags">
 >;
 
 let mutationQueue: Promise<void> = Promise.resolve();
@@ -100,17 +101,45 @@ export async function updateIntakeEntry(id: string, patch: UpdateIntakeEntryPatc
     }
 
     const timestamp = patch.timestamp ?? current.timestamp;
+    const factor = updateScaleFactor(current, patch);
     const updated: IntakeEntry = {
       ...current,
       ...patch,
       timestamp,
       date: timestamp.slice(0, 10),
     };
+    if (factor !== undefined) {
+      updated.nutrients = scaleNutrients(current.nutrients, factor);
+      if (patch.grams_estimate === undefined && current.grams_estimate !== undefined) {
+        updated.grams_estimate = roundGrams(current.grams_estimate * factor);
+      }
+    }
 
     entries[index] = updated;
     await writeEntriesAtomically(entries, path);
     return updated;
   });
+}
+
+function updateScaleFactor(
+  current: IntakeEntry,
+  patch: UpdateIntakeEntryPatch,
+): number | undefined {
+  if (patch.grams_estimate !== undefined && current.grams_estimate !== undefined) {
+    const factor = patch.grams_estimate / current.grams_estimate;
+    return Number.isFinite(factor) && factor > 0 ? factor : undefined;
+  }
+
+  if (patch.quantity !== undefined) {
+    const factor = patch.quantity / current.quantity;
+    return Number.isFinite(factor) && factor > 0 ? factor : undefined;
+  }
+
+  return undefined;
+}
+
+function roundGrams(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
 export async function deleteIntakeEntry(id: string): Promise<boolean> {
