@@ -1,23 +1,37 @@
-# Wellness Nourish MCP
+<!-- delx-wellness header v2 -->
+<h1 align="center">Wellness Nourish</h1>
 
+<div align="center">
+  <img src="assets/banner.png" alt="Wellness Nourish — Nourish MCP for AI agents" width="85%" />
+</div>
 
-<!-- delx-wellness badges -->
-[![npm version](https://img.shields.io/npm/v/wellness-nourish?color=14b8a6)](https://www.npmjs.com/package/wellness-nourish)
-[![npm downloads](https://img.shields.io/npm/dw/wellness-nourish?color=14b8a6)](https://www.npmjs.com/package/wellness-nourish)
-[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e.svg)](https://opensource.org/licenses/MIT)
-[![Part of Delx Wellness](https://img.shields.io/badge/part%20of-Delx%20Wellness-0ea5a3)](https://wellness.delx.ai)
+<h3 align="center">
+  Local-first nutrition MCP &mdash; food search, barcode lookup, intake logging, hydration. Works without OAuth.<br>
+  Local-first MCP server &mdash; <strong>tokens never leave your machine</strong>.
+</h3>
 
-> **One-command install** with [Delx Wellness for Hermes](https://github.com/davidmosiah/delx-wellness-hermes):
-> `npx -y delx-wellness-hermes setup` — preconfigures this connector and the other 8 in a dedicated Hermes profile.
+<p align="center">
+  <a href="https://www.npmjs.com/package/wellness-nourish"><img src="https://img.shields.io/npm/v/wellness-nourish?style=for-the-badge&labelColor=0F172A&color=10B981&logo=npm&logoColor=white" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/wellness-nourish"><img src="https://img.shields.io/npm/dm/wellness-nourish?style=for-the-badge&labelColor=0F172A&color=0EA5A3&logo=npm&logoColor=white" alt="npm downloads" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-22C55E?style=for-the-badge&labelColor=0F172A" alt="License MIT" /></a>
+  <a href="https://wellness.delx.ai/nutrition"><img src="https://img.shields.io/badge/SITE-wellness.delx.ai-0EA5A3?style=for-the-badge&labelColor=0F172A" alt="Site" /></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/davidmosiah/wellness-nourish/stargazers"><img src="https://img.shields.io/github/stars/davidmosiah/wellness-nourish?style=for-the-badge&labelColor=0F172A&color=FBBF24&logo=github" alt="GitHub stars" /></a>
+  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/BUILT_FOR-MCP-7C3AED?style=for-the-badge&labelColor=0F172A" alt="Built for MCP" /></a>
+  <a href="https://github.com/davidmosiah/delx-wellness-hermes"><img src="https://img.shields.io/badge/HERMES-one--command_setup-10B981?style=for-the-badge&labelColor=0F172A" alt="Hermes one-command setup" /></a>
+  <a href="https://github.com/davidmosiah/delx-wellness"><img src="https://img.shields.io/badge/Nourish-10B981?style=for-the-badge&labelColor=0F172A&logoColor=white" alt="Nourish" /></a>
+</p>
+
+> ⚡ **One-command install** with [Delx Wellness for Hermes](https://github.com/davidmosiah/delx-wellness-hermes):
+> `npx -y delx-wellness-hermes setup` &mdash; preconfigures this connector and the other 8 in a dedicated Hermes profile.
 >
-> Or wire it standalone into Claude Desktop / Cursor / ChatGPT Desktop — see the install section below.
-<!-- /delx-wellness badges -->
+> Or wire it standalone into Claude Desktop / Cursor / ChatGPT Desktop &mdash; see the install section below.
 
-[![npm version](https://img.shields.io/npm/v/wellness-nourish?style=flat-square&color=cb3837&logo=npm)](https://www.npmjs.com/package/wellness-nourish)
-[![npm downloads](https://img.shields.io/npm/dm/wellness-nourish?style=flat-square&color=0ea5a3&logo=npm)](https://www.npmjs.com/package/wellness-nourish)
-[![GitHub stars](https://img.shields.io/github/stars/davidmosiah/wellness-nourish?style=flat-square&logo=github)](https://github.com/davidmosiah/wellness-nourish/stargazers)
-[![Agent-ready MCP](https://img.shields.io/badge/agent--ready-MCP-0ea5a3?style=flat-square)](https://wellness.delx.ai/nutrition)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://opensource.org/licenses/MIT)
+---
+
+<!-- /delx-wellness header v2 -->
 
 ## Overview
 
