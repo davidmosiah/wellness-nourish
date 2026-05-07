@@ -38,6 +38,9 @@
     "type": "git",
     "url": "git+https://github.com/davidmosiah/wellness-nourish.git"
   },
+  "bugs": {
+    "url": "https://github.com/davidmosiah/wellness-nourish/issues"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.21.0",
     "@zxing/library": "^0.21.3",

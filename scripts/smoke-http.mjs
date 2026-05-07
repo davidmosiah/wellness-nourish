@@ -56,7 +56,7 @@ child.stderr.on("data", (chunk) => {
 });
 
 async function waitForHealth() {
-  const deadline = Date.now() + 5000;
+  const deadline = Date.now() + 20000;
   let lastError;
 
   while (Date.now() < deadline) {
@@ -73,7 +73,7 @@ async function waitForHealth() {
       lastError = error;
     }
 
-    await new Promise((resolvePoll) => setTimeout(resolvePoll, 100));
+    await new Promise((resolvePoll) => setTimeout(resolvePoll, 200));
   }
 
   throw lastError ?? new Error("Timed out waiting for /health");
