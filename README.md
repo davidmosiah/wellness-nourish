@@ -25,7 +25,7 @@
 </p>
 
 > ⚡ **One-command install** with [Delx Wellness for Hermes](https://github.com/davidmosiah/delx-wellness-hermes):
-> `npx -y delx-wellness-hermes setup` &mdash; preconfigures this connector and the other 8 in a dedicated Hermes profile.
+> `npx -y delx-wellness-hermes setup` &mdash; preconfigures this connector and the rest of the Delx Wellness stack in a dedicated Hermes profile.
 >
 > Or wire it standalone into Claude Desktop / Cursor / ChatGPT Desktop &mdash; see the install section below.
 
@@ -38,6 +38,25 @@
 Wellness Nourish is a local MCP server for nutrition search, barcode lookup, barcode photo lookup, photo-assisted meal estimation, intake logging, hydration, goals, exports, daily or weekly summaries, personal meal memory, and coach-style nutrition workflows. It runs over stdio by default for MCP clients and can also run a Streamable HTTP endpoint at `POST /mcp`.
 
 > If this nutrition layer helps your agent workflow, please star the repo. Stars make the project easier for other AI builders to discover and help Delx keep shipping local-first wellness infrastructure.
+
+<p align="center">
+  <img src="assets/telegram-nourish-demo.svg" alt="Wellness Nourish Telegram and Hermes nutrition workflow demo" width="92%" />
+</p>
+
+## Try It In 60 Seconds
+
+```bash
+npx -y wellness-nourish doctor
+npx -y wellness-nourish search banana
+npx -y wellness-nourish log --preview "2 ovos, banana e café preto"
+```
+
+For the full Telegram/Hermes flow:
+
+```bash
+npx -y delx-wellness-hermes setup
+hermes -p delx-wellness
+```
 
 The connector uses USDA FoodData Central as the primary food search provider. Open Food Facts is used for packaged-food barcode lookup and product-name search when enabled. Local barcode image decoding is supported with ZXing. Meal photos are estimated only from an agent-provided visual observation and always require confirmation before logging. The local estimator includes a pt-BR/Brazilian-food catalog for common meals, kitchen units, and shortcuts such as arroz, feijão, frango, ovos, banana, tapioca, picanha, feijoada and salada. It does not provide hosted sync, autonomous photo upload, recipe generation, or medical advice.
 
@@ -221,8 +240,10 @@ The full [Delx Wellness](https://wellness.delx.ai) connector library:
 | Garmin | [`garmin-mcp-unofficial`](https://www.npmjs.com/package/garmin-mcp-unofficial) | [garminmcp](https://github.com/davidmosiah/garminmcp) |
 | Strava | [`strava-mcp-unofficial`](https://www.npmjs.com/package/strava-mcp-unofficial) | [strava-mcp](https://github.com/davidmosiah/strava-mcp) |
 | Fitbit | [`fitbit-mcp-unofficial`](https://www.npmjs.com/package/fitbit-mcp-unofficial) | [fitbitmcp](https://github.com/davidmosiah/fitbitmcp) |
+| Google Health | [`google-health-mcp-unofficial`](https://www.npmjs.com/package/google-health-mcp-unofficial) | [google-health-mcp](https://github.com/davidmosiah/google-health-mcp) |
 | Withings | [`withings-mcp-unofficial`](https://www.npmjs.com/package/withings-mcp-unofficial) | [withingsmcp](https://github.com/davidmosiah/withingsmcp) |
 | Apple Health | [`apple-health-mcp-unofficial`](https://www.npmjs.com/package/apple-health-mcp-unofficial) | [apple-health-mcp](https://github.com/davidmosiah/apple-health-mcp) |
+| Samsung Health | [`samsung-health-mcp-unofficial`](https://www.npmjs.com/package/samsung-health-mcp-unofficial) | [samsung-health-mcp](https://github.com/davidmosiah/samsung-health-mcp) |
 | Polar | [`polar-mcp-unofficial`](https://www.npmjs.com/package/polar-mcp-unofficial) | [polarmcp](https://github.com/davidmosiah/polarmcp) |
 | Nourish (nutrition) | [`wellness-nourish`](https://www.npmjs.com/package/wellness-nourish) | [wellness-nourish](https://github.com/davidmosiah/wellness-nourish) |
 
