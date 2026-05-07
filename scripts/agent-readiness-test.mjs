@@ -16,6 +16,11 @@ assert.ok(manifest.tools.includes("nourish_search_food"));
 assert.ok(manifest.tools.includes("nourish_decode_barcode_image"));
 assert.ok(manifest.tools.includes("nourish_lookup_barcode_image"));
 assert.ok(manifest.tools.includes("nourish_estimate_meal_photo"));
+assert.ok(manifest.tools.includes("nourish_analyze_food_image"));
+assert.ok(manifest.tools.includes("nourish_daily_coach"));
+assert.ok(manifest.tools.includes("nourish_suggest_next_meal"));
+assert.ok(manifest.tools.includes("nourish_remember_meal"));
+assert.ok(manifest.tools.includes("nourish_list_memory"));
 assert.ok(manifest.tools.includes("nourish_export_data"));
 assert.ok(manifest.tools.includes("nourish_list_intake"));
 assert.ok(manifest.tools.includes("nourish_log_water"));
@@ -31,8 +36,11 @@ assert.deepEqual(manifest.install.optional_env, [
 ]);
 assert.equal(Object.hasOwn(manifest, "optional_env"), false);
 assert.ok(manifest.agent_rules.some((rule) => /confirmation/i.test(rule)));
+assert.ok(manifest.agent_rules.some((rule) => /coach tools/i.test(rule)));
+assert.ok(manifest.agent_rules.some((rule) => /personal memory/i.test(rule)));
 assert.ok(manifest.agent_rules.some((rule) => /medical advice/i.test(rule)));
 assert.ok(manifest.hermes.common_tool_names.includes("mcp_nourish_nourish_daily_summary"));
+assert.ok(manifest.hermes.common_tool_names.includes("mcp_nourish_nourish_daily_coach"));
 assert.ok(JSON.stringify(manifest.hermes.recommended_config).includes(`wellness-nourish@${packageVersion}`));
 
 const examples = [

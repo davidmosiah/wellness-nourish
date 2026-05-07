@@ -7,10 +7,13 @@ import {
   BarcodeImageDecodeInputSchema,
   BarcodeImageLookupInputSchema,
   BarcodeLookupInputSchema,
+  CoachInputSchema,
   ClearDayInputSchema,
   ExportInputSchema,
+  FoodImageAnalysisInputSchema,
   FoodGetInputSchema,
   FoodSearchInputSchema,
+  ForgetMemoryInputSchema,
   GoalsSetInputSchema,
   HydrationLogInputSchema,
   IntakeDeleteInputSchema,
@@ -19,14 +22,17 @@ import {
   IntakeUpdateInputSchema,
   MealEstimateInputSchema,
   PhotoMealEstimateInputSchema,
+  RememberMealInputSchema,
   ResponseOnlyInputSchema,
   SummaryInputSchema,
   WeeklySummaryInputSchema,
 } from "../schemas/common.js";
 import { getUsdaFood, searchUsdaFoods } from "../providers/usda.js";
-import { lookupOpenFoodFactsBarcode } from "../providers/open-food-facts.js";
+import { searchBrazilianLocalFoods } from "../providers/br-local.js";
+import { lookupOpenFoodFactsBarcode, searchOpenFoodFactsByName } from "../providers/open-food-facts.js";
 import { buildAgentManifest } from "../services/agent-manifest.js";
 import { buildCapabilities } from "../services/capabilities.js";
+import { buildNutritionCoach, type CoachMode } from "../services/coach.js";
 import { buildConnectionStatus } from "../services/connection-status.js";
 import {
   makeActionRequired,
@@ -49,8 +55,15 @@ import {
 } from "../services/intake-store.js";
 import { buildHydrationSummary, logWater } from "../services/hydration-store.js";
 import { getGoals, updateGoals } from "../services/goals-store.js";
+import { analyzeFoodImage } from "../services/food-image-analysis.js";
 import { decodeBarcodeImage } from "../services/image-decoder.js";
 import { estimateMeal } from "../services/meal-estimator.js";
+import {
+  expandMealTextWithMemory,
+  forgetRememberedMeal,
+  getPersonalNutritionMemory,
+  rememberMeal,
+} from "../services/personal-memory.js";
 import { gramsForQuantity, nutrientsForGrams } from "../services/portion-engine.js";
 import { estimateMealFromPhotoObservation } from "../services/photo-meal-estimator.js";
 import { buildPrivacyAudit } from "../services/privacy-audit.js";
@@ -145,14 +158,14 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_search_food",
     {
       title: "Search foods",
-      description: "Search USDA FoodData Central foods by query and return compact nutrition/source data.",
+      description: "Search food providers by query. Use br_local for Brazilian staples, open_food_facts for packaged products, usda for generic foods, or all.",
       inputSchema: FoodSearchInputSchema.shape,
       annotations: readOnlyOpenWorldAnnotation(),
     },
     async (input) => {
       try {
         const params = FoodSearchInputSchema.parse(input);
-        const result = await searchUsdaFoods(params.query, params.limit);
+        const result = await searchFoods(params.query, params.limit, params.provider);
         const markdown = compactFoodTable(result.foods);
 
         return toolResponse(makeResponse(result, params.response_format, markdown));
@@ -277,13 +290,23 @@ export function registerNourishTools(server: McpServer): void {
     async (input) => {
       try {
         const params = MealEstimateInputSchema.parse(input);
+        const mealText = params.text ?? params.meal_text ?? "";
+        const expanded = await expandMealTextWithMemory(mealText);
         const estimate = await estimateMeal({
-          text: params.text ?? params.meal_text ?? "",
+          text: expanded.text,
           meal_type: params.meal_type,
           locale: params.locale,
         });
+        const payload = {
+          ...estimate,
+          requested_text: mealText,
+          personal_memory: {
+            expanded: expanded.matches.length > 0,
+            matches: expanded.matches,
+          },
+        };
 
-        return toolResponse(makeResponse(estimate, params.response_format));
+        return toolResponse(makeResponse(payload, params.response_format));
       } catch (error) {
         return toolError(error);
       }
@@ -304,6 +327,26 @@ export function registerNourishTools(server: McpServer): void {
         const estimate = await estimateMealFromPhotoObservation(params);
 
         return toolResponse(makeResponse(estimate, params.response_format, photoMealEstimateMarkdown(estimate)));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_analyze_food_image",
+    {
+      title: "Analyze food image",
+      description: "Route agent-provided food image observations across barcode, nutrition label OCR, or meal-photo estimation without logging.",
+      inputSchema: FoodImageAnalysisInputSchema.shape,
+      annotations: readOnlyOpenWorldAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = FoodImageAnalysisInputSchema.parse(input);
+        const result = await analyzeFoodImage(params);
+
+        return toolResponse(makeResponse(result, params.response_format));
       } catch (error) {
         return toolError(error);
       }
@@ -333,6 +376,88 @@ export function registerNourishTools(server: McpServer): void {
         const entry = await addIntakeEntry(await buildIntakeEntryInput(params));
 
         return toolResponse(makeResponse(entry, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  registerCoachTool(server, "nourish_daily_coach", "daily_coach", "Daily nutrition coach", "Summarize today, goal gaps, wearable context, and a safe next action for Telegram-style coaching.");
+  registerCoachTool(server, "nourish_suggest_next_meal", "suggest_next_meal", "Suggest next meal", "Suggest a next meal from today's intake, goals, personal memory, and optional wearable context.");
+  registerCoachTool(server, "nourish_after_log_review", "after_log_review", "After-log review", "Review the day after a meal log and explain what changed plus the next correction or action.");
+  registerCoachTool(server, "nourish_pre_workout_nutrition", "pre_workout_nutrition", "Pre-workout nutrition", "Suggest light pre-workout nutrition using goals, current intake, and optional WHOOP/Garmin context.");
+  registerCoachTool(server, "nourish_evening_checkin", "evening_checkin", "Evening check-in", "Check late-day protein, calories, and hydration gaps with a compact Telegram-friendly next step.");
+
+  server.registerTool(
+    "nourish_remember_meal",
+    {
+      title: "Remember meal",
+      description: "Save a personal meal shortcut locally after explicit user intent, for example 'meu cafe normal' -> '2 ovos e banana'.",
+      inputSchema: RememberMealInputSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async (input) => {
+      try {
+        const params = RememberMealInputSchema.parse(input);
+        if (params.explicit_user_intent !== true) {
+          return explicitIntentRequired("explicit_user_intent must be true to remember a personal meal.", params.response_format);
+        }
+        const meal = await rememberMeal(params);
+
+        return toolResponse(makeResponse({ ok: true, meal }, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_list_memory",
+    {
+      title: "List personal nutrition memory",
+      description: "Read local remembered meals and nutrition preferences for personal Telegram shortcuts.",
+      inputSchema: ResponseOnlyInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = ResponseOnlyInputSchema.parse(input);
+        const memory = await getPersonalNutritionMemory();
+
+        return toolResponse(makeResponse(memory, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_forget_memory",
+    {
+      title: "Forget personal nutrition memory",
+      description: "Delete a local remembered meal by id or label after explicit user intent.",
+      inputSchema: ForgetMemoryInputSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async (input) => {
+      try {
+        const params = ForgetMemoryInputSchema.parse(input);
+        if (params.explicit_user_intent !== true) {
+          return explicitIntentRequired("explicit_user_intent must be true to forget personal nutrition memory.", params.response_format);
+        }
+        const result = await forgetRememberedMeal(params.id_or_label);
+
+        return toolResponse(makeResponse({ ok: true, ...result }, params.response_format));
       } catch (error) {
         return toolError(error);
       }
@@ -659,10 +784,89 @@ function readOnlyAnnotation() {
   };
 }
 
+function registerCoachTool(
+  server: McpServer,
+  name: string,
+  mode: CoachMode,
+  title: string,
+  description: string,
+): void {
+  server.registerTool(
+    name,
+    {
+      title,
+      description,
+      inputSchema: CoachInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = CoachInputSchema.parse(input);
+        const result = await buildNutritionCoach({
+          mode,
+          date: params.date,
+          locale: params.locale,
+          focus: params.focus,
+          meal_type: params.meal_type,
+          wearable_context: params.wearable_context,
+          workout_context: params.workout_context,
+          recent_intake_id: params.recent_intake_id,
+        });
+
+        return toolResponse(makeResponse(result, params.response_format, coachMarkdown(result)));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+}
+
 function readOnlyOpenWorldAnnotation() {
   return {
     ...readOnlyAnnotation(),
     openWorldHint: true,
+  };
+}
+
+async function searchFoods(
+  query: string,
+  limit: number,
+  provider: "usda" | "open_food_facts" | "br_local" | "all",
+): Promise<{ provider: string; foods: FoodItem[]; warnings?: string[] }> {
+  if (provider === "usda") {
+    return searchUsdaFoods(query, limit);
+  }
+
+  if (provider === "open_food_facts") {
+    return searchOpenFoodFactsByName(query, limit);
+  }
+
+  if (provider === "br_local") {
+    return searchBrazilianLocalFoods(query, limit);
+  }
+
+  const warnings: string[] = [];
+  const foods: FoodItem[] = [];
+  for (const search of [
+    () => searchBrazilianLocalFoods(query, limit),
+    () => searchOpenFoodFactsByName(query, limit),
+    () => searchUsdaFoods(query, limit),
+  ]) {
+    try {
+      const result = await search();
+      foods.push(...result.foods);
+      if ("warnings" in result && Array.isArray(result.warnings)) {
+        warnings.push(...result.warnings);
+      }
+    } catch (error) {
+      warnings.push(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  return {
+    provider: "all",
+    foods: foods.slice(0, limit),
+    warnings,
   };
 }
 
@@ -734,6 +938,23 @@ function photoMealEstimateMarkdown(
   });
 }
 
+function coachMarkdown(result: Awaited<ReturnType<typeof buildNutritionCoach>>): string {
+  return [
+    `# Nourish Coach`,
+    `- mode: ${result.mode}`,
+    `- date: ${result.date}`,
+    `- calories: ${result.summary.calories_kcal}`,
+    `- protein_g: ${result.summary.protein_g}`,
+    `- hydration_ml: ${result.summary.hydration_ml}`,
+    `- suggested_next_meal: ${result.suggested_next_meal.text}`,
+    `- reason: ${result.suggested_next_meal.reason}`,
+    `- requires_confirmation_to_log: ${result.requires_confirmation_to_log}`,
+    "",
+    "## Next Actions",
+    ...result.next_actions.map((action) => `- ${action}`),
+  ].join("\n");
+}
+
 function compactIntakeTable(entries: IntakeEntry[]): string {
   return compactTable(
     entries.map((entry) => ({
@@ -762,8 +983,9 @@ async function buildIntakeEntryInput(
   const text = params.text ?? params.meal_text;
 
   if (text !== undefined) {
+    const expanded = await expandMealTextWithMemory(text);
     const estimate = await estimateMeal({
-      text,
+      text: expanded.text,
       meal_type: params.meal_type,
       locale: "en-US",
     });
@@ -781,7 +1003,10 @@ async function buildIntakeEntryInput(
       confidence: params.confidence ?? estimate.confidence,
       source_trace: "estimate",
       tags: params.tags,
-      wellness_context_refs: params.wellness_context_refs,
+      wellness_context_refs: [
+        ...params.wellness_context_refs,
+        ...expanded.matches.map((match) => `nourish-memory:${match.id}`),
+      ],
     };
 
     if (params.timestamp !== undefined) {

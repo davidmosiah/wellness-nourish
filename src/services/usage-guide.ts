@@ -21,8 +21,11 @@ export function buildUsageGuide(): NourishUsageGuide {
       "Call nourish_capabilities.",
       "Read nourish://usage-guide.",
       "Use nourish_search_food or nourish_lookup_barcode before estimating whenever possible.",
+      "Use nourish_search_food provider br_local for Brazilian staples and provider open_food_facts for packaged product name search.",
       "Use nourish_lookup_barcode_image for barcode photos and nourish_estimate_meal_photo for meal photos when the agent has image context.",
+      "Use nourish_analyze_food_image when a Telegram image could be a barcode, nutrition label, or meal photo.",
       "For Brazilian Portuguese meals, preserve explicit grams and common aliases such as arroz branco cozido, feijão carioca, peito de frango grelhado, salada simples and ovos.",
+      "Use nourish_daily_coach or nourish_suggest_next_meal when the user asks what to eat next.",
     ],
     agent_workflows: [
       {
@@ -39,6 +42,15 @@ export function buildUsageGuide(): NourishUsageGuide {
           "Call nourish_lookup_barcode_image with image_path, image_base64, or image_data_uri.",
           "If the barcode cannot be decoded, ask for a sharper, flatter image with the full barcode visible.",
           "Preserve Open Food Facts license and source attribution in exports or reusable records.",
+        ],
+      },
+      {
+        name: "mixed food image",
+        steps: [
+          "Pass detected_barcodes, nutrition_label_text, detected_items, and image_description to nourish_analyze_food_image.",
+          "If route is barcode, confirm product and serving before logging.",
+          "If route is nutrition_label, confirm OCR and serving before logging custom_food.",
+          "If route is meal_photo, confirm portions before logging.",
         ],
       },
       {
@@ -63,6 +75,23 @@ export function buildUsageGuide(): NourishUsageGuide {
           "Call nourish_daily_summary with response_format markdown for human review.",
           "Use nourish_list_intake when the user wants to edit a specific item.",
           "Use nourish_update_intake or nourish_delete_intake only for the selected id.",
+        ],
+      },
+      {
+        name: "coach loop",
+        steps: [
+          "Call nourish_daily_coach for a compact Telegram-ready read of the day.",
+          "Pass wearable_context after calling WHOOP/Garmin/Oura tools when available.",
+          "Use nourish_suggest_next_meal, nourish_pre_workout_nutrition, or nourish_evening_checkin for specific next-step questions.",
+          "Never log the suggestion until the user confirms.",
+        ],
+      },
+      {
+        name: "personal meal memory",
+        steps: [
+          "When the user says to remember a recurring meal, call nourish_remember_meal with explicit_user_intent true.",
+          "Use nourish_list_memory to inspect saved shortcuts.",
+          "When a user says a remembered label such as 'meu cafe normal', nourish_estimate_meal expands it locally before estimating.",
         ],
       },
       {

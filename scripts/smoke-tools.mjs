@@ -21,7 +21,16 @@ const expectedTools = [
   "nourish_get_food",
   "nourish_estimate_meal",
   "nourish_estimate_meal_photo",
+  "nourish_analyze_food_image",
   "nourish_log_intake",
+  "nourish_daily_coach",
+  "nourish_suggest_next_meal",
+  "nourish_after_log_review",
+  "nourish_pre_workout_nutrition",
+  "nourish_evening_checkin",
+  "nourish_remember_meal",
+  "nourish_list_memory",
+  "nourish_forget_memory",
   "nourish_list_intake",
   "nourish_update_intake",
   "nourish_delete_intake",
@@ -76,6 +85,10 @@ try {
   await assertMealTextAliasWorks();
   await assertFoodRefLogResolvesProviderNutrients();
   await assertUpdateQuantityRescalesNutrients();
+  await assertBrazilianLocalSearchWorks();
+  await assertPersonalMemoryFeedsEstimator();
+  await assertCoachLoopReadsGoalsAndWearableContext();
+  await assertFoodImageRouterSupportsBarcodeMealAndLabel();
 
 } finally {
   await client.close();
@@ -138,6 +151,7 @@ function assertSchemaDx(tools) {
   const logIntake = findTool(tools, "nourish_log_intake");
   const logWater = findTool(tools, "nourish_log_water");
   const setGoals = findTool(tools, "nourish_set_goals");
+  const dailyCoach = findTool(tools, "nourish_daily_coach");
 
   assert.match(logIntake.inputSchema?.properties?.text?.description ?? "", /meal text/i);
   assert.match(logIntake.inputSchema?.properties?.meal_text?.description ?? "", /alias/i);
@@ -145,6 +159,7 @@ function assertSchemaDx(tools) {
   assert.match(logWater.inputSchema?.properties?.explicit_user_intent?.description ?? "", /Pass true/i);
   assert.match(setGoals.inputSchema?.properties?.daily?.description ?? "", /nested/i);
   assert.match(setGoals.inputSchema?.properties?.calories_kcal?.description ?? "", /flat/i);
+  assert.match(dailyCoach.description ?? "", /coach/i);
 }
 
 async function assertValidationErrorsAreStructured() {
@@ -255,12 +270,154 @@ async function assertUpdateQuantityRescalesNutrients() {
   assert.equal(payload.nutrients.calories_kcal, 260);
 }
 
+async function assertBrazilianLocalSearchWorks() {
+  const result = await client.callTool({
+    name: "nourish_search_food",
+    arguments: {
+      query: "picanha",
+      provider: "br_local",
+      limit: 5,
+    },
+  });
+  const payload = JSON.parse(textFromToolResult(result));
+
+  assert.equal(result.isError, undefined);
+  assert.equal(payload.provider, "br_local");
+  assert.ok(payload.foods.some((food) => food.name === "picanha"));
+  assert.ok(payload.foods[0].license.attribution.includes("Nourish"));
+}
+
+async function assertPersonalMemoryFeedsEstimator() {
+  const guarded = await client.callTool({
+    name: "nourish_remember_meal",
+    arguments: {
+      label: "meu cafe normal",
+      meal_text: "2 ovos cozidos e 1 banana",
+    },
+  });
+  const guardedPayload = JSON.parse(textFromToolResult(guarded));
+
+  assert.equal(guarded.isError, undefined);
+  assert.equal(guardedPayload.error.code, "USER_ACTION_REQUIRED");
+
+  const remembered = await client.callTool({
+    name: "nourish_remember_meal",
+    arguments: {
+      explicit_user_intent: true,
+      label: "meu cafe normal",
+      aliases: ["cafe padrao"],
+      meal_text: "2 ovos cozidos e 1 banana",
+      default_meal_type: "breakfast",
+    },
+  });
+  const rememberedPayload = JSON.parse(textFromToolResult(remembered));
+
+  assert.equal(remembered.isError, undefined);
+  assert.equal(rememberedPayload.ok, true);
+  assert.equal(rememberedPayload.meal.label, "meu cafe normal");
+
+  const estimate = await client.callTool({
+    name: "nourish_estimate_meal",
+    arguments: {
+      text: "meu cafe normal",
+      locale: "pt-BR",
+    },
+  });
+  const estimatePayload = JSON.parse(textFromToolResult(estimate));
+
+  assert.equal(estimate.isError, undefined);
+  assert.deepEqual(estimatePayload.personal_memory.matches.map((match) => match.label), ["meu cafe normal"]);
+  assert.ok((estimatePayload.total_nutrients.protein_g ?? 0) > 10);
+  assert.equal(estimatePayload.unresolved.length, 0);
+
+  const memory = await client.callTool({
+    name: "nourish_list_memory",
+    arguments: {},
+  });
+  const memoryPayload = JSON.parse(textFromToolResult(memory));
+
+  assert.ok(memoryPayload.remembered_meals.some((meal) => meal.label === "meu cafe normal"));
+}
+
+async function assertCoachLoopReadsGoalsAndWearableContext() {
+  await client.callTool({
+    name: "nourish_set_goals",
+    arguments: {
+      calories_kcal: 2200,
+      protein_g: 140,
+      hydration_ml: 2600,
+      explicit_user_intent: true,
+    },
+  });
+  const coach = await client.callTool({
+    name: "nourish_daily_coach",
+    arguments: {
+      date: new Date().toISOString().slice(0, 10),
+      locale: "pt-BR",
+      wearable_context: {
+        source: "whoop",
+        recovery: "green",
+        strain: 12.4,
+        sleep_performance: 88,
+      },
+      focus: "protein",
+    },
+  });
+  const payload = JSON.parse(textFromToolResult(coach));
+
+  assert.equal(coach.isError, undefined);
+  assert.equal(payload.mode, "daily_coach");
+  assert.equal(payload.requires_confirmation_to_log, true);
+  assert.ok(payload.gaps.protein_g.remaining >= 0);
+  assert.ok(payload.wellness_context.sources.includes("whoop"));
+  assert.ok(payload.next_actions.length > 0);
+}
+
+async function assertFoodImageRouterSupportsBarcodeMealAndLabel() {
+  const meal = await client.callTool({
+    name: "nourish_analyze_food_image",
+    arguments: {
+      image_description: "prato com arroz branco, feijão carioca e frango grelhado",
+      detected_items: [
+        { name: "arroz branco", grams_estimate: 180, confidence: 0.75 },
+        { name: "feijão carioca", grams_estimate: 100, confidence: 0.7 },
+        { name: "frango grelhado", grams_estimate: 140, confidence: 0.72 },
+      ],
+      locale: "pt-BR",
+      meal_type: "lunch",
+    },
+  });
+  const mealPayload = JSON.parse(textFromToolResult(meal));
+
+  assert.equal(meal.isError, undefined);
+  assert.equal(mealPayload.route, "meal_photo");
+  assert.equal(mealPayload.requires_confirmation, true);
+  assert.ok((mealPayload.meal_estimate.estimate.total_nutrients.protein_g ?? 0) > 40);
+
+  const label = await client.callTool({
+    name: "nourish_analyze_food_image",
+    arguments: {
+      image_description: "rótulo de iogurte",
+      product_name: "Iogurte Proteico",
+      nutrition_label_text: "Porção 170g Valor energético 120 kcal Carboidratos 8g Proteínas 15g Gorduras totais 2g",
+      locale: "pt-BR",
+    },
+  });
+  const labelPayload = JSON.parse(textFromToolResult(label));
+
+  assert.equal(label.isError, undefined);
+  assert.equal(labelPayload.route, "nutrition_label");
+  assert.equal(labelPayload.label_food.name, "Iogurte Proteico");
+  assert.equal(labelPayload.label_food.nutrients_per_serving.protein_g, 15);
+  assert.equal(labelPayload.suggested_log_intake.explicit_user_intent, false);
+}
+
 function assertSearchSchemaHonest(tools) {
   const searchTool = findTool(tools, "nourish_search_food");
   const provider = searchTool.inputSchema?.properties?.provider;
 
   if (provider !== undefined) {
-    assert.deepEqual(provider.enum, ["usda"]);
+    assert.deepEqual(provider.enum, ["usda", "open_food_facts", "br_local", "all"]);
   }
 }
 

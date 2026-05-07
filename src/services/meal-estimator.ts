@@ -2,7 +2,7 @@ import type { MealType, NutrientMap } from "../types.js";
 import { addNutrients } from "./nutrients.js";
 import { gramsForQuantity, nutrientsForGrams } from "./portion-engine.js";
 
-interface SimpleFood {
+export interface SimpleFood {
   canonical: string;
   aliases: string[];
   servingGrams: number;
@@ -493,6 +493,10 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
 const FOOD_BY_ALIAS = new Map<string, SimpleFood>(
   SIMPLE_FOODS.flatMap((food) => food.aliases.map((alias) => [normalizeAlias(alias), food] as const)),
 );
+
+export function listSimpleFoods(): readonly SimpleFood[] {
+  return SIMPLE_FOODS;
+}
 
 const QUANTITY_PATTERN = String.raw`\d+(?:\.\d+)?(?:\/\d+(?:\.\d+)?)?`;
 const UNIT_PATTERN = [

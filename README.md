@@ -35,11 +35,11 @@
 
 ## Overview
 
-Wellness Nourish is a local MCP server for nutrition search, barcode lookup, barcode photo lookup, photo-assisted meal estimation, intake logging, hydration, goals, exports, and daily or weekly summaries. It runs over stdio by default for MCP clients and can also run a Streamable HTTP endpoint at `POST /mcp`.
+Wellness Nourish is a local MCP server for nutrition search, barcode lookup, barcode photo lookup, photo-assisted meal estimation, intake logging, hydration, goals, exports, daily or weekly summaries, personal meal memory, and coach-style nutrition workflows. It runs over stdio by default for MCP clients and can also run a Streamable HTTP endpoint at `POST /mcp`.
 
 > If this nutrition layer helps your agent workflow, please star the repo. Stars make the project easier for other AI builders to discover and help Delx keep shipping local-first wellness infrastructure.
 
-The connector uses USDA FoodData Central as the primary food search provider. Open Food Facts is used for packaged-food barcode lookup when enabled. Local barcode image decoding is supported with ZXing. Meal photos are estimated only from an agent-provided visual observation and always require confirmation before logging. The local estimator includes a small pt-BR/Brazilian-food dictionary for common meals such as arroz, feijão, frango, ovos, banana and salada. It does not provide hosted sync, autonomous photo upload, recipe generation, or medical advice.
+The connector uses USDA FoodData Central as the primary food search provider. Open Food Facts is used for packaged-food barcode lookup and product-name search when enabled. Local barcode image decoding is supported with ZXing. Meal photos are estimated only from an agent-provided visual observation and always require confirmation before logging. The local estimator includes a pt-BR/Brazilian-food catalog for common meals, kitchen units, and shortcuts such as arroz, feijão, frango, ovos, banana, tapioca, picanha, feijoada and salada. It does not provide hosted sync, autonomous photo upload, recipe generation, or medical advice.
 
 ## Install
 
@@ -147,10 +147,13 @@ Recommended Telegram flow:
 1. User says what they ate.
 2. Hermes calls `nourish_estimate_meal` and replies with calories, protein, confidence and warnings.
 3. For barcode photos, Hermes calls `nourish_lookup_barcode_image` when it has an image path, base64 image, or data URI.
-4. For meal photos, Hermes describes visible food and portions, calls `nourish_estimate_meal_photo`, and asks for portion confirmation.
-5. User confirms saving.
-6. Hermes calls `nourish_log_intake` with `explicit_user_intent: true`.
-7. User can ask for `today`, weekly summaries, goals, hydration, edits, deletes or exports.
+4. For mixed food photos, Hermes calls `nourish_analyze_food_image` with barcode observations, label OCR, detected items, or image description.
+5. For meal photos, Hermes describes visible food and portions, calls `nourish_estimate_meal_photo`, and asks for portion confirmation.
+6. For "what should I eat now?" questions, Hermes calls `nourish_daily_coach` or `nourish_suggest_next_meal`, optionally passing wearable context from WHOOP/Garmin/Oura.
+7. For repeated meals, Hermes can call `nourish_remember_meal` after explicit user intent so future phrases like "meu café normal" expand locally.
+8. User confirms saving.
+9. Hermes calls `nourish_log_intake` with `explicit_user_intent: true`.
+10. User can ask for `today`, weekly summaries, goals, hydration, edits, deletes or exports.
 
 Local build:
 
@@ -226,4 +229,3 @@ The full [Delx Wellness](https://wellness.delx.ai) connector library:
 **One-command setup for Hermes** — preconfigures every connector above plus wellness skills + onboarding: [`delx-wellness-hermes`](https://github.com/davidmosiah/delx-wellness-hermes).
 
 <!-- /delx-wellness see-also -->
-

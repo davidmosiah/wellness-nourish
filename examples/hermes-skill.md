@@ -19,7 +19,10 @@ Use this skill whenever a user asks Hermes, including through Telegram, to searc
 - If the user says `registra`, `anota`, `log`, `salva`, or otherwise clearly asks to save a meal, call `mcp_nourish_nourish_log_intake` with `explicit_user_intent: true`.
 - If the user only says what they ate, first call `mcp_nourish_nourish_estimate_meal`, return a compact preview with calories, protein, confidence and warnings, then ask whether to save it.
 - If the user sends a barcode photo and Hermes has an image path, base64 image, or data URI, call `mcp_nourish_nourish_lookup_barcode_image`; if only visible digits are available, call `mcp_nourish_nourish_lookup_barcode`.
+- If a food image could be a barcode, nutrition label, or meal photo, call `mcp_nourish_nourish_analyze_food_image` with the visual/OCR observations and follow its route.
 - If the user sends a meal photo, describe the visible food and portions as `detected_items`, call `mcp_nourish_nourish_estimate_meal_photo`, then ask the user to confirm portions before logging.
+- If the user asks what to eat next, call `mcp_nourish_nourish_daily_coach` or `mcp_nourish_nourish_suggest_next_meal`, passing WHOOP/Garmin/Oura context if already available.
+- If the user asks Hermes to remember a recurring meal, call `mcp_nourish_nourish_remember_meal` with `explicit_user_intent: true`.
 - For Portuguese/Brazilian meals, preserve explicit quantities such as `200g arroz`, `120g feijão`, `150g frango`, call estimate with `locale: pt-BR`, and ask one concise clarification only for unresolved foods.
 - If a tool returns `USER_ACTION_REQUIRED`, treat it as a normal confirmation guard, not as a server outage.
 - Preserve uncertainty. Include confidence and unresolved items instead of pretending estimates are exact.
@@ -32,5 +35,7 @@ Use this skill whenever a user asks Hermes, including through Telegram, to searc
 3. `mcp_nourish_nourish_estimate_meal` for natural-language meals
 4. `mcp_nourish_nourish_lookup_barcode_image` for barcode photos
 5. `mcp_nourish_nourish_estimate_meal_photo` for meal photo previews
-6. `mcp_nourish_nourish_log_intake` only after explicit save intent
-7. `mcp_nourish_nourish_daily_summary` for today's Telegram summary
+6. `mcp_nourish_nourish_analyze_food_image` for mixed image routing
+7. `mcp_nourish_nourish_daily_coach` for what-to-eat-next questions
+8. `mcp_nourish_nourish_log_intake` only after explicit save intent
+9. `mcp_nourish_nourish_daily_summary` for today's Telegram summary

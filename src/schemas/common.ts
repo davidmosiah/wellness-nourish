@@ -132,7 +132,7 @@ export const FoodSearchInputSchema = z
   .object({
     query: z.string().trim().min(1),
     limit: z.number().int().min(1).max(25).default(10),
-    provider: z.enum(["usda"]).default("usda"),
+    provider: z.enum(["usda", "open_food_facts", "br_local", "all"]).default("usda"),
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
@@ -222,6 +222,36 @@ export const PhotoMealEstimateInputSchema = z
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
+
+export const FoodImageAnalysisInputSchema = z
+  .object({
+    image_description: z.string().trim().min(1).optional(),
+    barcode: z.string().trim().regex(/^[0-9]{6,18}$/).optional(),
+    detected_barcodes: z.array(z.string().trim().regex(/^[0-9]{6,18}$/)).max(10).default([]),
+    detected_items: z.array(PhotoMealDetectedItemSchema).max(25).default([]),
+    nutrition_label_text: z.string().trim().min(1).optional(),
+    product_name: z.string().trim().min(1).optional(),
+    locale: z.string().trim().min(2).default("en-US"),
+    meal_type: MealTypeSchema,
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict()
+  .superRefine((input, ctx) => {
+    const hasAnyInput =
+      input.image_description !== undefined ||
+      input.barcode !== undefined ||
+      input.detected_barcodes.length > 0 ||
+      input.detected_items.length > 0 ||
+      input.nutrition_label_text !== undefined;
+
+    if (!hasAnyInput) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Provide barcode, detected_barcodes, detected_items, nutrition_label_text, or image_description.",
+        path: ["image_description"],
+      });
+    }
+  });
 
 export const IntakeLogInputSchema = z
   .object({
@@ -321,6 +351,40 @@ export const SummaryInputSchema = z
 export const WeeklySummaryInputSchema = z
   .object({
     start_date: DateSchema.optional(),
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
+export const CoachInputSchema = z
+  .object({
+    date: DateSchema.optional(),
+    locale: z.string().trim().min(2).default("en-US"),
+    focus: z.enum(["balanced", "protein", "calories", "hydration", "training"]).default("balanced"),
+    meal_type: z.enum(["breakfast", "lunch", "dinner", "snack", "other"]).optional(),
+    wearable_context: z.record(z.string(), z.unknown()).optional(),
+    workout_context: z.string().trim().min(1).optional(),
+    recent_intake_id: z.string().trim().min(1).optional(),
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
+export const RememberMealInputSchema = z
+  .object({
+    label: z.string().trim().min(1).describe("Personal shortcut, for example 'meu cafe normal'."),
+    aliases: z.array(z.string().trim().min(1)).max(20).default([]),
+    meal_text: z.string().trim().min(1).describe("Canonical meal text that Nourish should estimate when this shortcut is used."),
+    default_meal_type: z.enum(["breakfast", "lunch", "dinner", "snack", "other"]).optional(),
+    notes: z.string().trim().optional(),
+    tags: z.array(z.string().trim().min(1)).default([]),
+    explicit_user_intent: ExplicitUserIntentSchema,
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
+export const ForgetMemoryInputSchema = z
+  .object({
+    id_or_label: z.string().trim().min(1),
+    explicit_user_intent: ExplicitUserIntentSchema,
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();

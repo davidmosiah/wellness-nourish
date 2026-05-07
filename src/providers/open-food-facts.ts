@@ -28,6 +28,14 @@ type OpenFoodFactsResponse = {
 };
 
 type OpenFoodFactsLookupResult = { food: FoodItem; provider: "open_food_facts" };
+type OpenFoodFactsSearchResult = {
+  foods: FoodItem[];
+  provider: "open_food_facts";
+  warnings: string[];
+};
+type OpenFoodFactsSearchResponse = {
+  products?: OpenFoodFactsProduct[];
+};
 
 const OFF_LICENSE = {
   name: "Open Food Facts ODbL",
@@ -96,6 +104,37 @@ async function fetchBarcode(barcode: string): Promise<OpenFoodFactsResponse> {
   }
 
   return (await response.json()) as OpenFoodFactsResponse;
+}
+
+async function fetchSearch(query: string, limit: number): Promise<OpenFoodFactsSearchResponse> {
+  const url = new URL(`${OFF_BASE_URL}/cgi/search.pl`);
+  url.searchParams.set("search_terms", query);
+  url.searchParams.set("search_simple", "1");
+  url.searchParams.set("action", "process");
+  url.searchParams.set("json", "1");
+  url.searchParams.set("page_size", String(limit));
+  url.searchParams.set(
+    "fields",
+    "code,product_name,brands,url,quantity,serving_size,serving_quantity,nutriments",
+  );
+
+  const response = await fetch(url, {
+    headers: {
+      "user-agent": USER_AGENT,
+      accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    if (response.status === 429) {
+      throw new Error(
+        "Open Food Facts is rate limiting requests right now. Try again in a few minutes, or provide the product name, label photo, or visible nutrition facts manually.",
+      );
+    }
+    throw new Error(`Open Food Facts search failed: ${response.status} ${response.statusText}`);
+  }
+
+  return (await response.json()) as OpenFoodFactsSearchResponse;
 }
 
 function mapNutrients(nutriments: OpenFoodFactsProduct["nutriments"] = {}): NutrientMap {
@@ -216,6 +255,49 @@ export async function lookupOpenFoodFactsBarcode(
   setCachedLookup(barcode, result, config.cache_ttl_seconds);
 
   return cloneLookupResult(result);
+}
+
+export async function searchOpenFoodFactsByName(
+  query: string,
+  limit = 10,
+): Promise<OpenFoodFactsSearchResult> {
+  const config = getConfig();
+
+  if (!config.off_enabled) {
+    throw new Error("Open Food Facts provider is disabled");
+  }
+
+  const response = config.fixture_mode
+    ? await fixtureSearch(query)
+    : await fetchSearch(query, Math.min(limit, config.max_results));
+  const foods = (response.products ?? [])
+    .flatMap((product) => {
+      if (product.product_name === undefined || product.code === undefined) {
+        return [];
+      }
+
+      return [mapProduct({ product, code: product.code }, product.code)];
+    })
+    .slice(0, limit);
+
+  return {
+    provider: "open_food_facts",
+    foods,
+    warnings: foods.length === 0 ? ["No Open Food Facts products matched this name search."] : [],
+  };
+}
+
+async function fixtureSearch(query: string): Promise<OpenFoodFactsSearchResponse> {
+  const fixture = await readFixture("737628064502");
+  const normalizedQuery = query.toLowerCase();
+  const productName = fixture.product?.product_name?.toLowerCase() ?? "";
+  const brands = fixture.product?.brands?.toLowerCase() ?? "";
+
+  if (productName.includes(normalizedQuery) || brands.includes(normalizedQuery) || normalizedQuery.includes("peanut")) {
+    return { products: fixture.product === undefined ? [] : [fixture.product] };
+  }
+
+  return { products: [] };
 }
 
 function getCachedLookup(barcode: string): OpenFoodFactsLookupResult | undefined {

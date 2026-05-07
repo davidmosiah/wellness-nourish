@@ -30,7 +30,10 @@ Telegram flow:
 
 1. Preview with `nourish_estimate_meal`.
 2. For barcode photos, use `nourish_lookup_barcode_image` when Hermes has an image path, base64 image, or data URI.
-3. For meal photos, use `nourish_estimate_meal_photo` from the visual observation and ask for portion confirmation.
-4. Ask for confirmation unless the user clearly asked to save/register/log and the estimate is already confirmed.
-5. Save with `nourish_log_intake` and `explicit_user_intent: true`.
-6. Summarize with `nourish_daily_summary` or `nourish_weekly_summary`.
+3. For mixed food images, use `nourish_analyze_food_image` with barcode observations, label OCR, detected items, or image description.
+4. For meal photos, use `nourish_estimate_meal_photo` from the visual observation and ask for portion confirmation.
+5. For "what should I eat now?" questions, use `nourish_daily_coach` or `nourish_suggest_next_meal`, passing wearable context if another connector supplied it.
+6. Remember recurring meals with `nourish_remember_meal` only after explicit user intent.
+7. Ask for confirmation unless the user clearly asked to save/register/log and the estimate is already confirmed.
+8. Save with `nourish_log_intake` and `explicit_user_intent: true`.
+9. Summarize with `nourish_daily_summary` or `nourish_weekly_summary`.
