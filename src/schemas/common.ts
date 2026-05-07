@@ -359,7 +359,7 @@ export const CoachInputSchema = z
   .object({
     date: DateSchema.optional(),
     locale: z.string().trim().min(2).default("en-US"),
-    focus: z.enum(["balanced", "protein", "calories", "hydration", "training"]).default("balanced"),
+    focus: z.enum(["balanced", "protein", "calories", "hydration", "training"]).optional(),
     meal_type: z.enum(["breakfast", "lunch", "dinner", "snack", "other"]).optional(),
     wearable_context: z.record(z.string(), z.unknown()).optional(),
     workout_context: z.string().trim().min(1).optional(),
