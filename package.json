@@ -1,6 +1,6 @@
 {
   "name": "wellness-nourish",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Standalone MCP server for nutrition search, intake, and meal summaries.",
   "license": "MIT",
   "type": "module",
