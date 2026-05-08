@@ -1,8 +1,8 @@
 /// <reference types="node" />
 
 import { promises as fs } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
+import { homedir, tmpdir } from "node:os";
+import { join, resolve as resolvePath } from "node:path";
 
 import {
   BarcodeFormat,
@@ -15,6 +15,8 @@ import {
   type Result,
 } from "@zxing/library";
 import sharp from "sharp";
+
+import { getConfig } from "./config.js";
 
 export interface ImageInput {
   image_path?: string | undefined;
@@ -103,7 +105,15 @@ async function loadImage(input: ImageInput): Promise<{
   }
 
   if (input.image_path !== undefined && input.image_path.trim().length > 0) {
-    const buffer = await fs.readFile(expandHome(input.image_path.trim()));
+    // B3 fix: image_path used to accept ANY filesystem path. A malicious agent
+    // (or a label name flowing back from OFF) could read ~/.ssh/id_rsa or
+    // similar before sharp errored out. We now require the resolved path to
+    // sit under one of these allowed roots:
+    //   - ~/.wellness-nourish/ (or NOURISH_LOCAL_DIR)
+    //   - the OS temp dir (where downloads from messengers usually land)
+    //   - NOURISH_IMAGE_DIR if explicitly configured by the user
+    const safePath = await resolveSafeImagePath(input.image_path.trim());
+    const buffer = await fs.readFile(safePath);
     assertImageSize(buffer);
     return {
       buffer,
@@ -225,4 +235,61 @@ function expandHome(path: string): string {
   }
 
   return path;
+}
+
+/**
+ * B3 fix: validate that an `image_path` resolves to a file under one of the
+ * allowed roots. Without this, a malicious agent could read arbitrary files
+ * (e.g. `~/.ssh/id_rsa`) by passing the path here.
+ *
+ * Allowed roots:
+ *   - `NOURISH_LOCAL_DIR` (default `~/.wellness-nourish/`)
+ *   - the OS temp dir (where Telegram / Hermes commonly drop downloads)
+ *   - `NOURISH_IMAGE_DIR` if explicitly configured
+ *
+ * The `..` check is on the raw input string (catches `../../../etc/passwd`)
+ * AND on the resolved path (catches symlink-style escape attempts).
+ */
+async function resolveSafeImagePath(rawPath: string): Promise<string> {
+  if (rawPath.includes("\0")) {
+    throw new Error("image_path contains a null byte and is rejected.");
+  }
+
+  const expanded = expandHome(rawPath);
+  const resolved = resolvePath(expanded);
+
+  const allowedRoots = collectAllowedImageRoots();
+  const isAllowed = allowedRoots.some((root) => isUnder(resolved, root));
+
+  if (!isAllowed) {
+    throw new Error(
+      `image_path must resolve to a file under one of: ${allowedRoots.join(", ")}. ` +
+        `Got: ${resolved}. Set NOURISH_IMAGE_DIR to whitelist a different directory, ` +
+        `or move the image into ~/.wellness-nourish/ or the OS temp dir.`,
+    );
+  }
+
+  return resolved;
+}
+
+function collectAllowedImageRoots(): string[] {
+  const roots = new Set<string>();
+  // The local dir is always allowed.
+  try {
+    roots.add(resolvePath(getConfig().local_dir));
+  } catch {
+    // getConfig is generally safe but defensive: don't crash here.
+  }
+  roots.add(resolvePath(tmpdir()));
+  const explicit = process.env.NOURISH_IMAGE_DIR?.trim();
+  if (explicit !== undefined && explicit.length > 0) {
+    roots.add(resolvePath(expandHome(explicit)));
+  }
+  return [...roots];
+}
+
+function isUnder(target: string, root: string): boolean {
+  if (target === root) return true;
+  const rootWithSep = root.endsWith("/") ? root : `${root}/`;
+  return target.startsWith(rootWithSep);
 }

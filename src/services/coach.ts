@@ -160,26 +160,73 @@ function sourceFromWearable(context: Record<string, unknown> | undefined): strin
   return typeof source === "string" && source.trim().length > 0 ? source : "wearable";
 }
 
+// C2 fix: previously these strings were hardcoded in pt-BR, regardless of
+// the caller-supplied `locale`. An en-US Telegram user got Portuguese meal
+// suggestions back AND the text was fed into estimateMeal() which only
+// matches pt-BR aliases — so the suggestion was unactionable.
+//
+// Locale-keyed table covers the two production locales today (pt-BR + en-US).
+// Add more keys as needed; falls back to en-US for unknown locales.
+const SUGGESTION_TABLE: Record<string, Record<SuggestionKey, string>> = {
+  "pt-BR": {
+    pre_workout_nutrition: "banana, tapioca e cafezinho",
+    evening_low_protein: "iogurte natural, banana e 2 ovos cozidos",
+    evening_default: "cafezinho e água",
+    low_protein: "150g peito de frango grelhado, arroz branco e salada simples",
+    low_calories: "tapioca com queijo minas e banana",
+    default: "arroz branco, feijão carioca, frango grelhado e salada simples",
+  },
+  "en-US": {
+    pre_workout_nutrition: "banana, oats and black coffee",
+    evening_low_protein: "Greek yogurt, banana and 2 boiled eggs",
+    evening_default: "black coffee and water",
+    low_protein: "150g grilled chicken breast, white rice and a simple salad",
+    low_calories: "oatmeal with peanut butter and banana",
+    default: "white rice, black beans, grilled chicken and a simple salad",
+  },
+};
+
+type SuggestionKey =
+  | "pre_workout_nutrition"
+  | "evening_low_protein"
+  | "evening_default"
+  | "low_protein"
+  | "low_calories"
+  | "default";
+
+function suggestionFor(locale: string, key: SuggestionKey): string {
+  const normalized = normalizeLocale(locale);
+  const table = SUGGESTION_TABLE[normalized] ?? SUGGESTION_TABLE["en-US"]!;
+  return table[key];
+}
+
+function normalizeLocale(locale: string): string {
+  const trimmed = locale.trim();
+  // Accept "pt-BR", "pt", "pt_BR", "pt-br" and friends.
+  if (/^pt(-|_)?(br)?$/i.test(trimmed)) return "pt-BR";
+  if (/^en(-|_)?(us)?$/i.test(trimmed)) return "en-US";
+  return trimmed;
+}
+
 function chooseSuggestionText(input: CoachInput, summary: DailySummary): string {
   if (input.mode === "pre_workout_nutrition") {
-    return "banana, tapioca e cafezinho";
+    return suggestionFor(input.locale, "pre_workout_nutrition");
   }
 
   if (input.mode === "evening_checkin") {
-    return (summary.goal_progress.protein_g?.percent ?? 100) < 85
-      ? "iogurte natural, banana e 2 ovos cozidos"
-      : "cafezinho e água";
+    const lowProtein = (summary.goal_progress.protein_g?.percent ?? 100) < 85;
+    return suggestionFor(input.locale, lowProtein ? "evening_low_protein" : "evening_default");
   }
 
   if ((summary.goal_progress.protein_g?.percent ?? 100) < 70 || input.focus === "protein") {
-    return "150g peito de frango grelhado, arroz branco e salada simples";
+    return suggestionFor(input.locale, "low_protein");
   }
 
   if ((summary.goal_progress.calories_kcal?.percent ?? 100) < 60 || input.focus === "calories") {
-    return "tapioca com queijo minas e banana";
+    return suggestionFor(input.locale, "low_calories");
   }
 
-  return "arroz branco, feijão carioca, frango grelhado e salada simples";
+  return suggestionFor(input.locale, "default");
 }
 
 function suggestionReason(mode: CoachMode, summary: DailySummary): string {

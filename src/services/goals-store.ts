@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
 
 import { getConfig } from "./config.js";
+import { withLock } from "./locked-store.js";
 import type { NourishGoals, NutrientMap } from "../types.js";
 
 export interface UpdateGoalsInput {
@@ -35,22 +36,27 @@ export async function getGoals(path = goalsPath()): Promise<NourishGoals> {
 
 export async function updateGoals(input: UpdateGoalsInput): Promise<NourishGoals> {
   const path = goalsPath();
-  const current = await getGoals(path);
-  const next: NourishGoals = {
-    daily: {
-      ...current.daily,
-      ...cleanNutrients(input.daily),
-    },
-    updated_at: new Date().toISOString(),
-  };
+  // A2 fix: serialize concurrent updateGoals calls. Without this, two parallel
+  // calls both read the same baseline and the second write clobbers the
+  // first (lost-update bug).
+  return withLock(`goals:${path}`, async () => {
+    const current = await getGoals(path);
+    const next: NourishGoals = {
+      daily: {
+        ...current.daily,
+        ...cleanNutrients(input.daily),
+      },
+      updated_at: new Date().toISOString(),
+    };
 
-  const hydration = input.hydration_ml ?? current.hydration_ml;
-  if (typeof hydration === "number" && Number.isFinite(hydration) && hydration > 0) {
-    next.hydration_ml = hydration;
-  }
+    const hydration = input.hydration_ml ?? current.hydration_ml;
+    if (typeof hydration === "number" && Number.isFinite(hydration) && hydration > 0) {
+      next.hydration_ml = hydration;
+    }
 
-  await writeGoalsAtomically(next, path);
-  return next;
+    await writeGoalsAtomically(next, path);
+    return next;
+  });
 }
 
 async function writeGoalsAtomically(goals: NourishGoals, path: string): Promise<void> {

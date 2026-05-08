@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
 
 import { getConfig } from "./config.js";
+import { withLock } from "./locked-store.js";
 import type { MealType } from "../types.js";
 
 export interface RememberedMeal {
@@ -73,68 +74,75 @@ export async function getPersonalNutritionMemory(): Promise<PersonalNutritionMem
 }
 
 export async function rememberMeal(input: RememberMealInput): Promise<RememberedMeal> {
-  const memory = await getPersonalNutritionMemory();
-  const now = new Date().toISOString();
-  const key = normalizeKey(input.label);
-  const aliases = uniqueAliases([...(input.aliases ?? []), input.label]);
-  const existingIndex = memory.remembered_meals.findIndex((meal) =>
-    uniqueAliases([meal.label, ...meal.aliases]).some((alias) => normalizeKey(alias) === key),
-  );
-  const existing = existingIndex === -1 ? undefined : memory.remembered_meals[existingIndex];
-  const meal: RememberedMeal = {
-    id: existing?.id ?? `memory_${randomUUID()}`,
-    label: input.label,
-    aliases,
-    meal_text: input.meal_text,
-    tags: input.tags ?? existing?.tags ?? [],
-    created_at: existing?.created_at ?? now,
-    updated_at: now,
-  };
+  // A2 fix: serialize concurrent rememberMeal/forgetRememberedMeal calls.
+  // Without this, two parallel `nourish_remember_meal` calls would both read
+  // the same baseline and the second write would clobber the first.
+  return withLock(`memory:${memoryPath()}`, async () => {
+    const memory = await getPersonalNutritionMemory();
+    const now = new Date().toISOString();
+    const key = normalizeKey(input.label);
+    const aliases = uniqueAliases([...(input.aliases ?? []), input.label]);
+    const existingIndex = memory.remembered_meals.findIndex((meal) =>
+      uniqueAliases([meal.label, ...meal.aliases]).some((alias) => normalizeKey(alias) === key),
+    );
+    const existing = existingIndex === -1 ? undefined : memory.remembered_meals[existingIndex];
+    const meal: RememberedMeal = {
+      id: existing?.id ?? `memory_${randomUUID()}`,
+      label: input.label,
+      aliases,
+      meal_text: input.meal_text,
+      tags: input.tags ?? existing?.tags ?? [],
+      created_at: existing?.created_at ?? now,
+      updated_at: now,
+    };
 
-  if (input.default_meal_type !== undefined) {
-    meal.default_meal_type = input.default_meal_type;
-  } else if (existing?.default_meal_type !== undefined) {
-    meal.default_meal_type = existing.default_meal_type;
-  }
-  if (input.notes !== undefined) {
-    meal.notes = input.notes;
-  } else if (existing?.notes !== undefined) {
-    meal.notes = existing.notes;
-  }
+    if (input.default_meal_type !== undefined) {
+      meal.default_meal_type = input.default_meal_type;
+    } else if (existing?.default_meal_type !== undefined) {
+      meal.default_meal_type = existing.default_meal_type;
+    }
+    if (input.notes !== undefined) {
+      meal.notes = input.notes;
+    } else if (existing?.notes !== undefined) {
+      meal.notes = existing.notes;
+    }
 
-  if (existingIndex === -1) {
-    memory.remembered_meals.push(meal);
-  } else {
-    memory.remembered_meals[existingIndex] = meal;
-  }
-  memory.updated_at = now;
-  await writeMemory(memory);
+    if (existingIndex === -1) {
+      memory.remembered_meals.push(meal);
+    } else {
+      memory.remembered_meals[existingIndex] = meal;
+    }
+    memory.updated_at = now;
+    await writeMemory(memory);
 
-  return meal;
+    return meal;
+  });
 }
 
 export async function forgetRememberedMeal(idOrLabel: string): Promise<{ deleted: boolean; id_or_label: string }> {
-  const memory = await getPersonalNutritionMemory();
-  const normalized = normalizeKey(idOrLabel);
-  const nextMeals = memory.remembered_meals.filter((meal) => {
-    if (meal.id === idOrLabel) {
-      return false;
+  return withLock(`memory:${memoryPath()}`, async () => {
+    const memory = await getPersonalNutritionMemory();
+    const normalized = normalizeKey(idOrLabel);
+    const nextMeals = memory.remembered_meals.filter((meal) => {
+      if (meal.id === idOrLabel) {
+        return false;
+      }
+
+      return !uniqueAliases([meal.label, ...meal.aliases]).some((alias) => normalizeKey(alias) === normalized);
+    });
+    const deleted = nextMeals.length !== memory.remembered_meals.length;
+
+    if (deleted) {
+      memory.remembered_meals = nextMeals;
+      memory.updated_at = new Date().toISOString();
+      await writeMemory(memory);
     }
 
-    return !uniqueAliases([meal.label, ...meal.aliases]).some((alias) => normalizeKey(alias) === normalized);
+    return {
+      deleted,
+      id_or_label: idOrLabel,
+    };
   });
-  const deleted = nextMeals.length !== memory.remembered_meals.length;
-
-  if (deleted) {
-    memory.remembered_meals = nextMeals;
-    memory.updated_at = new Date().toISOString();
-    await writeMemory(memory);
-  }
-
-  return {
-    deleted,
-    id_or_label: idOrLabel,
-  };
 }
 
 export async function expandMealTextWithMemory(text: string): Promise<{
