@@ -9,8 +9,11 @@ import {
   BarcodeLookupInputSchema,
   CoachInputSchema,
   ClearDayInputSchema,
+  BulkLogIntakeInputSchema,
   CarbonSummaryInputSchema,
   ClearHydrationDayInputSchema,
+  CompareDaysInputSchema,
+  DailySummaryInputSchema,
   HydrationDeleteInputSchema,
   UndoLastInputSchema,
   ExportInputSchema,
@@ -527,17 +530,67 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_list_intake",
     {
       title: "List intake",
-      description: "List local intake entries, optionally filtered by date.",
+      description: "List local intake entries with optional filters: date OR since/until range, meal_type, tag, source_trace, min_confidence, limit. All filters AND together. Returns most-recent-first.",
       inputSchema: IntakeListInputSchema.shape,
       annotations: readOnlyAnnotation(),
     },
     async (input) => {
       try {
         const params = IntakeListInputSchema.parse(input);
-        const entries = await listIntakeEntries(params.date === undefined ? {} : { date: params.date });
+
+        // Single-day filter wins (mutually exclusive with since/until per the schema docs).
+        let entries = params.date !== undefined
+          ? await listIntakeEntries({ date: params.date })
+          : await listIntakeEntries();
+
+        if (params.since !== undefined) {
+          entries = entries.filter((entry) => entry.date >= params.since!);
+        }
+        if (params.until !== undefined) {
+          entries = entries.filter((entry) => entry.date <= params.until!);
+        }
+        if (params.meal_type !== undefined) {
+          entries = entries.filter((entry) => entry.meal_type === params.meal_type);
+        }
+        if (params.tag !== undefined) {
+          entries = entries.filter((entry) => entry.tags.includes(params.tag!));
+        }
+        if (params.source_trace !== undefined) {
+          entries = entries.filter((entry) => entry.source_trace === params.source_trace);
+        }
+        if (params.min_confidence !== undefined) {
+          entries = entries.filter((entry) => entry.confidence >= params.min_confidence!);
+        }
+
+        // Most-recent-first ordering.
+        entries = [...entries].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+        if (params.limit !== undefined) {
+          entries = entries.slice(0, params.limit);
+        }
+
         const markdown = compactIntakeTable(entries);
 
-        return toolResponse(makeResponse({ entries }, params.response_format, markdown));
+        return toolResponse(
+          makeResponse(
+            {
+              entries,
+              applied_filters: {
+                date: params.date,
+                since: params.since,
+                until: params.until,
+                meal_type: params.meal_type,
+                tag: params.tag,
+                source_trace: params.source_trace,
+                min_confidence: params.min_confidence,
+                limit: params.limit,
+              },
+              count: entries.length,
+            },
+            params.response_format,
+            markdown,
+          ),
+        );
       } catch (error) {
         return toolError(error);
       }
@@ -980,16 +1033,147 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_daily_summary",
     {
       title: "Daily summary",
-      description: "Summarize local intake totals, confidence, and source coverage for a date.",
-      inputSchema: SummaryInputSchema.shape,
+      description: "Summarize local intake totals, confidence, and source coverage for a date. Pass `compare_to: 'yesterday'` or `compare_to: '7d_avg'` to add a `comparison` block with per-nutrient deltas — useful for trend coaching ('your protein is low again — third day in a row').",
+      inputSchema: DailySummaryInputSchema.shape,
       annotations: readOnlyAnnotation(),
     },
     async (input) => {
       try {
-        const params = SummaryInputSchema.parse(input);
+        const params = DailySummaryInputSchema.parse(input);
         const summary = await buildDailySummary(params.date);
 
-        return toolResponse(makeResponse(summary, params.response_format));
+        let comparison: Record<string, unknown> | undefined;
+        if (params.compare_to === "yesterday") {
+          const yesterdayDate = addDaysToDate(summary.date, -1);
+          const baseline = await buildDailySummary(yesterdayDate);
+          comparison = {
+            kind: "yesterday",
+            baseline_date: yesterdayDate,
+            deltas: nutrientDeltas(baseline.total_nutrients, summary.total_nutrients),
+            entry_count_delta: summary.entry_count - baseline.entry_count,
+          };
+        } else if (params.compare_to === "7d_avg") {
+          const days = await Promise.all(
+            [1, 2, 3, 4, 5, 6, 7].map((offset) => buildDailySummary(addDaysToDate(summary.date, -offset))),
+          );
+          const avgNutrients = averageNutrients(days.map((day) => day.total_nutrients));
+          comparison = {
+            kind: "7d_avg",
+            baseline_window: { from: addDaysToDate(summary.date, -7), to: addDaysToDate(summary.date, -1) },
+            deltas: nutrientDeltas(avgNutrients, summary.total_nutrients),
+            avg_baseline: avgNutrients,
+          };
+        }
+
+        return toolResponse(
+          makeResponse(
+            comparison === undefined ? summary : { ...summary, comparison },
+            params.response_format,
+          ),
+        );
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_compare_days",
+    {
+      title: "Compare two days",
+      description:
+        "Compute a per-nutrient diff between two days' summaries. Returns deltas (date_b - date_a) for calories, protein, carbs, fat, fiber, sugar, sodium plus what changed by meal type. Useful for 'how was today vs yesterday?' coaching.",
+      inputSchema: CompareDaysInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = CompareDaysInputSchema.parse(input);
+        const [summaryA, summaryB] = await Promise.all([
+          buildDailySummary(params.date_a),
+          buildDailySummary(params.date_b),
+        ]);
+
+        return toolResponse(
+          makeResponse(
+            {
+              date_a: params.date_a,
+              date_b: params.date_b,
+              totals_a: summaryA.total_nutrients,
+              totals_b: summaryB.total_nutrients,
+              deltas: nutrientDeltas(summaryA.total_nutrients, summaryB.total_nutrients),
+              entry_count_delta: summaryB.entry_count - summaryA.entry_count,
+              hydration_delta_ml: summaryB.hydration.total_ml - summaryA.hydration.total_ml,
+              by_meal_changed: meaningfulMealDifferences(summaryA.by_meal, summaryB.by_meal),
+            },
+            params.response_format,
+          ),
+        );
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_bulk_log_intake",
+    {
+      title: "Bulk log intake",
+      description:
+        "Log multiple intake entries in a single call. Each item is processed through the same text-estimator pipeline as `nourish_log_intake`, but the entire batch shares one explicit_user_intent flag — perfect for Telegram users who say 'log everything I ate today: breakfast was X, lunch was Y, dinner was Z'. Returns per-item success/failure so a partial failure doesn't lose the rest.",
+      inputSchema: BulkLogIntakeInputSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async (input) => {
+      try {
+        const params = BulkLogIntakeInputSchema.parse(input);
+        if (params.explicit_user_intent !== true) {
+          return explicitIntentRequired(
+            "explicit_user_intent must be true to bulk-log intake.",
+            params.response_format,
+          );
+        }
+
+        const results: Array<{ index: number; ok: boolean; entry?: unknown; error?: string }> = [];
+        for (const [index, item] of params.items.entries()) {
+          try {
+            const itemInput = IntakeLogInputSchema.parse({
+              text: item.text,
+              meal_type: item.meal_type ?? "snack",
+              notes: item.notes,
+              tags: item.tags,
+              explicit_user_intent: true,
+            });
+            const built = await buildIntakeEntryInput(itemInput);
+            const entry = await addIntakeEntry(built);
+            results.push({ index, ok: true, entry });
+          } catch (err) {
+            results.push({
+              index,
+              ok: false,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          }
+        }
+
+        const ok_count = results.filter((r) => r.ok).length;
+        return toolResponse(
+          makeResponse(
+            {
+              ok: ok_count === params.items.length,
+              total: params.items.length,
+              ok_count,
+              failed_count: params.items.length - ok_count,
+              results,
+            },
+            params.response_format,
+          ),
+        );
       } catch (error) {
         return toolError(error);
       }
@@ -1629,6 +1813,90 @@ function stableEstimateId(text: string): string {
 import { dateToNoonTimestamp as dateToNoonTimestampLocal } from "../services/local-date.js";
 function dateToNoonTimestamp(date: string | undefined): string | undefined {
   return dateToNoonTimestampLocal(date);
+}
+
+// Compare/trend helpers used by daily_summary (compare_to) and compare_days.
+function addDaysToDate(date: string, days: number): string {
+  const parsed = new Date(`${date}T00:00:00.000Z`);
+  parsed.setUTCDate(parsed.getUTCDate() + days);
+  return parsed.toISOString().slice(0, 10);
+}
+
+const TRACKED_NUTRIENT_KEYS: Array<keyof NutrientMap> = [
+  "calories_kcal",
+  "protein_g",
+  "carbohydrates_g",
+  "fat_g",
+  "fiber_g",
+  "sugar_g",
+  "saturated_fat_g",
+  "sodium_mg",
+];
+
+function nutrientDeltas(
+  baseline: NutrientMap,
+  current: NutrientMap,
+): Record<string, { baseline: number; current: number; delta: number; percent_change?: number }> {
+  const deltas: Record<string, { baseline: number; current: number; delta: number; percent_change?: number }> = {};
+  for (const key of TRACKED_NUTRIENT_KEYS) {
+    const a = (baseline[key] as number | undefined) ?? 0;
+    const b = (current[key] as number | undefined) ?? 0;
+    if (a === 0 && b === 0) continue;
+    const entry: { baseline: number; current: number; delta: number; percent_change?: number } = {
+      baseline: a,
+      current: b,
+      delta: Math.round((b - a) * 100) / 100,
+    };
+    if (a !== 0) {
+      entry.percent_change = Math.round(((b - a) / a) * 1000) / 10;
+    }
+    deltas[key] = entry;
+  }
+  return deltas;
+}
+
+function averageNutrients(samples: NutrientMap[]): NutrientMap {
+  if (samples.length === 0) return {};
+  const sums: Record<string, number> = {};
+  const counts: Record<string, number> = {};
+  for (const sample of samples) {
+    for (const key of TRACKED_NUTRIENT_KEYS) {
+      const v = sample[key] as number | undefined;
+      if (v !== undefined && Number.isFinite(v)) {
+        sums[key] = (sums[key] ?? 0) + v;
+        counts[key] = (counts[key] ?? 0) + 1;
+      }
+    }
+  }
+  const avg: NutrientMap = {};
+  for (const key of TRACKED_NUTRIENT_KEYS) {
+    if (counts[key] !== undefined && counts[key]! > 0) {
+      avg[key] = Math.round((sums[key]! / counts[key]!) * 100) / 100;
+    }
+  }
+  return avg;
+}
+
+function meaningfulMealDifferences(
+  byMealA: Record<string, NutrientMap>,
+  byMealB: Record<string, NutrientMap>,
+): Record<string, { calories_kcal_delta: number; protein_g_delta: number }> {
+  const out: Record<string, { calories_kcal_delta: number; protein_g_delta: number }> = {};
+  const mealTypes = new Set([...Object.keys(byMealA), ...Object.keys(byMealB)]);
+  for (const meal of mealTypes) {
+    const a = byMealA[meal] ?? {};
+    const b = byMealB[meal] ?? {};
+    const calorieDelta = ((b.calories_kcal as number | undefined) ?? 0) - ((a.calories_kcal as number | undefined) ?? 0);
+    const proteinDelta = ((b.protein_g as number | undefined) ?? 0) - ((a.protein_g as number | undefined) ?? 0);
+    // Only include meals with meaningful change (>20 kcal or >2g protein).
+    if (Math.abs(calorieDelta) > 20 || Math.abs(proteinDelta) > 2) {
+      out[meal] = {
+        calories_kcal_delta: Math.round(calorieDelta * 100) / 100,
+        protein_g_delta: Math.round(proteinDelta * 100) / 100,
+      };
+    }
+  }
+  return out;
 }
 
 function toolError(error: unknown, responseFormat: ResponseFormat = "json"): CallToolResult {

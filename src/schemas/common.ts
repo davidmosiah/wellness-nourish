@@ -46,7 +46,31 @@ export const ResponseOnlyInputSchema = z
 
 export const IntakeListInputSchema = z
   .object({
-    date: DateSchema.optional(),
+    date: DateSchema.optional().describe("Single-day filter. Mutually exclusive with since/until."),
+    since: DateSchema.optional().describe("Start of date range (inclusive). Use with `until` for multi-day queries."),
+    until: DateSchema.optional().describe("End of date range (inclusive)."),
+    meal_type: z
+      .enum(["breakfast", "lunch", "dinner", "snack", "other"])
+      .optional()
+      .describe("Filter to a single meal type."),
+    tag: z.string().min(1).optional().describe("Filter to entries that have this tag (case-sensitive)."),
+    source_trace: z
+      .enum(["exact_food", "barcode", "estimate", "manual", "agent_inference"])
+      .optional()
+      .describe("Filter by how the entry was created."),
+    min_confidence: z
+      .number()
+      .min(0)
+      .max(1)
+      .optional()
+      .describe("Only return entries whose confidence is >= this value (e.g. 0.7)."),
+    limit: z
+      .number()
+      .int()
+      .positive()
+      .max(500)
+      .optional()
+      .describe("Max entries to return (most recent first). Defaults to all matching."),
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
@@ -88,6 +112,48 @@ export const UndoLastInputSchema = z
         "Which most-recent entry to undo: 'intake' = last logged meal, 'hydration' = last logged water, 'any' = whichever was most recent across both stores. Defaults to 'any'.",
       ),
     explicit_user_intent: ExplicitUserIntentSchema,
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
+export const BulkLogIntakeInputSchema = z
+  .object({
+    items: z
+      .array(
+        z.object({
+          text: z.string().min(1).describe("Meal text (e.g. '2 ovos e 1 banana')."),
+          meal_type: z.enum(["breakfast", "lunch", "dinner", "snack", "other"]).optional(),
+          notes: z.string().trim().optional(),
+          tags: z.array(z.string()).optional(),
+        }),
+      )
+      .min(1)
+      .max(20)
+      .describe(
+        "Array of meals to log atomically (1-20). Each item gets its own intake entry. The `explicit_user_intent` flag covers the entire batch.",
+      ),
+    explicit_user_intent: ExplicitUserIntentSchema,
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
+export const CompareDaysInputSchema = z
+  .object({
+    date_a: DateSchema.describe("First date (the 'baseline' to compare against)."),
+    date_b: DateSchema.describe("Second date (the 'newer' / comparison date)."),
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
+export const DailySummaryInputSchema = z
+  .object({
+    date: DateSchema.optional().describe("Date to summarize (defaults to today in active timezone)."),
+    compare_to: z
+      .enum(["yesterday", "7d_avg", "none"])
+      .default("none")
+      .describe(
+        "Optional baseline to add a `comparison` block: 'yesterday' = previous day, '7d_avg' = average of the prior 7 days. 'none' (default) skips the comparison.",
+      ),
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
