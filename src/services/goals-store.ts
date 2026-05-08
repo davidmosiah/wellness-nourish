@@ -1,11 +1,10 @@
 /// <reference types="node" />
 
 import { promises as fs } from "node:fs";
-import { randomUUID } from "node:crypto";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 import { getConfig } from "./config.js";
-import { withLock } from "./locked-store.js";
+import { withLock, writeAtomically } from "./locked-store.js";
 import type { NourishGoals, NutrientMap } from "../types.js";
 
 export interface UpdateGoalsInput {
@@ -15,10 +14,6 @@ export interface UpdateGoalsInput {
 
 function goalsPath(): string {
   return join(getConfig().local_dir, "goals.json");
-}
-
-async function ensureStoreDir(path: string): Promise<void> {
-  await fs.mkdir(dirname(path), { recursive: true });
 }
 
 export async function getGoals(path = goalsPath()): Promise<NourishGoals> {
@@ -60,10 +55,7 @@ export async function updateGoals(input: UpdateGoalsInput): Promise<NourishGoals
 }
 
 async function writeGoalsAtomically(goals: NourishGoals, path: string): Promise<void> {
-  await ensureStoreDir(path);
-  const tempPath = `${path}.${randomUUID()}.tmp`;
-  await fs.writeFile(tempPath, `${JSON.stringify(goals, null, 2)}\n`, "utf8");
-  await fs.rename(tempPath, path);
+  await writeAtomically(path, `${JSON.stringify(goals, null, 2)}\n`);
 }
 
 function normalizeGoals(value: unknown): NourishGoals {

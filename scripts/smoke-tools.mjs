@@ -817,6 +817,40 @@ async function assertTacoProviderReturnsBrazilianFoods() {
     assert.ok(top.carbon.kg_co2e_per_kg > 0);
     assert.ok(top.carbon.source.length > 0);
   }
+
+  const fetched = await client.callTool({
+    name: "nourish_get_food",
+    arguments: { source: "taco", source_id: top.source_id },
+  });
+  const fetchedPayload = JSON.parse(textFromToolResult(fetched));
+  assert.notEqual(fetched.isError, true, "nourish_get_food must support TACO foods");
+  assert.equal(fetchedPayload.provider, "taco");
+  assert.equal(fetchedPayload.food.source, "taco");
+  assert.equal(fetchedPayload.food.source_id, top.source_id);
+
+  const logged = await client.callTool({
+    name: "nourish_log_intake",
+    arguments: {
+      explicit_user_intent: true,
+      food_ref: { source: "taco", source_id: top.source_id, name: top.name },
+      grams_estimate: 100,
+      meal_type: "lunch",
+      tags: ["qa-taco-food-ref"],
+    },
+  });
+  const loggedPayload = JSON.parse(textFromToolResult(logged));
+  assert.notEqual(logged.isError, true, "TACO search -> food_ref -> log must resolve nutrients");
+  assert.equal(loggedPayload.food_ref.source, "taco");
+  assert.equal(loggedPayload.source_trace, "exact_food");
+  assert.ok(
+    (loggedPayload.nutrients.calories_kcal ?? 0) > 0,
+    "TACO food_ref logs must persist provider nutrients",
+  );
+
+  await client.callTool({
+    name: "nourish_delete_intake",
+    arguments: { id: loggedPayload.id },
+  });
 }
 
 // --- Sprint 4: nourish_carbon_summary computes meal carbon + swap suggestions ---
@@ -878,6 +912,73 @@ async function assertCarbonSummaryWorks() {
   assert.notEqual(mixedMeal.isError, true);
   assert.equal(mixedPayload.unmatched_count, 1);
   assert.match(mixedPayload.warnings.join(" "), /unmatched|no carbon/i);
+
+  // With no date/items, the tool contract says it summarizes today's intake,
+  // not the entire local store. A high-carbon entry yesterday must not leak in.
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const nutrientStub = { calories_kcal: 100, protein_g: 1 };
+  const oldBeef = await client.callTool({
+    name: "nourish_log_intake",
+    arguments: {
+      explicit_user_intent: true,
+      timestamp: `${yesterday}T12:00:00.000Z`,
+      meal_type: "lunch",
+      custom_food: {
+        source: "manual",
+        source_id: "qa-carbon-old-beef",
+        name: "beef",
+        nutrients_per_100g: nutrientStub,
+      },
+      grams_estimate: 100,
+      tags: ["qa-carbon-default-date"],
+    },
+  });
+  const oldBeefPayload = JSON.parse(textFromToolResult(oldBeef));
+  assert.notEqual(oldBeef.isError, true);
+
+  const todayRice = await client.callTool({
+    name: "nourish_log_intake",
+    arguments: {
+      explicit_user_intent: true,
+      timestamp: `${today}T12:00:00.000Z`,
+      meal_type: "lunch",
+      custom_food: {
+        source: "manual",
+        source_id: "qa-carbon-today-rice",
+        name: "rice",
+        nutrients_per_100g: nutrientStub,
+      },
+      grams_estimate: 100,
+      tags: ["qa-carbon-default-date"],
+    },
+  });
+  const todayRicePayload = JSON.parse(textFromToolResult(todayRice));
+  assert.notEqual(todayRice.isError, true);
+
+  try {
+    const defaultSummary = await client.callTool({
+      name: "nourish_carbon_summary",
+      arguments: {},
+    });
+    const defaultPayload = JSON.parse(textFromToolResult(defaultSummary));
+    assert.notEqual(defaultSummary.isError, true);
+    assert.equal(defaultPayload.source, "intake_log");
+    assert.equal(defaultPayload.date, today);
+    assert.ok(
+      defaultPayload.total_kg_co2e < 1,
+      `default carbon summary must exclude yesterday's beef entry; got ${defaultPayload.total_kg_co2e}`,
+    );
+  } finally {
+    await client.callTool({
+      name: "nourish_delete_intake",
+      arguments: { id: oldBeefPayload.id },
+    });
+    await client.callTool({
+      name: "nourish_delete_intake",
+      arguments: { id: todayRicePayload.id },
+    });
+  }
 }
 
 function assertSearchSchemaHonest(tools) {

@@ -4,7 +4,7 @@
 //   C2 — coach pt-BR strings localized for en-US
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -65,6 +65,14 @@ try {
     () => decodeBarcodeImage({ image_path: "~/../../../../etc/shadow" }),
     /image_path must resolve to a file under/,
     "B3: home-relative traversal must be rejected",
+  );
+
+  const symlinkPath = join(localDir, "passwd-link.png");
+  await symlink("/etc/passwd", symlinkPath);
+  await assert.rejects(
+    () => decodeBarcodeImage({ image_path: symlinkPath }),
+    /image_path must resolve to a file under/,
+    "B3: symlinks inside allowed roots must not escape to arbitrary files",
   );
 
   // Path under tmpdir IS allowed (file may not exist; we want past the

@@ -6,7 +6,7 @@ import type { NutrientMap } from "../types.js";
  * Source: NEPA / UNICAMP — Tabela Brasileira de Composição de Alimentos, 4ª edição
  * Publication: https://www.nepa.unicamp.br/tabela-brasileira-de-composicao-de-alimentos-4a-edicao/
  *
- * v1 ships ~60 of the most commonly logged Brazilian foods, hand-curated from
+ * v1 ships a curated subset of the most commonly logged Brazilian foods from
  * the public TACO 4 publication. Future PRs will replace this with a build
  * script that ingests the full Excel (~597 foods) once UNICAMP has confirmed
  * a redistribution license. Each entry below cites the TACO row id so the

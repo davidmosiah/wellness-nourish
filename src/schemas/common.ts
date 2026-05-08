@@ -310,7 +310,7 @@ export const BarcodeImageLookupInputSchema = z
 
 export const FoodGetInputSchema = z
   .object({
-    source: z.enum(["usda", "open_food_facts"]),
+    source: z.enum(["usda", "open_food_facts", "taco"]),
     source_id: z.string().trim().min(1),
     response_format: ResponseFormatSchema.default("json"),
   })

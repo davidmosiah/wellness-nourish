@@ -6,7 +6,7 @@ import type { FoodItem } from "../types.js";
 
 /**
  * TACO provider — searches the curated subset of the TACO 4 (UNICAMP/NEPA)
- * Brazilian food composition table (~60 foods in v1; full ingest planned).
+ * Brazilian food composition table (curated subset; full ingest planned).
  *
  * Search ranks by:
  *   1. Exact alias match (highest)
@@ -41,7 +41,7 @@ export async function searchTacoFoods(query: string, limit = 10): Promise<TacoSe
     provider: "taco",
     foods: scored,
     warnings: scored.length === 0
-      ? ["No TACO foods matched. The TACO 4 curated subset covers ~60 staple Brazilian foods."]
+      ? [`No TACO foods matched. The TACO 4 curated subset covers ${tacoDatasetSize()} staple Brazilian foods.`]
       : [],
   };
 }

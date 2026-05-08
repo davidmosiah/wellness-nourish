@@ -2,7 +2,7 @@
 
 import { promises as fs } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { join, resolve as resolvePath } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve as resolvePath } from "node:path";
 
 import {
   BarcodeFormat,
@@ -258,21 +258,22 @@ async function resolveSafeImagePath(rawPath: string): Promise<string> {
   const expanded = expandHome(rawPath);
   const resolved = resolvePath(expanded);
 
-  const allowedRoots = collectAllowedImageRoots();
-  const isAllowed = allowedRoots.some((root) => isUnder(resolved, root));
+  const allowedRoots = await collectAllowedImageRoots();
+  const canonicalPath = await canonicalizeExistingPath(resolved);
+  const isAllowed = allowedRoots.some((root) => isUnder(canonicalPath, root));
 
   if (!isAllowed) {
     throw new Error(
       `image_path must resolve to a file under one of: ${allowedRoots.join(", ")}. ` +
-        `Got: ${resolved}. Set NOURISH_IMAGE_DIR to whitelist a different directory, ` +
+        `Got: ${canonicalPath}. Set NOURISH_IMAGE_DIR to whitelist a different directory, ` +
         `or move the image into ~/.wellness-nourish/ or the OS temp dir.`,
     );
   }
 
-  return resolved;
+  return canonicalPath;
 }
 
-function collectAllowedImageRoots(): string[] {
+async function collectAllowedImageRoots(): Promise<string[]> {
   const roots = new Set<string>();
   // The local dir is always allowed.
   try {
@@ -285,11 +286,38 @@ function collectAllowedImageRoots(): string[] {
   if (explicit !== undefined && explicit.length > 0) {
     roots.add(resolvePath(expandHome(explicit)));
   }
-  return [...roots];
+  return Promise.all([...roots].map(canonicalizeExistingPath));
+}
+
+async function canonicalizeExistingPath(path: string): Promise<string> {
+  const missingSegments: string[] = [];
+  let current = path;
+
+  try {
+    return await fs.realpath(current);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+
+  while (true) {
+    const parent = dirname(current);
+    if (parent === current) {
+      return resolvePath(path);
+    }
+
+    missingSegments.unshift(basename(current));
+    current = parent;
+
+    try {
+      const canonicalParent = await fs.realpath(current);
+      return join(canonicalParent, ...missingSegments);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+  }
 }
 
 function isUnder(target: string, root: string): boolean {
-  if (target === root) return true;
-  const rootWithSep = root.endsWith("/") ? root : `${root}/`;
-  return target.startsWith(rootWithSep);
+  const rel = relative(root, target);
+  return rel === "" || (rel.length > 0 && !rel.startsWith("..") && !isAbsolute(rel));
 }

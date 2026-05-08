@@ -2,10 +2,10 @@
 
 import { promises as fs } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 import { getConfig } from "./config.js";
-import { withLock } from "./locked-store.js";
+import { withLock, writeAtomically } from "./locked-store.js";
 import type { MealType } from "../types.js";
 
 export interface RememberedMeal {
@@ -178,8 +178,7 @@ export async function expandMealTextWithMemory(text: string): Promise<{
 
 async function writeMemory(memory: PersonalNutritionMemory): Promise<void> {
   const path = memoryPath();
-  await fs.mkdir(dirname(path), { recursive: true });
-  await fs.writeFile(path, `${JSON.stringify(memory, null, 2)}\n`, "utf8");
+  await writeAtomically(path, `${JSON.stringify(memory, null, 2)}\n`);
 }
 
 function normalizeMemory(raw: Partial<PersonalNutritionMemory>): PersonalNutritionMemory {

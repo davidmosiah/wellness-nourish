@@ -36,7 +36,7 @@ import {
 } from "../schemas/common.js";
 import { getUsdaFood, searchUsdaFoods } from "../providers/usda.js";
 import { searchBrazilianLocalFoods } from "../providers/br-local.js";
-import { searchTacoFoods } from "../providers/taco.js";
+import { getTacoFood, searchTacoFoods } from "../providers/taco.js";
 import {
   carbonDatasetSize,
   computeMealCarbon,
@@ -72,6 +72,7 @@ import { getGoals, updateGoals } from "../services/goals-store.js";
 import { analyzeFoodImage } from "../services/food-image-analysis.js";
 import { decodeBarcodeImage } from "../services/image-decoder.js";
 import { estimateMeal } from "../services/meal-estimator.js";
+import { localDate } from "../services/local-date.js";
 import {
   expandMealTextWithMemory,
   forgetRememberedMeal,
@@ -172,7 +173,7 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_search_food",
     {
       title: "Search foods",
-      description: "Search food providers by query. Use br_local for Brazilian staples, open_food_facts for packaged products, usda for generic foods, or all.",
+      description: "Search food providers by query. Use taco or br_local for Brazilian staples, open_food_facts for packaged products, usda for generic foods, or all.",
       inputSchema: FoodSearchInputSchema.shape,
       annotations: readOnlyOpenWorldAnnotation(),
     },
@@ -274,17 +275,14 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_get_food",
     {
       title: "Get food",
-      description: "Fetch a USDA food by source_id or an Open Food Facts food by barcode source_id.",
+      description: "Fetch a USDA food by source_id, an Open Food Facts food by barcode source_id, or a TACO food by source_id.",
       inputSchema: FoodGetInputSchema.shape,
       annotations: readOnlyOpenWorldAnnotation(),
     },
     async (input) => {
       try {
         const params = FoodGetInputSchema.parse(input);
-        const result =
-          params.source === "usda"
-            ? { provider: "usda" as const, food: await getUsdaFood(params.source_id) }
-            : await lookupOpenFoodFactsBarcode(params.source_id);
+        const result = await getFoodBySource(params.source, params.source_id);
 
         return toolResponse(makeResponse(result, params.response_format));
       } catch (error) {
@@ -749,7 +747,7 @@ export function registerNourishTools(server: McpServer): void {
           mealItems = params.items.map((item) => ({ name: item.name, grams: item.grams }));
           sourceLabel = "items";
         } else {
-          resolvedDate = params.date;
+          resolvedDate = params.date ?? localDate();
           const entries = await listIntakeEntries(
             resolvedDate === undefined ? {} : { date: resolvedDate },
           );
@@ -1587,7 +1585,28 @@ async function resolveFoodRef(foodRef: IntakeEntry["food_ref"] | undefined): Pro
     return (await lookupOpenFoodFactsBarcode(foodRef.source_id)).food;
   }
 
+  if (foodRef.source === "taco") {
+    return getTacoFood(foodRef.source_id);
+  }
+
   return undefined;
+}
+
+async function getFoodBySource(
+  source: "usda" | "open_food_facts" | "taco",
+  sourceId: string,
+): Promise<{ provider: "usda" | "open_food_facts" | "taco"; food: FoodItem }> {
+  if (source === "usda") {
+    return { provider: "usda", food: await getUsdaFood(sourceId) };
+  }
+  if (source === "open_food_facts") {
+    return lookupOpenFoodFactsBarcode(sourceId);
+  }
+  const food = await getTacoFood(sourceId);
+  if (food === undefined) {
+    throw new Error(`TACO food not found for source_id ${sourceId}`);
+  }
+  return { provider: "taco", food };
 }
 
 function nutrientsForLoggedFood(
@@ -1709,7 +1728,7 @@ function hasMeaningfulNutrients(nutrients: NutrientMap): boolean {
 }
 
 function sourceTraceFor(foodRef: IntakeEntry["food_ref"], customFood: FoodItem | undefined): IntakeEntry["source_trace"] {
-  if (customFood !== undefined || foodRef?.source === "usda") {
+  if (customFood !== undefined || foodRef?.source === "usda" || foodRef?.source === "taco") {
     return "exact_food";
   }
 
@@ -1792,7 +1811,7 @@ function isRecord(value: unknown): value is UnknownRecord {
 }
 
 function isProviderSource(value: unknown): value is ProviderSource {
-  return value === "usda" || value === "open_food_facts" || value === "manual" || value === "estimate";
+  return value === "usda" || value === "open_food_facts" || value === "manual" || value === "estimate" || value === "taco";
 }
 
 function sumGrams(items: Array<{ grams: number }>): number | undefined {

@@ -23,6 +23,19 @@ nutrition release made *complete*.
   dataset (token + diacritic-aware match). When no match: field stays
   undefined (no fabricated values).
 
+### Fixed
+
+- **Release-gate hardening.** `image_path` allowlisting now canonicalizes
+  symlinks with `realpath`, so a link inside `NOURISH_LOCAL_DIR` cannot escape
+  to arbitrary local files.
+- **TACO canonical flow.** `nourish_get_food` and `nourish_log_intake` now
+  resolve `food_ref.source: "taco"`, preserving the search → choose → log
+  workflow for Brazilian provider results.
+- **Carbon default date.** `nourish_carbon_summary` with no `date` now uses the
+  local current date instead of summarizing the whole intake store.
+- **Atomic small-store writes.** Goals and personal-memory now share the same
+  temp-file + rename helper used by the locked-store path.
+
 ### Expanded
 
 - **TACO dataset: 58 → 106 entries.** Added 48 more curated foods covering:
