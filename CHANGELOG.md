@@ -6,6 +6,90 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-05-08
+
+🌱 **The carbon-aware nutrition release.** Sprint 4 adds the strategic
+unlock identified in the dataset-research audit: Nourish is now the only
+nutrition MCP that can answer "how much CO2 is on my plate?".
+
+### Added
+
+- 🆕 **`nourish_carbon_summary` tool.** Estimates the carbon footprint
+  (kg CO2-equivalent) of a meal and returns lower-carbon swap
+  suggestions. Two modes:
+  - `items: [{name, grams}, ...]` — arbitrary meal
+  - `date: "YYYY-MM-DD"` — sums over that day's logged intake
+  
+  Response includes:
+  - `total_kg_co2e` + per-item breakdown
+  - `equivalents.km_driven_avg_car` and `smartphone_charges` so agents
+    can phrase the impact in lifestyle terms
+  - `swap_suggestions` (top 3) — e.g. "beef → chicken on 200g saves
+    ~10.8 kg CO2e"
+  - `unmatched_count` so agents can flag missing data instead of
+    fabricating numbers
+  - `dataset_attribution` so the data sources are visible
+
+- 🆕 **TACO 4 (UNICAMP/NEPA) provider** — `provider: "taco"` on
+  `nourish_search_food`. Replaces the 30-food `br_local` stopgap with
+  ~60 curated entries from the canonical Brazilian food composition
+  table, hand-pulled from the public TACO 4 publication. Future PR
+  will replace the curated subset with a build-time ingest of the full
+  ~597-row Excel once UNICAMP confirms a redistribution license. Each
+  entry cites its TACO row id so the upgrade path is traceable.
+
+- 🆕 **Carbon-footprint dataset** (60 curated entries) at
+  `src/data/carbon-footprint.ts`. Sources:
+  - **Agribalyse 3.1** (ADEME, France) — Etalab Open License,
+    MIT-compatible attribution-only
+  - **Our World in Data / Poore & Nemecek 2018** — CC-BY 4.0
+  Each entry tags `confidence` (`high` / `medium` / `low`) so agents
+  can decide how much to trust the number.
+
+- 🆕 **`carbon` field on `FoodItem`.** Optional. Auto-populated by the
+  TACO provider when the food matches a row in the carbon dataset.
+  Other providers (USDA, OFF) do NOT auto-enrich yet — that lands in
+  the next PR with a wider name-matching pass.
+
+- 🆕 **`services/carbon-enrichment.ts`** — public API:
+  `lookupCarbon(name)`, `enrichWithCarbon(food)`,
+  `computeMealCarbon(items)`, `suggestCarbonSwaps(items, topN)`,
+  `carbonDatasetSize()`. Token-level matching with diacritic
+  normalization (`acai` ↔ `açaí`).
+
+### Tests
+
+- New `scripts/test-carbon.mjs` — covers the carbon dataset sanity,
+  exact + diacritic + token lookups, idempotent enrichment, mealcarbon
+  math + breakdown + unmatched tracking, swap suggestions for high-vs
+  low-carbon meals, and TACO provider end-to-end (Portuguese alias,
+  diacritic-stripped query, English alias).
+- `scripts/smoke-tools.mjs` adds 2 MCP-level assertions:
+  `assertTacoProviderReturnsBrazilianFoods` and
+  `assertCarbonSummaryWorks` (beef-heavy + vegetarian + mixed-with-
+  unmatched cases).
+
+### Discovery
+
+- Tool count: **35 → 36** (`nourish_carbon_summary`).
+- Provider enum on `nourish_search_food`:
+  `["usda", "open_food_facts", "br_local", "taco", "all"]` — TACO is
+  also fanned out under `provider: "all"`.
+- Agent-manifest TOOLS list updated.
+
+### Notes
+
+- This release ships **curated subsets** (~60 + ~60 entries) of TACO
+  and carbon data. The full Agribalyse + SU-EATABLE LIFE ingest (3,484
+  + 3,349 entries) is queued for the next data PR. The curated subset
+  covers the foods most commonly logged via the existing estimator +
+  USDA staples, so most agent calls already get useful coverage.
+- TACO license posture: UNICAMP/NEPA copyright with no published
+  open-data license. Per the dataset-research audit, the community has
+  redistributed this table for 10+ years with attribution. v1 ships
+  with prominent attribution; a UNICAMP outreach letter is queued
+  before any 1.0 release.
+
 ## [0.2.5] - 2026-05-08
 
 Sprint 3 — data-integrity (timezone) + first agent UX win (`undo_last`).
