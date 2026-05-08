@@ -23,6 +23,14 @@ assert.equal(detail.source_id, "173944");
 assert.equal(detail.license.share_alike, false);
 await assert.rejects(() => getUsdaFood("999999"), /fixture not found/i);
 
+const { searchBrazilianLocalFoods } = await import("../dist/providers/br-local.js");
+const brLocal = await searchBrazilianLocalFoods("feijão carioca", 3);
+assert.equal(brLocal.foods[0].source, "estimate");
+assert.equal(brLocal.foods[0].locale, "pt-BR");
+assert.equal(brLocal.foods[0].name, "feijão carioca");
+assert.equal(brLocal.foods[0].display_name_pt_br, "feijão carioca");
+assert.ok(brLocal.foods[0].data_quality.warnings.some((warning) => /Local Brazilian estimate/i.test(warning)));
+
 const { lookupOpenFoodFactsBarcode } = await import("../dist/providers/open-food-facts.js");
 const off = await lookupOpenFoodFactsBarcode("737628064502");
 assert.equal(off.food.source, "open_food_facts");

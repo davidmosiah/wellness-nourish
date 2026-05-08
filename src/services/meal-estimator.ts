@@ -4,6 +4,8 @@ import { gramsForQuantity, nutrientsForGrams } from "./portion-engine.js";
 
 export interface SimpleFood {
   canonical: string;
+  /** Human-friendly pt-BR label for foods whose canonical name is English. */
+  displayNamePtBr?: string;
   aliases: string[];
   servingGrams: number;
   nutrientsPer100g: NutrientMap;
@@ -30,6 +32,7 @@ export interface MealEstimate {
 const SIMPLE_FOODS: readonly SimpleFood[] = [
   {
     canonical: "egg",
+    displayNamePtBr: "ovo",
     aliases: [
       "boiled eggs",
       "boiled egg",
@@ -55,7 +58,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "banana",
-    aliases: ["banana prata", "banana-prata", "banana"],
+    displayNamePtBr: "banana",
+    aliases: ["banana prata", "banana-prata", "bananas", "banana"],
     servingGrams: 118,
     nutrientsPer100g: {
       calories_kcal: 89,
@@ -94,6 +98,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "olive oil",
+    displayNamePtBr: "azeite de oliva",
     aliases: ["azeite de oliva", "azeite", "olive oil"],
     servingGrams: 15,
     nutrientsPer100g: {
@@ -116,6 +121,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "black coffee",
+    displayNamePtBr: "café preto",
     aliases: ["café preto", "cafe preto", "café sem açúcar", "cafe sem acucar", "black coffee", "coffee"],
     servingGrams: 240,
     nutrientsPer100g: {
@@ -195,6 +201,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "rice",
+    displayNamePtBr: "arroz",
     aliases: [
       "arroz branco cozido",
       "arroz branco",
@@ -215,6 +222,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "chicken",
+    displayNamePtBr: "frango",
     aliases: [
       "peito de frango grelhado",
       "frango grelhado",
@@ -234,6 +242,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "pinto beans",
+    displayNamePtBr: "feijão carioca",
     aliases: [
       "feijão carioca cozido",
       "feijao carioca cozido",
@@ -256,6 +265,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "black beans",
+    displayNamePtBr: "feijão preto",
     aliases: ["feijão preto cozido", "feijao preto cozido", "feijão preto", "feijao preto", "black beans"],
     servingGrams: 120,
     nutrientsPer100g: {
@@ -431,6 +441,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "salad",
+    displayNamePtBr: "salada",
     aliases: ["salada simples", "simple salad", "salada", "salad"],
     servingGrams: 80,
     nutrientsPer100g: {
@@ -443,6 +454,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "oatmeal",
+    displayNamePtBr: "mingau de aveia",
     aliases: ["oatmeal", "oats"],
     servingGrams: 234,
     nutrientsPer100g: {
@@ -455,6 +467,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "milk",
+    displayNamePtBr: "leite",
     aliases: ["milk"],
     servingGrams: 244,
     nutrientsPer100g: {
@@ -477,6 +490,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "apple",
+    displayNamePtBr: "maçã",
     aliases: ["apple", "apples"],
     servingGrams: 182,
     nutrientsPer100g: {
@@ -503,7 +517,41 @@ export function listSimpleFoods(): readonly SimpleFood[] {
 //   - simple fractions (1/2, 1.5/2)
 //   - optional leading `-` so we can DETECT negatives and reject them in
 //     parseQuantity instead of silently dropping them (N-005)
-const QUANTITY_PATTERN = String.raw`-?\d+(?:[.,]\d+)?(?:\/\d+(?:[.,]\d+)?)?`;
+const NUMERIC_QUANTITY_PATTERN = String.raw`-?\d+(?:[.,]\d+)?(?:\/\d+(?:[.,]\d+)?)?`;
+const QUANTITY_WORDS: Record<string, number> = {
+  a: 1,
+  an: 1,
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+  um: 1,
+  uma: 1,
+  uns: 1,
+  umas: 1,
+  dois: 2,
+  duas: 2,
+  tres: 3,
+  três: 3,
+  quatro: 4,
+  cinco: 5,
+  seis: 6,
+  sete: 7,
+  oito: 8,
+  nove: 9,
+  dez: 10,
+};
+const QUANTITY_WORD_PATTERN = Object.keys(QUANTITY_WORDS)
+  .sort((a, b) => b.length - a.length)
+  .map(escapeRegExp)
+  .join("|");
+const QUANTITY_PATTERN = String.raw`(?:${NUMERIC_QUANTITY_PATTERN}|${QUANTITY_WORD_PATTERN})`;
 const UNIT_PATTERN = [
   "tablespoons",
   "tablespoon",
@@ -692,8 +740,16 @@ function pushClause(
 }
 
 function cleanUnresolvedTerm(raw: string): string | undefined {
+  // Only strip a leading quantity when it is a standalone token. The main food
+  // matcher can safely accept word quantities such as "a"/"uma" before known
+  // food aliases, but unresolved cleanup must not turn unknown foods like
+  // "abacate" or "atum" into "bacate"/"tum".
+  const leadingQuantityPattern = new RegExp(
+    String.raw`^\s*(?:${QUANTITY_PATTERN})(?:(?:\s*(?:${UNIT_PATTERN})\s+)|\s+|\s*$)`,
+    "iu",
+  );
   const cleaned = raw
-    .replace(new RegExp(String.raw`^\s*(?:${QUANTITY_PATTERN})\s*(?:${UNIT_PATTERN})?\s*`, "iu"), "")
+    .replace(leadingQuantityPattern, "")
     .replace(/^[,;:+&\s]+|[,;:+&\s]+$/gu, "")
     .replace(/\s+/gu, " ")
     .trim();
@@ -768,7 +824,13 @@ function parseQuantity(raw: string | undefined): number | null {
     return 1;
   }
 
-  const [numerator, denominator] = raw.split("/");
+  const normalized = raw.trim().toLowerCase();
+  const wordQuantity = QUANTITY_WORDS[normalized];
+  if (wordQuantity !== undefined) {
+    return wordQuantity;
+  }
+
+  const [numerator, denominator] = normalized.split("/");
   if (numerator === undefined) {
     return null;
   }

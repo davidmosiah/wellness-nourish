@@ -47,7 +47,8 @@ function mapSimpleFood(food: SimpleFood): FoodItem {
     source: "estimate",
     source_id: sourceId,
     source_url: "https://wellness.delx.ai/nutrition",
-    name: food.canonical,
+    name: food.displayNamePtBr ?? food.canonical,
+    display_name_pt_br: food.displayNamePtBr ?? food.canonical,
     locale: "pt-BR",
     serving: {
       quantity: 1,
