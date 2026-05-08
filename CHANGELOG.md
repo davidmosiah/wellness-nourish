@@ -6,6 +6,70 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-05-08
+
+Sprint 5 — security + integrity hygiene. Fixes 3 QA-backlog items
+discovered after Sprint 2 audit, all about correctness under real-world
+usage (concurrent agent calls, hostile input, multi-locale agents).
+
+### Fixed
+
+- **A2 — Lost-update bug in goals + personal-memory.** Both stores had
+  atomic writes (rename trick) but no mutation lock, so two parallel
+  `nourish_set_goals` or `nourish_remember_meal` calls could read the same
+  baseline and the second write would clobber the first. New
+  `services/locked-store.ts` provides a generic single-process mutex that
+  serializes mutations per-key. Applied to `goals-store.updateGoals` and
+  `personal-memory.rememberMeal` / `forgetRememberedMeal`. Intake +
+  hydration stores already had this pattern; this consolidates the
+  approach.
+- **B3 — `image_path` traversal vector closed.** `nourish_decode_barcode_image`
+  / `nourish_lookup_barcode_image` / `nourish_analyze_food_image` used to
+  accept any filesystem path, including `/etc/passwd` and `~/.ssh/id_rsa`.
+  Now validates that the resolved path sits under one of:
+  - `NOURISH_LOCAL_DIR` (default `~/.wellness-nourish/`)
+  - the OS temp dir (where Telegram/Hermes drop downloads)
+  - `NOURISH_IMAGE_DIR` if explicitly configured
+  
+  Null-byte injection rejected. Resolved path checked (catches `..`-style
+  escapes after `path.resolve`).
+
+- **C2 — Coach pt-BR strings honored locale.** `chooseSuggestionText` had 5
+  hardcoded Portuguese strings that were returned regardless of caller-
+  supplied `locale`. An en-US agent would receive Portuguese meal text and
+  feed it back into `estimateMeal`, which only matches pt-BR aliases — so
+  the suggestion was unactionable. Now uses a locale-keyed lookup table
+  with pt-BR + en-US entries; unknown locales fall back to en-US.
+
+### Added
+
+- **`services/locked-store.ts`** — `withLock(key, fn)` helper used by
+  goals + memory + (in next PR) intake + hydration. Single-process only;
+  cross-process protection is a separate problem (lock-file or O_EXCL)
+  that's not in scope for personal single-user MCP usage.
+- **`writeAtomically(path, data)`** — exported atomic-write helper that
+  consolidates the temp-file + rename pattern duplicated across stores.
+  Intake + hydration migrate to it in the next refactor PR.
+
+### Tests
+
+- New `scripts/test-security-and-locks.mjs` covers:
+  - 2 parallel `updateGoals` keep both updates (A2)
+  - 5 parallel `rememberMeal` keep all 5 (A2)
+  - `image_path: "/etc/passwd"` rejected (B3)
+  - Traversal `/etc/../etc/passwd` rejected (B3)
+  - Home-relative traversal `~/../../../../etc/shadow` rejected (B3)
+  - Path under `tmpdir` accepted (passes safety check, fails later on missing file)
+  - `pre_workout_nutrition` in pt-BR returns Portuguese text (C2)
+  - Same in en-US returns English, no Portuguese-only words (C2)
+  - Unknown locale (`fr-FR`) falls back to en-US (C2)
+
+### Notes
+
+- No public surface change. No new tools.
+- `NOURISH_IMAGE_DIR` env is the new escape hatch for advanced users with
+  custom image directories.
+
 ## [0.2.6] - 2026-05-08
 
 🌱 **The carbon-aware nutrition release.** Sprint 4 adds the strategic
