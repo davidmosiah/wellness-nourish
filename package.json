@@ -1,6 +1,6 @@
 {
   "name": "wellness-nourish",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Local-first nutrition MCP server for AI agents: food search, barcode lookup, meal photos, hydration, goals and safe intake logging.",
   "license": "MIT",
   "type": "module",

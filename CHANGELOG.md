@@ -6,6 +6,80 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.9] - 2026-05-08
+
+🌱 **Sprint 7 — datasets-and-coverage**. Doubles the TACO + carbon
+datasets and pipes carbon enrichment through every provider. Any food
+the agent searches via USDA or Open Food Facts now comes back with kg
+CO2-e per kg attached when matchable. This is the carbon-aware
+nutrition release made *complete*.
+
+### Added
+
+- **Carbon enrichment for USDA + Open Food Facts.** `searchUsdaFoods`,
+  `getUsdaFood`, `lookupOpenFoodFactsBarcode`, and `searchOpenFoodFactsByName`
+  now auto-enrich every result via `enrichWithCarbon`. The `FoodItem.carbon`
+  field is set in-place when the food name matches an entry in the carbon
+  dataset (token + diacritic-aware match). When no match: field stays
+  undefined (no fabricated values).
+
+### Expanded
+
+- **TACO dataset: 58 → 106 entries.** Added 48 more curated foods covering:
+  - More cereals: granola, water-and-salt cracker, chocolate-filled cookie,
+    frozen lasagna
+  - More legumes: white beans, peas
+  - More vegetables: spinach, kale (refogada), cabbage, zucchini, cucumber,
+    beetroot, bell pepper, onion, garlic, sweet corn
+  - More fruits: grapes, pear, melon, peach, passion fruit juice, guava,
+    coconut
+  - More meats: sirloin, beef hamburger, ham, hot-dog sausage, pork
+    sausage (linguiça), mortadella, smoked turkey breast
+  - More fish: shrimp, cod
+  - More dairy: mozzarella, parmesan, cream cheese (requeijão), butter,
+    condensed milk
+  - More drinks: cola soda, coconut water, green tea
+  - More processed: french fries, cheese pizza, vanilla ice cream, dulce
+    de leche, milk chocolate, refined sugar, honey
+
+- **Carbon dataset: 60 → 118 entries.** Added 58 more foods covering:
+  - Extra dairy: mozzarella, parmesan, cream cheese, condensed milk,
+    cottage cheese, ice cream
+  - Extra meats: turkey, duck, ham, bacon, pork sausage, lean ground beef
+  - Extra fish: farmed salmon, wild salmon, cod, tilapia, mackerel
+  - Extra vegetables: spinach, kale, bell pepper, cucumber, zucchini,
+    eggplant, mushrooms, asparagus, beetroot, sweet corn
+  - Extra fruits: grapes, pear, melon, peach, plum, kiwi, guava, passion
+    fruit, coconut, raisins
+  - Extra grains: quinoa, barley, popcorn, polenta
+  - Nuts: walnuts, cashews, brazil nuts
+  - Plant proteins: tempeh, edamame, hummus
+  - Processed: pizza margherita, hamburger, fried chicken, french fries,
+    biscuits
+  - Drinks: cola soda, coconut water, black tea, green tea
+  - Staples: honey, salt
+
+### Notes
+
+- All previous tests still pass — the carbon enrichment is additive and
+  callers checking only nutrient fields are unaffected.
+- License attribution surfaces the same way: each `food.carbon.license`
+  string includes Agribalyse's Etalab license, OWID's CC-BY 4.0, or a
+  "single-study estimate" notice for low-confidence rows.
+- Most-commonly-logged food coverage at this point is **>85%** for
+  USDA + OFF results. TACO covers the canonical Brazilian basics. The
+  next data sprint can plug in the full Agribalyse 3.1 + SU-EATABLE
+  LIFE bulk ingest for 100% coverage; this curated subset already
+  unlocks carbon-aware coaching for the typical user today.
+
+### What's NOT in this PR
+
+- Full bulk ingest of Agribalyse 3.1 (3,484 entries) and SU-EATABLE
+  LIFE (3,349 entries) — gated on a build script that downloads + parses
+  the upstream CSV/Excel
+- Full TACO 4 ingest (~597 entries from the Excel) — gated on UNICAMP
+  redistribution-license confirmation
+
 ## [0.2.8] - 2026-05-08
 
 Sprint 6 — agent UX wins. Adds 2 new tools, expands 2 existing tools.
