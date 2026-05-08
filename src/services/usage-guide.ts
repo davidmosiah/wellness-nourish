@@ -99,6 +99,8 @@ export function buildUsageGuide(): NourishUsageGuide {
         steps: [
           "Use nourish_get_goals before comparing totals to targets.",
           "Call nourish_log_water only after explicit user intent.",
+          "Use nourish_delete_water { id, explicit_user_intent: true } to remove a single water entry, or nourish_clear_hydration_day { date, explicit_user_intent: true } to wipe a date.",
+          "nourish_clear_day { date, explicit_user_intent: true } only clears intake by default — pass include_hydration: true to also wipe water for that date.",
           "Treat goals as local tracking preferences, not medical guidance.",
         ],
       },

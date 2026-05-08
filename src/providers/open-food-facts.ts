@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import { OFF_BASE_URL, USER_AGENT } from "../constants.js";
 import { foodCompleteness, makeFoodId } from "../services/food-normalization.js";
+import { fetchWithTimeout, isTransientHttpError, NourishHttpError } from "../services/http.js";
 import { nutrientsForGrams } from "../services/portion-engine.js";
 import { roundNutrient } from "../services/nutrients.js";
 import { getConfig, getFixtureDir } from "../services/config.js";
@@ -53,6 +54,12 @@ const NUTRIENT_KEYS: Readonly<Record<string, keyof NutrientMap>> = {
   sugars_100g: "sugar_g",
   "saturated-fat_100g": "saturated_fat_g",
 };
+// In-memory cache with TTL + LRU cap. Prevents unbounded growth in
+// long-running stdio processes that scan many barcodes (each entry is
+// 3-5 KB, so 100K barcodes ≈ 400 MB resident without a cap).
+// Map preserves insertion order, so we treat the oldest entry as the LRU
+// victim when we hit OFF_CACHE_MAX_ENTRIES.
+const OFF_CACHE_MAX_ENTRIES = 500;
 const OFF_CACHE = new Map<string, { expires_at: number; result: OpenFoodFactsLookupResult }>();
 
 function finiteNumber(value: unknown): number | undefined {
@@ -87,22 +94,16 @@ async function fetchBarcode(barcode: string): Promise<OpenFoodFactsResponse> {
     "code,product_name,brands,url,quantity,serving_size,serving_quantity,nutriments",
   );
 
-  const response = await fetch(url, {
+  // NB: throws NourishHttpError on transient failures so callers can decide
+  // whether to surface a hard error or degrade gracefully. Friendly
+  // user-facing messaging is added by normalizeOffError() in the public
+  // tools.
+  const response = await fetchWithTimeout(url, {
     headers: {
       "user-agent": USER_AGENT,
       accept: "application/json",
     },
   });
-
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new Error(
-        "Open Food Facts is rate limiting requests right now. Try again in a few minutes, or provide the product name, label photo, or visible nutrition facts manually.",
-      );
-    }
-    throw new Error(`Open Food Facts request failed: ${response.status} ${response.statusText}`);
-  }
-
   return (await response.json()) as OpenFoodFactsResponse;
 }
 
@@ -118,23 +119,45 @@ async function fetchSearch(query: string, limit: number): Promise<OpenFoodFactsS
     "code,product_name,brands,url,quantity,serving_size,serving_quantity,nutriments",
   );
 
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     headers: {
       "user-agent": USER_AGENT,
       accept: "application/json",
     },
   });
+  return (await response.json()) as OpenFoodFactsSearchResponse;
+}
 
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new Error(
+/**
+ * Convert a raw NourishHttpError from the OFF wrapper into the user-facing
+ * Error message shape callers used to see. Preserves the legacy "Open Food
+ * Facts request failed: ..." prefix so existing string matches keep working.
+ */
+function normalizeOffError(err: unknown, kind: "request" | "search"): Error {
+  if (err instanceof NourishHttpError) {
+    if (err.kind === "rate_limit") {
+      return new Error(
         "Open Food Facts is rate limiting requests right now. Try again in a few minutes, or provide the product name, label photo, or visible nutrition facts manually.",
       );
     }
-    throw new Error(`Open Food Facts search failed: ${response.status} ${response.statusText}`);
+    if (err.kind === "timeout") {
+      return new Error(
+        `Open Food Facts ${kind} timed out after ${err.attempts} attempt(s). The provider is slow right now; try a barcode/label/photo input instead.`,
+      );
+    }
+    if (err.kind === "server_error") {
+      return new Error(
+        `Open Food Facts ${kind} failed: ${err.status} server error after ${err.attempts} attempt(s). The provider is unhealthy right now.`,
+      );
+    }
+    if (err.kind === "network") {
+      return new Error(
+        `Open Food Facts ${kind} failed: network error. Check connectivity to ${OFF_BASE_URL}.`,
+      );
+    }
+    return new Error(`Open Food Facts ${kind} failed: ${err.status} ${err.message}`);
   }
-
-  return (await response.json()) as OpenFoodFactsSearchResponse;
+  return err instanceof Error ? err : new Error(String(err));
 }
 
 function mapNutrients(nutriments: OpenFoodFactsProduct["nutriments"] = {}): NutrientMap {
@@ -235,13 +258,14 @@ export async function lookupOpenFoodFactsBarcode(
   try {
     response = config.fixture_mode ? await readFixture(barcode) : await fetchBarcode(barcode);
   } catch (error) {
-    if (cached !== undefined && isRateLimitError(error)) {
+    // Serve stale cache for any transient upstream failure (was: rate-limit only).
+    if (cached !== undefined && isTransientHttpError(error)) {
       return cloneLookupResult(
         cached,
-        "Returned cached Open Food Facts result because the provider is rate limiting requests right now.",
+        `Returned cached Open Food Facts result because the provider failed (${error.kind}).`,
       );
     }
-    throw error;
+    throw normalizeOffError(error, "request");
   }
 
   if (response.product === undefined || response.status === 0) {
@@ -267,9 +291,34 @@ export async function searchOpenFoodFactsByName(
     throw new Error("Open Food Facts provider is disabled");
   }
 
-  const response = config.fixture_mode
-    ? await fixtureSearch(query)
-    : await fetchSearch(query, Math.min(limit, config.max_results));
+  // N-007 fix: transient upstream failures (5xx, timeout, network, rate
+  // limit) should NOT crash the search call. Return an empty result with a
+  // warning so the agent can show partial results from other providers and
+  // explain why OFF is missing — instead of failing the whole call.
+  let response: OpenFoodFactsSearchResponse;
+  try {
+    response = config.fixture_mode
+      ? await fixtureSearch(query)
+      : await fetchSearch(query, Math.min(limit, config.max_results));
+  } catch (error) {
+    if (isTransientHttpError(error)) {
+      const kind = error.kind;
+      const reason =
+        kind === "timeout"
+          ? "Open Food Facts search timed out; returning empty results."
+          : kind === "rate_limit"
+            ? "Open Food Facts is rate limiting search; returning empty results. Try again in a few minutes."
+            : kind === "server_error"
+              ? `Open Food Facts search hit a ${error.status} upstream error; returning empty results.`
+              : "Open Food Facts search failed (network error); returning empty results.";
+      return {
+        provider: "open_food_facts",
+        foods: [],
+        warnings: [reason],
+      };
+    }
+    throw normalizeOffError(error, "search");
+  }
   const foods = (response.products ?? [])
     .flatMap((product) => {
       if (product.product_name === undefined || product.code === undefined) {
@@ -315,6 +364,17 @@ function getCachedLookup(barcode: string): OpenFoodFactsLookupResult | undefined
 }
 
 function setCachedLookup(barcode: string, result: OpenFoodFactsLookupResult, ttlSeconds: number): void {
+  // LRU: evict oldest entries first when at capacity.
+  if (!OFF_CACHE.has(barcode)) {
+    while (OFF_CACHE.size >= OFF_CACHE_MAX_ENTRIES) {
+      const oldestKey = OFF_CACHE.keys().next().value;
+      if (oldestKey === undefined) break;
+      OFF_CACHE.delete(oldestKey);
+    }
+  } else {
+    // Re-inserting moves the entry to the most-recently-used position.
+    OFF_CACHE.delete(barcode);
+  }
   OFF_CACHE.set(barcode, {
     expires_at: Date.now() + Math.max(ttlSeconds, 1) * 1000,
     result: cloneLookupResult(result),
@@ -352,6 +412,3 @@ function cloneLookupResult(
   };
 }
 
-function isRateLimitError(error: unknown): boolean {
-  return error instanceof Error && /rate limiting|429|Too Many Requests/i.test(error.message);
-}

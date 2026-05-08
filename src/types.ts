@@ -104,4 +104,6 @@ export interface NourishConfig {
   off_enabled: boolean;
   cache_ttl_seconds: number;
   max_results: number;
+  /** Per-attempt timeout in ms for outbound provider HTTP calls. */
+  provider_timeout_ms: number;
 }

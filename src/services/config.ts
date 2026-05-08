@@ -27,6 +27,7 @@ export function getConfig(): NourishConfig {
     off_enabled: process.env.NOURISH_OFF_ENABLED !== "0",
     cache_ttl_seconds: numberFromEnv(process.env.NOURISH_CACHE_TTL_SECONDS, 3600),
     max_results: numberFromEnv(process.env.NOURISH_MAX_RESULTS, 20),
+    provider_timeout_ms: numberFromEnv(process.env.NOURISH_PROVIDER_TIMEOUT_MS, 10000),
   };
 
   if (usda_api_key !== undefined) {

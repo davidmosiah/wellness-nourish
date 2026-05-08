@@ -94,6 +94,10 @@ try {
   await assertExplicitNutrientsBeatText();
   await assertCustomFoodScalesByGrams();
   await assertHydrationDeleteAndClear();
+  await assertConnectionStatusEnriched();
+  await assertAgentManifestIncludesHydrationTools();
+  await assertLabelOcrWithoutNutrientsDoesNotSuggestLog();
+  await assertParallelAllProviderTagsWarnings();
 
 } finally {
   await client.close();
@@ -604,6 +608,90 @@ async function assertHydrationDeleteAndClear() {
       name: "nourish_delete_intake",
       arguments: { id: intakePayload.id },
     });
+  }
+}
+
+// --- Sprint 2: connection_status now exposes warnings + provider_timeout_ms +
+//     usda_using_demo_key flag for the shared/rate-limited DEMO_KEY case ---
+async function assertConnectionStatusEnriched() {
+  const result = await client.callTool({
+    name: "nourish_connection_status",
+    arguments: {},
+  });
+  const payload = JSON.parse(textFromToolResult(result));
+
+  assert.notEqual(result.isError, true, "connection_status should not error");
+  assert.equal(typeof payload.provider_timeout_ms, "number", "provider_timeout_ms should be a number");
+  assert.ok(payload.provider_timeout_ms > 0);
+  assert.ok(Array.isArray(payload.warnings), "warnings array must be present");
+  assert.equal(typeof payload.usda_using_demo_key, "boolean", "usda_using_demo_key flag must be present");
+  assert.equal(payload.usda_using_demo_key, false, "fixture-mode smoke should not flag DEMO_KEY use");
+}
+
+// --- Sprint 2 / E1: hydration tools added in PR #7 must surface in the
+//     agent-manifest so agents discovering tools at boot know they exist. ---
+async function assertAgentManifestIncludesHydrationTools() {
+  const result = await client.callTool({
+    name: "nourish_agent_manifest",
+    arguments: { client: "generic" },
+  });
+  const payload = JSON.parse(textFromToolResult(result));
+
+  assert.notEqual(result.isError, true);
+  assert.ok(Array.isArray(payload.tools), "agent-manifest must include tools[]");
+  for (const expected of ["nourish_delete_water", "nourish_clear_hydration_day"]) {
+    assert.ok(
+      payload.tools.includes(expected),
+      `agent-manifest must list ${expected} so discovery doesn't hide it (E1)`,
+    );
+  }
+}
+
+// --- N-009: nutrition-label OCR with no parseable nutrients should emit
+//     route: "needs_more_ocr" and OMIT suggested_log_intake. Logging an
+//     entry with empty nutrients silently corrupts the daily summary. ---
+async function assertLabelOcrWithoutNutrientsDoesNotSuggestLog() {
+  const result = await client.callTool({
+    name: "nourish_analyze_food_image",
+    arguments: {
+      image_description: "rótulo borrado, ilegível",
+      product_name: "Mystery Snack",
+      nutrition_label_text: "lorem ipsum dolor sit amet, consectetur adipiscing elit",
+      locale: "en-US",
+    },
+  });
+  const payload = JSON.parse(textFromToolResult(result));
+
+  assert.notEqual(result.isError, true);
+  assert.equal(payload.route, "needs_more_ocr", `expected needs_more_ocr route, got ${payload.route}`);
+  assert.equal(
+    payload.suggested_log_intake,
+    undefined,
+    "must NOT emit suggested_log_intake when label nutrients are empty",
+  );
+  assert.ok(Array.isArray(payload.warnings) && payload.warnings.length > 0);
+}
+
+// --- Sprint 2: `provider: "all"` now fans out via Promise.allSettled and
+//     tags every warning with its provider name so a partial failure is
+//     attributable. ---
+async function assertParallelAllProviderTagsWarnings() {
+  const result = await client.callTool({
+    name: "nourish_search_food",
+    arguments: { query: "banana", provider: "all", limit: 5 },
+  });
+  const payload = JSON.parse(textFromToolResult(result));
+
+  assert.notEqual(result.isError, true);
+  assert.equal(payload.provider, "all");
+  if (Array.isArray(payload.warnings) && payload.warnings.length > 0) {
+    for (const warning of payload.warnings) {
+      assert.match(
+        warning,
+        /^(br_local|open_food_facts|usda):\s/,
+        `warning must be tagged with provider name; got: ${warning}`,
+      );
+    }
   }
 }
 

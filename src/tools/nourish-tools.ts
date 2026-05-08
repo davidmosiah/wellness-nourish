@@ -923,21 +923,34 @@ async function searchFoods(
     return searchBrazilianLocalFoods(query, limit);
   }
 
+  // Parallel fan-out across all 3 providers — was sequential before, which
+  // unfairly penalized "all" mode (the most useful default for users who
+  // don't know which provider to pick). Each provider failure is converted
+  // to a tagged warning so callers can tell which one(s) degraded.
+  const named = [
+    { provider: "br_local", run: () => searchBrazilianLocalFoods(query, limit) },
+    { provider: "open_food_facts", run: () => searchOpenFoodFactsByName(query, limit) },
+    { provider: "usda", run: () => searchUsdaFoods(query, limit) },
+  ] as const;
+
+  const settled = await Promise.allSettled(named.map((entry) => entry.run()));
+
   const warnings: string[] = [];
   const foods: FoodItem[] = [];
-  for (const search of [
-    () => searchBrazilianLocalFoods(query, limit),
-    () => searchOpenFoodFactsByName(query, limit),
-    () => searchUsdaFoods(query, limit),
-  ]) {
-    try {
-      const result = await search();
-      foods.push(...result.foods);
-      if ("warnings" in result && Array.isArray(result.warnings)) {
-        warnings.push(...result.warnings);
+  for (const [index, outcome] of settled.entries()) {
+    const providerName = named[index]!.provider;
+    if (outcome.status === "fulfilled") {
+      foods.push(...outcome.value.foods);
+      if ("warnings" in outcome.value && Array.isArray(outcome.value.warnings)) {
+        for (const warning of outcome.value.warnings) {
+          warnings.push(`${providerName}: ${warning}`);
+        }
       }
-    } catch (error) {
-      warnings.push(error instanceof Error ? error.message : String(error));
+    } else {
+      const message = outcome.reason instanceof Error
+        ? outcome.reason.message
+        : String(outcome.reason);
+      warnings.push(`${providerName}: ${message}`);
     }
   }
 

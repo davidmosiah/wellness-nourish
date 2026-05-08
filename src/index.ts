@@ -122,8 +122,19 @@ async function startHttp(): Promise<void> {
       }
 
       closed = true;
-      await transport.close();
-      await server.close();
+      // Swallow close errors so they don't surface as unhandledRejection
+      // (and crash the process under newer Node defaults). We've already
+      // sent the response by this point.
+      try {
+        await transport.close();
+      } catch {
+        // ignore — transport may already be closed
+      }
+      try {
+        await server.close();
+      } catch {
+        // ignore — server may already be closed
+      }
     };
 
     res.on("close", () => {

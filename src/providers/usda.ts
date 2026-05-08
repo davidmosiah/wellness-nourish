@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import { USDA_BASE_URL, USER_AGENT } from "../constants.js";
 import { foodCompleteness, makeFoodId } from "../services/food-normalization.js";
+import { fetchWithTimeout, NourishHttpError } from "../services/http.js";
 import { roundNutrient, scaleNutrients } from "../services/nutrients.js";
 import { getConfig, getFixtureDir } from "../services/config.js";
 import type { FoodItem, NutrientMap } from "../types.js";
@@ -73,18 +74,31 @@ async function fetchJson<T>(path: string, params: Record<string, string>): Promi
     url.searchParams.set(key, value);
   }
 
-  const response = await fetch(url, {
-    headers: {
-      "user-agent": USER_AGENT,
-      accept: "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`USDA request failed: ${response.status} ${response.statusText}`);
+  try {
+    const response = await fetchWithTimeout(url, {
+      headers: {
+        "user-agent": USER_AGENT,
+        accept: "application/json",
+      },
+    });
+    return (await response.json()) as T;
+  } catch (err) {
+    if (err instanceof NourishHttpError) {
+      // Re-message in the legacy "USDA request failed: ..." shape so callers
+      // and existing surface text stay consistent, but enrich with kind/attempts.
+      const detail = err.kind === "timeout"
+        ? `timed out after ${err.attempts} attempt(s)`
+        : err.kind === "rate_limit"
+          ? `rate limited after ${err.attempts} attempt(s) (likely DEMO_KEY quota — set FDC_API_KEY)`
+          : err.kind === "server_error"
+            ? `${err.status} server error after ${err.attempts} attempt(s)`
+            : err.kind === "network"
+              ? "network failure"
+              : `${err.status} ${err.message}`;
+      throw new Error(`USDA request failed: ${detail}`);
+    }
+    throw err;
   }
-
-  return (await response.json()) as T;
 }
 
 function nutrientAmount(nutrient: {
