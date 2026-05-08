@@ -6,6 +6,15 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.10] - 2026-05-08
+
+### Fixed
+
+- Synchronized `package-lock.json`, `server.json`, and runtime constants with
+  the published package version after the 0.2.9 release train.
+- Extended the metadata check so future release bumps fail if `package-lock.json`
+  drifts from `package.json`.
+
 ## [0.2.9] - 2026-05-08
 
 🌱 **Sprint 7 — datasets-and-coverage**. Doubles the TACO + carbon

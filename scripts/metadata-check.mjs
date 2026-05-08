@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+const packageLock = JSON.parse(readFileSync('package-lock.json', 'utf8'));
 const serverJson = JSON.parse(readFileSync('server.json', 'utf8'));
 const errors = [];
 
@@ -17,6 +18,15 @@ requireFile('server.json');
 
 if (serverJson.version !== packageJson.version) {
   errors.push(`server.json version ${serverJson.version} does not match package.json version ${packageJson.version}`);
+}
+
+if (packageLock.version !== packageJson.version) {
+  errors.push(`package-lock.json version ${packageLock.version} does not match package.json version ${packageJson.version}`);
+}
+
+const rootPackage = packageLock.packages?.[''];
+if (rootPackage?.version !== packageJson.version) {
+  errors.push(`package-lock root package version ${rootPackage?.version} does not match package.json version ${packageJson.version}`);
 }
 
 const expectsRegistryPackage = packageJson.private !== true && serverJson.publication?.npm !== false;
