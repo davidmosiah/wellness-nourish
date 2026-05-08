@@ -29,7 +29,8 @@
     "test:privacy": "node scripts/privacy-redaction-test.mjs",
     "test:http-helper": "node scripts/test-http-helper.mjs",
     "test:local-date": "node scripts/test-local-date.mjs",
-    "test": "npm run typecheck && npm run build && npm run test:normalization && npm run test:providers && npm run test:intake-store && npm run test:hydration-goals && npm run test:meal-estimator && npm run test:image-tools && npm run test:summary && npm run test:privacy && npm run test:http-helper && npm run test:local-date && npm run smoke && npm run smoke:http && npm run test:cli-ux && npm run test:agent-readiness && npm run test:hermes-agent && npm run prepack && npm run test:metadata",
+    "test:carbon": "node scripts/test-carbon.mjs",
+    "test": "npm run typecheck && npm run build && npm run test:normalization && npm run test:providers && npm run test:intake-store && npm run test:hydration-goals && npm run test:meal-estimator && npm run test:image-tools && npm run test:summary && npm run test:privacy && npm run test:http-helper && npm run test:local-date && npm run test:carbon && npm run smoke && npm run smoke:http && npm run test:cli-ux && npm run test:agent-readiness && npm run test:hermes-agent && npm run prepack && npm run test:metadata",
     "test:metadata": "node scripts/metadata-check.mjs"
   },
   "engines": {

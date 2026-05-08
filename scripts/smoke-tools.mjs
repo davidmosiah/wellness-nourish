@@ -36,6 +36,7 @@ const expectedTools = [
   "nourish_delete_intake",
   "nourish_clear_day",
   "nourish_undo_last",
+  "nourish_carbon_summary",
   "nourish_log_water",
   "nourish_delete_water",
   "nourish_clear_hydration_day",
@@ -104,6 +105,8 @@ try {
   await assertParallelAllProviderTagsWarnings();
   await assertConnectionStatusExposesTimezone();
   await assertUndoLastWorks();
+  await assertTacoProviderReturnsBrazilianFoods();
+  await assertCarbonSummaryWorks();
 
 } finally {
   await client.close();
@@ -790,12 +793,97 @@ async function assertUndoLastWorks() {
   assert.equal(undoAnyPayload.deleted, true);
 }
 
+// --- Sprint 4: TACO provider returns canonical Brazilian foods ---
+async function assertTacoProviderReturnsBrazilianFoods() {
+  const result = await client.callTool({
+    name: "nourish_search_food",
+    arguments: { query: "feijão carioca", provider: "taco", limit: 3 },
+  });
+  const payload = JSON.parse(textFromToolResult(result));
+
+  assert.notEqual(result.isError, true);
+  assert.equal(payload.provider, "taco");
+  assert.ok(payload.foods.length > 0, "TACO must return matches for 'feijão carioca'");
+  const top = payload.foods[0];
+  assert.match(top.name, /feij[aã]o/i, `top match must mention feijão; got: ${top.name}`);
+  assert.equal(top.source, "taco");
+  assert.match(top.id, /^taco:/);
+  assert.match(top.license.attribution, /TACO/i);
+  assert.equal(top.locale, "pt-BR");
+  // Auto-enrichment should attach carbon when the food name matches.
+  if (top.carbon !== undefined) {
+    assert.ok(top.carbon.kg_co2e_per_kg > 0);
+    assert.ok(top.carbon.source.length > 0);
+  }
+}
+
+// --- Sprint 4: nourish_carbon_summary computes meal carbon + swap suggestions ---
+async function assertCarbonSummaryWorks() {
+  // Beef-heavy meal — should have high carbon and trigger swap suggestion.
+  const beefMeal = await client.callTool({
+    name: "nourish_carbon_summary",
+    arguments: {
+      items: [
+        { name: "beef", grams: 200 },
+        { name: "rice", grams: 150 },
+      ],
+      include_swap_suggestions: true,
+    },
+  });
+  const beefPayload = JSON.parse(textFromToolResult(beefMeal));
+  assert.notEqual(beefMeal.isError, true);
+  assert.equal(beefPayload.source, "items");
+  assert.ok(beefPayload.total_kg_co2e > 10, `beef meal should be >10 kg CO2e; got ${beefPayload.total_kg_co2e}`);
+  assert.ok(Array.isArray(beefPayload.items));
+  assert.equal(beefPayload.items.length, 2);
+  assert.ok(beefPayload.items.every((item) => item.matched), "both beef and rice should match dataset");
+  assert.ok(Array.isArray(beefPayload.swap_suggestions));
+  assert.ok(beefPayload.swap_suggestions.length > 0, "beef meal must trigger at least one swap suggestion");
+  const beefSwap = beefPayload.swap_suggestions[0];
+  assert.match(beefSwap.from_name, /beef/i);
+  assert.ok(beefSwap.saved_kg_co2e > 0);
+
+  // Vegetarian meal — should be low and have no swap suggestions.
+  const vegMeal = await client.callTool({
+    name: "nourish_carbon_summary",
+    arguments: {
+      items: [
+        { name: "rice", grams: 150 },
+        { name: "feijão", grams: 120 },
+        { name: "tomato", grams: 50 },
+      ],
+      include_swap_suggestions: true,
+    },
+  });
+  const vegPayload = JSON.parse(textFromToolResult(vegMeal));
+  assert.notEqual(vegMeal.isError, true);
+  assert.ok(vegPayload.total_kg_co2e < 2, `veg meal should be <2 kg CO2e; got ${vegPayload.total_kg_co2e}`);
+
+  // Equivalents block must be present.
+  assert.ok(typeof vegPayload.equivalents?.km_driven_avg_car === "number");
+
+  // Unmatched item should be reported, not crash the summary.
+  const mixedMeal = await client.callTool({
+    name: "nourish_carbon_summary",
+    arguments: {
+      items: [
+        { name: "beef", grams: 100 },
+        { name: "totally_unknown_food_xyz", grams: 50 },
+      ],
+    },
+  });
+  const mixedPayload = JSON.parse(textFromToolResult(mixedMeal));
+  assert.notEqual(mixedMeal.isError, true);
+  assert.equal(mixedPayload.unmatched_count, 1);
+  assert.match(mixedPayload.warnings.join(" "), /unmatched|no carbon/i);
+}
+
 function assertSearchSchemaHonest(tools) {
   const searchTool = findTool(tools, "nourish_search_food");
   const provider = searchTool.inputSchema?.properties?.provider;
 
   if (provider !== undefined) {
-    assert.deepEqual(provider.enum, ["usda", "open_food_facts", "br_local", "all"]);
+    assert.deepEqual(provider.enum, ["usda", "open_food_facts", "br_local", "taco", "all"]);
   }
 }
 

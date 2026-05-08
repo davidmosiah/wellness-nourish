@@ -9,6 +9,7 @@ import {
   BarcodeLookupInputSchema,
   CoachInputSchema,
   ClearDayInputSchema,
+  CarbonSummaryInputSchema,
   ClearHydrationDayInputSchema,
   HydrationDeleteInputSchema,
   UndoLastInputSchema,
@@ -32,6 +33,13 @@ import {
 } from "../schemas/common.js";
 import { getUsdaFood, searchUsdaFoods } from "../providers/usda.js";
 import { searchBrazilianLocalFoods } from "../providers/br-local.js";
+import { searchTacoFoods } from "../providers/taco.js";
+import {
+  carbonDatasetSize,
+  computeMealCarbon,
+  suggestCarbonSwaps,
+  type CarbonMealItem,
+} from "../services/carbon-enrichment.js";
 import { lookupOpenFoodFactsBarcode, searchOpenFoodFactsByName } from "../providers/open-food-facts.js";
 import { buildAgentManifest } from "../services/agent-manifest.js";
 import { buildCapabilities } from "../services/capabilities.js";
@@ -666,6 +674,99 @@ export function registerNourishTools(server: McpServer): void {
   );
 
   server.registerTool(
+    "nourish_carbon_summary",
+    {
+      title: "Carbon footprint summary",
+      description:
+        "Estimate the carbon footprint (kg CO2-equivalent) of a meal, plus optional lower-carbon swap suggestions. Pass `items: [{name, grams}, ...]` for an arbitrary meal, OR `date: YYYY-MM-DD` to compute carbon over that day's logged intake. Data: Agribalyse 3.1 (Etalab Open License) + Our World in Data / Poore & Nemecek 2018 (CC-BY 4.0). Read-only; never mutates state.",
+      inputSchema: CarbonSummaryInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = CarbonSummaryInputSchema.parse(input);
+
+        // Build the carbon meal items list. Either explicit `items` or
+        // pulled from the day's intake log.
+        let mealItems: CarbonMealItem[] = [];
+        let sourceLabel: "items" | "intake_log";
+        let resolvedDate: string | undefined;
+
+        if (params.items !== undefined && params.items.length > 0) {
+          mealItems = params.items.map((item) => ({ name: item.name, grams: item.grams }));
+          sourceLabel = "items";
+        } else {
+          resolvedDate = params.date;
+          const entries = await listIntakeEntries(
+            resolvedDate === undefined ? {} : { date: resolvedDate },
+          );
+          mealItems = entries
+            .filter((entry) => entry.grams_estimate !== undefined && entry.grams_estimate > 0)
+            .map((entry) => ({
+              name: entry.food_ref?.name ?? entry.custom_food?.name ?? "unknown",
+              grams: entry.grams_estimate as number,
+              // Use the entry's own custom_food.carbon if it was set during logging.
+              carbon: entry.custom_food?.carbon,
+            }));
+          sourceLabel = "intake_log";
+        }
+
+        if (mealItems.length === 0) {
+          return toolResponse(
+            makeResponse(
+              {
+                ok: true,
+                source: sourceLabel,
+                date: resolvedDate,
+                total_kg_co2e: 0,
+                items: [],
+                unmatched_count: 0,
+                message: sourceLabel === "intake_log"
+                  ? "No logged intake entries with grams_estimate found for the requested date."
+                  : "No items provided.",
+              },
+              params.response_format,
+            ),
+          );
+        }
+
+        const result = computeMealCarbon(mealItems);
+
+        const swaps = params.include_swap_suggestions
+          ? suggestCarbonSwaps(mealItems, 3)
+          : [];
+
+        return toolResponse(
+          makeResponse(
+            {
+              ok: true,
+              source: sourceLabel,
+              date: resolvedDate,
+              total_kg_co2e: result.total_kg_co2e,
+              items: result.items,
+              unmatched_count: result.unmatched_count,
+              equivalents: result.equivalents,
+              swap_suggestions: swaps,
+              dataset_attribution: {
+                agribalyse: "Agribalyse 3.1 (ADEME) — Etalab Open License",
+                owid: "Our World in Data, derived from Poore & Nemecek 2018 — CC-BY 4.0",
+                version_note: `v1 ships ${carbonDatasetSize()} curated entries; full Agribalyse + SU-EATABLE LIFE ingest planned for next release.`,
+              },
+              warnings:
+                result.unmatched_count > 0
+                  ? [`${result.unmatched_count} item(s) had no carbon data — totals exclude them.`]
+                  : [],
+            },
+            params.response_format,
+          ),
+        );
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
     "nourish_undo_last",
     {
       title: "Undo last entry",
@@ -999,7 +1100,7 @@ function readOnlyOpenWorldAnnotation() {
 async function searchFoods(
   query: string,
   limit: number,
-  provider: "usda" | "open_food_facts" | "br_local" | "all",
+  provider: "usda" | "open_food_facts" | "br_local" | "taco" | "all",
 ): Promise<{ provider: string; foods: FoodItem[]; warnings?: string[] }> {
   if (provider === "usda") {
     return searchUsdaFoods(query, limit);
@@ -1013,11 +1114,16 @@ async function searchFoods(
     return searchBrazilianLocalFoods(query, limit);
   }
 
+  if (provider === "taco") {
+    return searchTacoFoods(query, limit);
+  }
+
   // Parallel fan-out across all 3 providers — was sequential before, which
   // unfairly penalized "all" mode (the most useful default for users who
   // don't know which provider to pick). Each provider failure is converted
   // to a tagged warning so callers can tell which one(s) degraded.
   const named = [
+    { provider: "taco", run: () => searchTacoFoods(query, limit) },
     { provider: "br_local", run: () => searchBrazilianLocalFoods(query, limit) },
     { provider: "open_food_facts", run: () => searchOpenFoodFactsByName(query, limit) },
     { provider: "usda", run: () => searchUsdaFoods(query, limit) },

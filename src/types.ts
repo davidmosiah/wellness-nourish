@@ -1,6 +1,6 @@
 export type ResponseFormat = "json" | "markdown";
 
-export type ProviderSource = "usda" | "open_food_facts" | "manual" | "estimate";
+export type ProviderSource = "usda" | "open_food_facts" | "manual" | "estimate" | "taco";
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack" | "other";
 
@@ -50,6 +50,21 @@ export interface FoodItem {
     warnings: string[];
   };
   license: SourceLicense;
+  /**
+   * Optional carbon footprint data, attached by the carbon-enrichment service
+   * when a food matches a row in the carbon dataset (Agribalyse, Our World in
+   * Data / Poore & Nemecek aggregates, or curated equivalents).
+   */
+  carbon?: {
+    /** kg CO2-equivalent per kg of edible food. */
+    kg_co2e_per_kg: number;
+    /** Source identifier — e.g. "agribalyse:25602" or "owid:beef-aggregate". */
+    source: string;
+    /** Provenance / methodology label (visible to users). */
+    license: string;
+    /** "high" = lifecycle assessment in Agribalyse; "medium" = global average; "low" = single-study estimate. */
+    confidence: "low" | "medium" | "high";
+  };
 }
 
 export interface IntakeEntry {

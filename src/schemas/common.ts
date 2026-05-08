@@ -21,7 +21,7 @@ const ExplicitUserIntentSchema = z
   .boolean()
   .default(false)
   .describe("Pass true only after the user explicitly asked to save, log, set, or delete this personal nutrition data.");
-const ProviderSourceSchema = z.enum(["usda", "open_food_facts", "manual", "estimate"]);
+const ProviderSourceSchema = z.enum(["usda", "open_food_facts", "manual", "estimate", "taco"]);
 const FoodRefSchema = z
   .object({
     source: ProviderSourceSchema,
@@ -88,6 +88,39 @@ export const UndoLastInputSchema = z
         "Which most-recent entry to undo: 'intake' = last logged meal, 'hydration' = last logged water, 'any' = whichever was most recent across both stores. Defaults to 'any'.",
       ),
     explicit_user_intent: ExplicitUserIntentSchema,
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
+export const CarbonSummaryInputSchema = z
+  .object({
+    /**
+     * Either supply explicit `items` to compute the carbon for an arbitrary
+     * meal, OR supply `date` to compute carbon over the day's logged intake.
+     * `items` wins when both are present.
+     */
+    date: DateSchema.optional().describe(
+      "Compute carbon for all logged intake entries on this date (defaults to today in the active timezone).",
+    ),
+    items: z
+      .array(
+        z.object({
+          name: z.string().min(1).describe("Food name to look up against the carbon dataset (e.g. 'beef', 'arroz')."),
+          grams: z.number().positive().describe("Grams of this food."),
+        }),
+      )
+      .min(1)
+      .max(50)
+      .optional()
+      .describe(
+        "Compute carbon for an explicit list of meal items. Wins over `date` when both are present.",
+      ),
+    include_swap_suggestions: z
+      .boolean()
+      .default(true)
+      .describe(
+        "If true, return up to 3 lower-carbon swap suggestions for the highest-emission items in the meal.",
+      ),
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
@@ -165,7 +198,7 @@ export const FoodSearchInputSchema = z
   .object({
     query: z.string().trim().min(1),
     limit: z.number().int().min(1).max(25).default(10),
-    provider: z.enum(["usda", "open_food_facts", "br_local", "all"]).default("usda"),
+    provider: z.enum(["usda", "open_food_facts", "br_local", "taco", "all"]).default("usda"),
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
