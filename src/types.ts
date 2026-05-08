@@ -28,6 +28,8 @@ export interface FoodItem {
   source_id: string;
   source_url?: string;
   name: string;
+  /** Optional localized display name for Telegram/UI surfaces. */
+  display_name_pt_br?: string;
   brand?: string;
   barcode?: string;
   locale?: string;

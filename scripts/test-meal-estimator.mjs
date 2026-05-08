@@ -87,6 +87,27 @@ assert.equal(brazilianBreakfast.items.some((item) => item.name === "toast"), fal
 assert.ok((brazilianBreakfast.total_nutrients.calories_kcal ?? 0) > 250);
 assert.ok(brazilianBreakfast.confidence >= 0.7);
 
+const wordQuantityBreakfast = await estimateMeal({
+  text: "pão de queijo, café preto e uma banana",
+  meal_type: "breakfast",
+  locale: "pt-BR",
+});
+
+assert.deepEqual(wordQuantityBreakfast.items.map((item) => item.name), ["pão de queijo", "black coffee", "banana"]);
+assert.equal(wordQuantityBreakfast.items.find((item) => item.name === "banana")?.quantity, 1);
+assert.deepEqual(wordQuantityBreakfast.unresolved, []);
+assert.ok(wordQuantityBreakfast.confidence >= 0.7);
+
+const pluralWordQuantity = await estimateMeal({
+  text: "duas bananas e três ovos cozidos",
+  meal_type: "snack",
+  locale: "pt-BR",
+});
+
+assert.equal(pluralWordQuantity.items.find((item) => item.name === "banana")?.quantity, 2);
+assert.equal(pluralWordQuantity.items.find((item) => item.name === "egg")?.quantity, 3);
+assert.deepEqual(pluralWordQuantity.unresolved, []);
+
 const partialBrazilianBreakfast = await estimateMeal({
   text: "pão de queijo, café preto, banana, suco verde misterioso",
   meal_type: "breakfast",
@@ -112,6 +133,15 @@ const unknownBrazilianBread = await estimateMeal({
 assert.deepEqual(unknownBrazilianBread.items.map((item) => item.name), ["banana"]);
 assert.deepEqual(unknownBrazilianBread.unresolved, ["pão de batata"]);
 assert.ok(unknownBrazilianBread.confidence <= 0.45);
+
+const unknownFoodsStartingWithQuantityLetters = await estimateMeal({
+  text: "abacate e atum",
+  meal_type: "snack",
+  locale: "pt-BR",
+});
+
+assert.deepEqual(unknownFoodsStartingWithQuantityLetters.items, []);
+assert.deepEqual(unknownFoodsStartingWithQuantityLetters.unresolved, ["abacate", "atum"]);
 
 const brazilianSnack = await estimateMeal({
   text: "1 tapioca com queijo minas, 1 coxinha, 1 brigadeiro e açaí",
