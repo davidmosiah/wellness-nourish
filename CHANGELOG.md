@@ -6,6 +6,73 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-08
+
+🌱 **Cross-connector wellness coaching release.** Closes the audit-trail
+gap from 2026-05-08 and lands the first MCP nutrition coach that
+*reasons* over wearable signals (not just echoes them).
+
+### Added
+
+- 🆕 **Wearable-aware coach reasoning** (PR #16). `coach.ts` now reads
+  `wellness_context` / `training_context` from `wearable_context` and
+  routes suggestions through 4 wearable rules in precedence order
+  before falling through to existing logic:
+  - **Rule 1 — poor recovery** (`recovery_score < 50` OR
+    `body_battery < 30`): suggest light, anti-inflammatory,
+    easy-digestion meal. *"sopa de legumes com peito de frango
+    desfiado e gengibre."*
+  - **Rule 4 — high recent training load**: recovery-focused meal.
+    *"salmão grelhado, batata doce e brócolis no vapor."*
+  - **Rule 3 — high strain in pre_workout mode**: carb bias.
+    *"tapioca grande com banana e mel, cafezinho."*
+  - **Rule 2 — high recovery + protein focus or post-workout**: higher
+    protein. *"200g picanha grelhada, arroz, feijão e salada."*
+  - **Rules 5/6 — protein gap / mode defaults**: existing fallback.
+  - Reason text now mentions the signal that fired (e.g. "Recovery 35%
+    from whoop — choosing easy-digestion option") so the calling agent
+    stays honest about why the suggestion changed.
+  - `extractWearableSignals()` uses explicit `typeof === "number"`
+    guards; malformed input degrades to "no rule fires" instead of
+    throwing.
+  - **No schema changes** — `wearable_context` was already
+    `z.record(z.string(), z.unknown())`, so the new fields are
+    accepted as-is.
+- 🆕 **`scripts/test-coach-wearable.mjs`** — covers all 4 wearable
+  rules, the precedence guard (poor recovery beats high training
+  load when both apply), and the empty-context fallback.
+
+### Changed
+
+- **`displayNamePtBr` 100% coverage** (PR #17). Moved from 12/35 →
+  35/35 entries in `SIMPLE_FOODS`. Every food now carries an explicit
+  pt-BR display name even when the canonical is already pt-BR. Added
+  pt-BR plural aliases: `ovos`, `maçãs`, `tapiocas`, `coxinhas`,
+  `brigadeiros`, `pães de queijo`, `fatias de pão`, `pães`,
+  `batatas doces`, `peixes grelhados`, `picanhas`, `costelas`,
+  `feijoadas`, `farofas`, `vinagretes`, `iogurtes naturais`,
+  `iogurtes`, `alcatras`, `cafezinhos`, `queijos minas`,
+  `queijos coalho`.
+- **`scripts/test-display-names.mjs`** new test asserts every food
+  has non-empty `displayNamePtBr` and contains no English-only words
+  (chicken / rice / salad heuristic). Wired into the `test` chain.
+
+### Documentation
+
+- 📝 **`docs/audit-2026-05-08.md`** (PR #15) — 385-line deep quality
+  audit committed to the repo so the findings of the 2026-05-08
+  campaign survive context compaction. Covers 13 bugs, 5 features,
+  1 CVE-class fix, cross-MCP standard, test coverage assessment,
+  and 9 prioritized follow-up gaps.
+
+### Notes
+
+- All previous tests still pass — wearable reasoning is additive
+  and callers passing no `wearable_context` keep working unchanged.
+- Tool count unchanged at 38 (no new tools, only smarter routing).
+- `package.json` `test` chain extended with `test:coach-wearable`
+  and `test:display-names`; full chain remains green on Node 20/22/24.
+
 ## [0.2.10] - 2026-05-08
 
 ### Fixed
