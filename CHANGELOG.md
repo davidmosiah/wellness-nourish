@@ -6,6 +6,62 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.8] - 2026-05-08
+
+Sprint 6 — agent UX wins. Adds 2 new tools, expands 2 existing tools.
+Each item is what an agent doing daily wellness work would actually
+benefit from (per the audit's category C/D recommendations).
+
+### Added
+
+- 🆕 **`nourish_bulk_log_intake`** (D2 from QA backlog) — log 1-20 meals
+  in a single atomic call. Each item gets its own intake entry through
+  the existing text-estimator; the entire batch shares one
+  `explicit_user_intent` flag. Returns per-item success/failure so a
+  partial failure doesn't lose the rest. Telegram-native pattern: "log
+  everything I ate today: breakfast was X, lunch was Y, dinner was Z".
+
+- 🆕 **`nourish_compare_days`** (D3) — diff per-nutrient between two
+  dates. Returns totals_a, totals_b, deltas (with percent_change where
+  baseline is non-zero), entry_count_delta, hydration_delta_ml, and
+  by_meal_changed (only meals with >20 kcal or >2g protein delta).
+  Powers "how did I eat today vs yesterday?" coaching.
+
+- 📊 **`nourish_daily_summary` accepts `compare_to`** (C5) — pass
+  `"yesterday"`, `"7d_avg"`, or `"none"` (default). When set, the
+  response includes a `comparison` block:
+  - `kind`, `baseline_date` (or `baseline_window` for 7d), `deltas`
+  - For 7d_avg, also `avg_baseline` so the agent can show "you're 30%
+    above your weekly average"
+  
+  This enables trend-aware coaching ("your protein is low again — third
+  day in a row") that previously required the agent to call summary
+  twice and diff manually.
+
+- 🔍 **`nourish_list_intake` filter combinators** (C4) — added
+  `since`, `until`, `meal_type`, `tag`, `source_trace`, `min_confidence`,
+  and `limit`. All filters AND together. Returns most-recent-first.
+  Response includes `applied_filters` echo + `count` so agents can
+  reason about scope. Schema is fully backward compatible — `date`
+  alone keeps working unchanged.
+
+### Tests
+
+- New `scripts/test-ux-tools.mjs` exercises all four additions through
+  the real MCP transport: explicit-intent guard on bulk_log, all 3
+  bulk items succeed, list_intake filters by meal_type / source_trace
+  / min_confidence / limit, summary `compare_to: "yesterday"` returns
+  a populated comparison block (with synthesized baseline entry),
+  `compare_to: "7d_avg"` returns 7-day window, `compare_to: "none"`
+  default omits comparison, and `compare_days` returns aligned totals
+  + deltas + meal-level changes.
+
+### Notes
+
+- Tool count: **36 → 38** (`bulk_log_intake`, `compare_days`).
+- No breaking schema changes. `daily_summary` and `list_intake` add
+  optional fields; old callers keep working.
+
 ## [0.2.7] - 2026-05-08
 
 Sprint 5 — security + integrity hygiene. Fixes 3 QA-backlog items
