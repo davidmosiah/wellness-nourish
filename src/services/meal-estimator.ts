@@ -498,7 +498,12 @@ export function listSimpleFoods(): readonly SimpleFood[] {
   return SIMPLE_FOODS;
 }
 
-const QUANTITY_PATTERN = String.raw`\d+(?:\.\d+)?(?:\/\d+(?:\.\d+)?)?`;
+// QUANTITY_PATTERN accepts:
+//   - integer or decimal with `.` OR `,` (pt-BR/es-419 decimal comma — N-004)
+//   - simple fractions (1/2, 1.5/2)
+//   - optional leading `-` so we can DETECT negatives and reject them in
+//     parseQuantity instead of silently dropping them (N-005)
+const QUANTITY_PATTERN = String.raw`-?\d+(?:[.,]\d+)?(?:\/\d+(?:[.,]\d+)?)?`;
 const UNIT_PATTERN = [
   "tablespoons",
   "tablespoon",
@@ -562,6 +567,8 @@ export async function estimateMeal(input: {
   const items: EstimatedMealItem[] = [];
   const matchSpans: MatchSpan[] = [];
 
+  let rejectedQuantities = 0;
+
   for (const match of input.text.matchAll(FOOD_PATTERN)) {
     const quantity = parseQuantity(match[1]);
     const unit = match[2]?.toLowerCase();
@@ -569,6 +576,13 @@ export async function estimateMeal(input: {
     const food = alias === undefined ? undefined : FOOD_BY_ALIAS.get(normalizeAlias(alias));
 
     if (food === undefined) {
+      continue;
+    }
+    // Skip foods with explicitly invalid quantities (zero, negative). The food
+    // name then falls into `unresolved` rather than being silently estimated
+    // as a default serving — N-005.
+    if (quantity === null) {
+      rejectedQuantities += 1;
       continue;
     }
     if (isAmbiguousBreadFalsePositive(input.text, match)) {
@@ -592,6 +606,13 @@ export async function estimateMeal(input: {
   }
 
   const unresolved = findUnresolvedTerms(input.text, matchSpans);
+  const baseWarnings = estimateWarnings(items.length, unresolved);
+  const warnings = rejectedQuantities > 0
+    ? [
+        ...baseWarnings,
+        `Rejected ${rejectedQuantities} food item(s) with non-positive quantity (zero or negative).`,
+      ]
+    : baseWarnings;
 
   return {
     text: input.text,
@@ -601,7 +622,7 @@ export async function estimateMeal(input: {
     total_nutrients: addNutrients(items.map((item) => item.nutrients)),
     confidence: estimateConfidence(items.length, unresolved.length),
     unresolved,
-    warnings: estimateWarnings(items.length, unresolved),
+    warnings,
   };
 }
 
@@ -633,7 +654,9 @@ function findUnresolvedTerms(text: string, matchSpans: MatchSpan[]): string[] {
 
 function splitMealClauses(text: string): Array<{ text: string; start: number; end: number }> {
   const clauses: Array<{ text: string; start: number; end: number }> = [];
-  const separators = /,|;|\+|&|\s+\b(?:e|and|com|with)\b\s+/giu;
+  // Don't split on a `,` that sits between two digits — that's a pt-BR decimal
+  // separator like "1,5", not a clause boundary. (N-004)
+  const separators = /(?<!\d),(?!\d)|;|\+|&|\s+\b(?:e|and|com|with)\b\s+/giu;
   let start = 0;
 
   for (const match of text.matchAll(separators)) {
@@ -729,20 +752,34 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function parseQuantity(raw: string | undefined): number {
+/**
+ * Parse a captured quantity string.
+ *
+ * - `undefined` → 1 (no quantity given, default).
+ * - explicit zero or negative (e.g. "0", "-100") → `null` (invalid; caller
+ *   should skip the food rather than fall back to a default serving — N-005).
+ * - decimal comma supported (e.g. "1,5" → 1.5 — N-004).
+ *
+ * Note: this returns `number | null` instead of always `number` so callers can
+ * distinguish "not specified" (default 1) from "explicitly invalid" (skip).
+ */
+function parseQuantity(raw: string | undefined): number | null {
   if (raw === undefined) {
     return 1;
   }
 
   const [numerator, denominator] = raw.split("/");
   if (numerator === undefined) {
-    return 1;
+    return null;
   }
 
-  const quantity =
-    denominator === undefined
-      ? Number.parseFloat(numerator)
-      : Number.parseFloat(numerator) / Number.parseFloat(denominator);
+  const num = Number.parseFloat(numerator.replace(",", "."));
+  const den = denominator === undefined ? 1 : Number.parseFloat(denominator.replace(",", "."));
+  const quantity = num / den;
 
-  return Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    return null;
+  }
+
+  return quantity;
 }

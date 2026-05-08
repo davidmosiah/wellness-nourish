@@ -179,4 +179,71 @@ assert.equal(twoEggsPortuguese.items[0].name, "egg");
 assert.equal(twoEggsPortuguese.items[0].quantity, 2);
 assert.equal(twoEggsPortuguese.items[0].grams, 100);
 
+// --- N-004: pt-BR decimal comma should NOT split clauses ---
+const decimalComma = await estimateMeal({
+  text: "1,5 banana e 200g arroz cozido",
+  meal_type: "snack",
+  locale: "pt-BR",
+});
+assert.equal(
+  decimalComma.items.length,
+  2,
+  `pt-BR decimal comma should produce 2 items, got ${decimalComma.items.length}`,
+);
+const bananaItem = decimalComma.items.find((item) => item.name === "banana");
+assert.ok(bananaItem, "banana should be present");
+assert.equal(bananaItem.quantity, 1.5, `banana quantity should be 1.5, got ${bananaItem.quantity}`);
+assert.ok(bananaItem.grams < 200, "1.5 bananas should weigh less than 200g");
+
+const decimalCommaSolo = await estimateMeal({
+  text: "1,5 banana",
+  meal_type: "snack",
+  locale: "pt-BR",
+});
+assert.equal(decimalCommaSolo.items.length, 1, "1,5 banana solo should be a single item");
+assert.equal(decimalCommaSolo.items[0].quantity, 1.5);
+
+// --- N-005: zero/negative quantities should be rejected, not silently
+//             fall back to a default serving ---
+const zeroQuantity = await estimateMeal({
+  text: "0g banana",
+  meal_type: "snack",
+  locale: "en-US",
+});
+assert.equal(
+  zeroQuantity.items.length,
+  0,
+  `0g banana should produce no items (got ${zeroQuantity.items.length})`,
+);
+assert.match(
+  zeroQuantity.warnings.join(" "),
+  /non-positive|rejected/i,
+  "warning should mention rejected non-positive quantity",
+);
+
+const negativeQuantity = await estimateMeal({
+  text: "-100g rice",
+  meal_type: "lunch",
+  locale: "en-US",
+});
+assert.equal(
+  negativeQuantity.items.length,
+  0,
+  `-100g rice should produce no items (got ${negativeQuantity.items.length})`,
+);
+assert.match(
+  negativeQuantity.warnings.join(" "),
+  /non-positive|rejected/i,
+  "warning should mention rejected negative quantity",
+);
+
+// Sanity: a normal quantity in the same family must still work.
+const positiveControl = await estimateMeal({
+  text: "100g rice",
+  meal_type: "lunch",
+  locale: "en-US",
+});
+assert.equal(positiveControl.items.length, 1);
+assert.equal(positiveControl.items[0].grams, 100);
+
 console.log("meal estimator tests ok");
