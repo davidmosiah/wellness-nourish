@@ -55,6 +55,26 @@ export const ClearDayInputSchema = z
   .object({
     date: DateSchema,
     explicit_user_intent: ExplicitUserIntentSchema,
+    include_hydration: z
+      .boolean()
+      .optional()
+      .describe("If true, also clear all hydration entries for the date in addition to intake."),
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
+export const HydrationDeleteInputSchema = z
+  .object({
+    id: z.string().min(1).describe("Hydration entry id (e.g. water_<uuid>)."),
+    explicit_user_intent: ExplicitUserIntentSchema,
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
+export const ClearHydrationDayInputSchema = z
+  .object({
+    date: DateSchema,
+    explicit_user_intent: ExplicitUserIntentSchema,
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();

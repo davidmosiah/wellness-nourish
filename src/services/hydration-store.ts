@@ -98,6 +98,39 @@ export async function listWaterEntries(filter: { date?: string } = {}): Promise<
   return entries.filter((entry) => entry.date === filter.date);
 }
 
+export async function deleteWaterEntry(id: string): Promise<boolean> {
+  return withMutationLock(async () => {
+    const path = hydrationPath();
+    const entries = await readHydrationEntries(path);
+    const nextEntries = entries.filter((entry) => entry.id !== id);
+
+    if (nextEntries.length === entries.length) {
+      return false;
+    }
+
+    await writeHydrationEntriesAtomically(nextEntries, path);
+    return true;
+  });
+}
+
+export async function clearHydrationDay(date: string): Promise<{ date: string; deleted_entries: number }> {
+  return withMutationLock(async () => {
+    const path = hydrationPath();
+    const entries = await readHydrationEntries(path);
+    const nextEntries = entries.filter((entry) => entry.date !== date);
+    const deletedEntries = entries.length - nextEntries.length;
+
+    if (deletedEntries > 0) {
+      await writeHydrationEntriesAtomically(nextEntries, path);
+    }
+
+    return {
+      date,
+      deleted_entries: deletedEntries,
+    };
+  });
+}
+
 export async function buildHydrationSummary(date = todayDate()): Promise<HydrationSummary> {
   const entries = await listWaterEntries({ date });
   const goals = await getGoals();

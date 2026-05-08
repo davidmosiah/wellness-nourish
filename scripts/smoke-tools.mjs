@@ -36,6 +36,8 @@ const expectedTools = [
   "nourish_delete_intake",
   "nourish_clear_day",
   "nourish_log_water",
+  "nourish_delete_water",
+  "nourish_clear_hydration_day",
   "nourish_hydration_summary",
   "nourish_get_goals",
   "nourish_set_goals",
@@ -89,6 +91,9 @@ try {
   await assertPersonalMemoryFeedsEstimator();
   await assertCoachLoopReadsGoalsAndWearableContext();
   await assertFoodImageRouterSupportsBarcodeMealAndLabel();
+  await assertExplicitNutrientsBeatText();
+  await assertCustomFoodScalesByGrams();
+  await assertHydrationDeleteAndClear();
 
 } finally {
   await client.close();
@@ -410,6 +415,196 @@ async function assertFoodImageRouterSupportsBarcodeMealAndLabel() {
   assert.equal(labelPayload.label_food.name, "Iogurte Proteico");
   assert.equal(labelPayload.label_food.nutrients_per_serving.protein_g, 15);
   assert.equal(labelPayload.suggested_log_intake.explicit_user_intent, false);
+}
+
+// --- N-001: explicit nutrients/custom_food/food_ref must override `text` ---
+async function assertExplicitNutrientsBeatText() {
+  const result = await client.callTool({
+    name: "nourish_log_intake",
+    arguments: {
+      explicit_user_intent: true,
+      text: "QA synthetic protein bar from label",
+      nutrients: {
+        calories_kcal: 220,
+        protein_g: 20,
+        carbohydrates_g: 22,
+        fat_g: 7,
+        sodium_mg: 180,
+      },
+      quantity: 1,
+      unit: "serving",
+      meal_type: "snack",
+    },
+  });
+  const payload = JSON.parse(textFromToolResult(result));
+
+  assert.notEqual(result.isError, true, "explicit-nutrients log should not error");
+  assert.equal(payload.nutrients.calories_kcal, 220, "calories must come from explicit nutrients, not text estimate");
+  assert.equal(payload.nutrients.protein_g, 20);
+  assert.equal(payload.nutrients.sodium_mg, 180);
+  // Text label should be preserved somewhere visible (food_ref.name OR notes).
+  const labelText = "QA synthetic protein bar from label";
+  const labelPreserved =
+    payload.food_ref?.name === labelText ||
+    payload.custom_food?.name === labelText ||
+    payload.notes === labelText;
+  assert.ok(labelPreserved, `text label '${labelText}' should be preserved in food_ref.name or notes; got food_ref=${JSON.stringify(payload.food_ref)} notes=${payload.notes}`);
+
+  // Cleanup
+  await client.callTool({
+    name: "nourish_delete_intake",
+    arguments: { id: payload.id },
+  });
+}
+
+// --- N-002: custom_food.nutrients_per_100g must scale by grams_estimate ---
+async function assertCustomFoodScalesByGrams() {
+  const result = await client.callTool({
+    name: "nourish_log_intake",
+    arguments: {
+      explicit_user_intent: true,
+      custom_food: {
+        source: "manual",
+        source_id: "qa-custom-bar-canonical",
+        name: "QA Custom Bar canonical delete_me",
+        nutrients_per_100g: {
+          calories_kcal: 366.67,
+          protein_g: 33.33,
+          carbohydrates_g: 36.67,
+          fat_g: 11.67,
+          sodium_mg: 300,
+        },
+      },
+      grams_estimate: 60,
+      quantity: 1,
+      unit: "serving",
+      meal_type: "snack",
+    },
+  });
+  const payload = JSON.parse(textFromToolResult(result));
+
+  assert.notEqual(result.isError, true, "custom_food log should not error");
+  // 60g of 366.67kcal/100g = 220.0 kcal (within rounding).
+  assert.ok(
+    Math.abs(payload.nutrients.calories_kcal - 220) < 1,
+    `60g should scale to ~220 kcal (got ${payload.nutrients.calories_kcal}); per_100g not being scaled`,
+  );
+  assert.ok(
+    Math.abs(payload.nutrients.protein_g - 20) < 0.5,
+    `60g should scale to ~20g protein (got ${payload.nutrients.protein_g})`,
+  );
+  assert.ok(
+    Math.abs(payload.nutrients.sodium_mg - 180) < 1,
+    `60g should scale to ~180mg sodium (got ${payload.nutrients.sodium_mg})`,
+  );
+
+  // Cleanup
+  await client.callTool({
+    name: "nourish_delete_intake",
+    arguments: { id: payload.id },
+  });
+}
+
+// --- N-003: hydration delete + clear day + clear_day(include_hydration) ---
+async function assertHydrationDeleteAndClear() {
+  const date = "2099-01-15";
+
+  // Log → confirm summary → delete by id → confirm summary back to 0.
+  const log = await client.callTool({
+    name: "nourish_log_water",
+    arguments: { explicit_user_intent: true, amount_ml: 333, date },
+  });
+  const logPayload = JSON.parse(textFromToolResult(log));
+  assert.notEqual(log.isError, true);
+  assert.match(logPayload.id, /^water_/);
+
+  let summary = JSON.parse(
+    textFromToolResult(
+      await client.callTool({ name: "nourish_hydration_summary", arguments: { date } }),
+    ),
+  );
+  assert.equal(summary.total_ml, 333);
+
+  const del = await client.callTool({
+    name: "nourish_delete_water",
+    arguments: { explicit_user_intent: true, id: logPayload.id },
+  });
+  const delPayload = JSON.parse(textFromToolResult(del));
+  assert.notEqual(del.isError, true);
+  assert.equal(delPayload.deleted, true);
+
+  summary = JSON.parse(
+    textFromToolResult(
+      await client.callTool({ name: "nourish_hydration_summary", arguments: { date } }),
+    ),
+  );
+  assert.equal(summary.total_ml, 0, "summary should drop to 0 after delete_water");
+
+  // delete_water guard: explicit_user_intent omitted → USER_ACTION_REQUIRED.
+  const guarded = await client.callTool({
+    name: "nourish_delete_water",
+    arguments: { id: "water_does_not_exist" },
+  });
+  const guardedPayload = JSON.parse(textFromToolResult(guarded));
+  assert.equal(guardedPayload.error?.code, "USER_ACTION_REQUIRED");
+
+  // clear_hydration_day: log 2 entries, clear, verify count.
+  await client.callTool({
+    name: "nourish_log_water",
+    arguments: { explicit_user_intent: true, amount_ml: 500, date },
+  });
+  await client.callTool({
+    name: "nourish_log_water",
+    arguments: { explicit_user_intent: true, amount_ml: 250, date },
+  });
+  const clear = await client.callTool({
+    name: "nourish_clear_hydration_day",
+    arguments: { explicit_user_intent: true, date },
+  });
+  const clearPayload = JSON.parse(textFromToolResult(clear));
+  assert.notEqual(clear.isError, true);
+  assert.equal(clearPayload.deleted_entries, 2);
+
+  // clear_day with include_hydration: log water + intake, clear both.
+  await client.callTool({
+    name: "nourish_log_water",
+    arguments: { explicit_user_intent: true, amount_ml: 100, date },
+  });
+  const intake = await client.callTool({
+    name: "nourish_log_intake",
+    arguments: {
+      explicit_user_intent: true,
+      text: "qa-synthetic banana",
+      meal_type: "snack",
+      timestamp: `${date}T12:00:00.000Z`,
+    },
+  });
+  const intakePayload = JSON.parse(textFromToolResult(intake));
+  assert.notEqual(intake.isError, true);
+
+  const clearAll = await client.callTool({
+    name: "nourish_clear_day",
+    arguments: { explicit_user_intent: true, date, include_hydration: true },
+  });
+  const clearAllPayload = JSON.parse(textFromToolResult(clearAll));
+  assert.notEqual(clearAll.isError, true);
+  assert.equal(clearAllPayload.hydration?.deleted_entries, 1);
+  assert.ok(clearAllPayload.deleted_entries >= 1, "intake from same date should be cleared too");
+
+  summary = JSON.parse(
+    textFromToolResult(
+      await client.callTool({ name: "nourish_hydration_summary", arguments: { date } }),
+    ),
+  );
+  assert.equal(summary.total_ml, 0, "all hydration for date should be gone");
+
+  // Defensive cleanup if anything stuck around.
+  if (intakePayload?.id !== undefined) {
+    await client.callTool({
+      name: "nourish_delete_intake",
+      arguments: { id: intakePayload.id },
+    });
+  }
 }
 
 function assertSearchSchemaHonest(tools) {

@@ -9,6 +9,8 @@ import {
   BarcodeLookupInputSchema,
   CoachInputSchema,
   ClearDayInputSchema,
+  ClearHydrationDayInputSchema,
+  HydrationDeleteInputSchema,
   ExportInputSchema,
   FoodImageAnalysisInputSchema,
   FoodGetInputSchema,
@@ -53,7 +55,7 @@ import {
   updateIntakeEntry,
   type AddIntakeEntryInput,
 } from "../services/intake-store.js";
-import { buildHydrationSummary, logWater } from "../services/hydration-store.js";
+import { buildHydrationSummary, clearHydrationDay, deleteWaterEntry, logWater } from "../services/hydration-store.js";
 import { getGoals, updateGoals } from "../services/goals-store.js";
 import { analyzeFoodImage } from "../services/food-image-analysis.js";
 import { decodeBarcodeImage } from "../services/image-decoder.js";
@@ -577,7 +579,83 @@ export function registerNourishTools(server: McpServer): void {
         if (params.explicit_user_intent !== true) {
           return explicitIntentRequired("explicit_user_intent must be true to clear a day.", params.response_format);
         }
-        const result = await clearIntakeDay(params.date);
+        const intakeResult = await clearIntakeDay(params.date);
+        const result: {
+          date: string;
+          deleted_entries: number;
+          hydration?: { deleted_entries: number };
+        } = {
+          date: intakeResult.date,
+          deleted_entries: intakeResult.deleted_entries,
+        };
+
+        if (params.include_hydration === true) {
+          const hydrationResult = await clearHydrationDay(params.date);
+          result.hydration = { deleted_entries: hydrationResult.deleted_entries };
+        }
+
+        return toolResponse(makeResponse(result, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_delete_water",
+    {
+      title: "Delete water entry",
+      description: "Delete a single local hydration entry by id after explicit user intent.",
+      inputSchema: HydrationDeleteInputSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async (input) => {
+      try {
+        const params = HydrationDeleteInputSchema.parse(input);
+        if (params.explicit_user_intent !== true) {
+          return explicitIntentRequired(
+            "explicit_user_intent must be true to delete a hydration entry.",
+            params.response_format,
+          );
+        }
+        const deleted = await deleteWaterEntry(params.id);
+
+        return toolResponse(makeResponse({ ok: true, deleted, id: params.id }, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_clear_hydration_day",
+    {
+      title: "Clear hydration day",
+      description:
+        "Delete all local hydration entries for a date after explicit user intent. Does not touch intake — pair with nourish_clear_day or use nourish_clear_day { include_hydration: true } for both.",
+      inputSchema: ClearHydrationDayInputSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async (input) => {
+      try {
+        const params = ClearHydrationDayInputSchema.parse(input);
+        if (params.explicit_user_intent !== true) {
+          return explicitIntentRequired(
+            "explicit_user_intent must be true to clear hydration for a day.",
+            params.response_format,
+          );
+        }
+        const result = await clearHydrationDay(params.date);
 
         return toolResponse(makeResponse(result, params.response_format));
       } catch (error) {
@@ -981,8 +1059,15 @@ async function buildIntakeEntryInput(
   params: ReturnType<typeof IntakeLogInputSchema.parse>,
 ): Promise<AddIntakeEntryInput> {
   const text = params.text ?? params.meal_text;
+  const hasExplicitFoodData =
+    params.nutrients !== undefined ||
+    params.custom_food !== undefined ||
+    params.food_ref !== undefined ||
+    params.food !== undefined;
 
-  if (text !== undefined) {
+  // Estimate path: text-only, no explicit food/nutrient data.
+  // Explicit data ALWAYS wins over text-derived estimate (N-001 fix).
+  if (text !== undefined && !hasExplicitFoodData) {
     const expanded = await expandMealTextWithMemory(text);
     const estimate = await estimateMeal({
       text: expanded.text,
@@ -1027,18 +1112,31 @@ async function buildIntakeEntryInput(
     return input;
   }
 
+  // Explicit-data path. May still have `text` (used as label/name override).
   const customFood = asFoodItem(params.custom_food);
   const providedFood = asFoodItem(params.food);
   const customFoodRef = foodRefFromUnknown(params.custom_food);
   const inputFoodRef = params.food_ref ?? foodRefFromUnknown(params.food) ?? customFoodRef;
   const resolvedFood = customFood ?? providedFood ?? await resolveFoodRef(inputFoodRef);
+
+  // If text is present but no food_ref was derivable, synthesize a manual food_ref
+  // using the text as the human-readable label so the entry isn't anonymous.
   const foodRef =
-    inputFoodRef ?? foodRefFromFood(resolvedFood);
+    inputFoodRef ??
+    foodRefFromFood(resolvedFood) ??
+    (text !== undefined
+      ? {
+          source: "manual" as const,
+          source_id: stableEstimateId(text),
+          name: text,
+        }
+      : undefined);
+
   const nutrients =
     params.nutrients ??
     nutrientsForLoggedFood(resolvedFood, params) ??
-    nutrientsFromUnknown(params.custom_food) ??
-    nutrientsFromUnknown(params.food);
+    nutrientsFromCustomShape(params.custom_food, params) ??
+    nutrientsFromCustomShape(params.food, params);
   const clean = cleanNutrients(nutrients);
 
   if (!hasMeaningfulNutrients(clean)) {
@@ -1072,8 +1170,12 @@ async function buildIntakeEntryInput(
   if (grams !== undefined) {
     input.grams_estimate = grams;
   }
+  // Preserve text in notes if provided alongside explicit food data, so the
+  // user-facing label isn't lost.
   if (params.notes !== undefined) {
     input.notes = params.notes;
+  } else if (text !== undefined && foodRef?.name !== text) {
+    input.notes = text;
   }
 
   return input;
@@ -1138,6 +1240,75 @@ function nutrientsFromUnknown(value: unknown): NutrientMap | undefined {
   }
 
   return undefined;
+}
+
+/**
+ * Like `nutrientsFromUnknown` but scales `nutrients_per_100g` to the user-supplied
+ * `grams_estimate` (or to grams derived from `serving.grams` × quantity). Without
+ * scaling, a 60g portion of a 100g-referenced custom food would log full 100g
+ * nutrient values (N-002 bug).
+ *
+ * Precedence:
+ *   1. nutrients_per_serving — used as-is
+ *   2. nutrients_per_100g + grams known — scaled via nutrientsForGrams
+ *   3. nutrients_per_100g without grams — used as-is (best effort, same as before)
+ *   4. nutrients — used as-is
+ */
+function nutrientsFromCustomShape(
+  value: unknown,
+  params: ReturnType<typeof IntakeLogInputSchema.parse>,
+): NutrientMap | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  if (isRecord(value.nutrients_per_serving)) {
+    return cleanNutrients(value.nutrients_per_serving);
+  }
+
+  if (isRecord(value.nutrients_per_100g)) {
+    const grams = gramsForCustomShape(value, params);
+    if (grams !== undefined) {
+      return cleanNutrients(nutrientsForGrams(value.nutrients_per_100g as NutrientMap, grams));
+    }
+    return cleanNutrients(value.nutrients_per_100g);
+  }
+
+  if (isRecord(value.nutrients)) {
+    return cleanNutrients(value.nutrients);
+  }
+
+  return undefined;
+}
+
+/**
+ * Resolve the gram weight for a `custom_food`-shaped value, given user
+ * intake params. Prefers explicit `grams_estimate`, then falls back to
+ * `serving.grams × quantity`, then to `available_portions[0].grams × quantity`.
+ */
+function gramsForCustomShape(
+  value: UnknownRecord,
+  params: ReturnType<typeof IntakeLogInputSchema.parse>,
+): number | undefined {
+  if (params.grams_estimate !== undefined) {
+    return params.grams_estimate;
+  }
+
+  const servingGrams =
+    (isRecord(value.serving) && typeof value.serving.grams === "number"
+      ? value.serving.grams
+      : undefined) ??
+    (Array.isArray(value.available_portions) &&
+    isRecord(value.available_portions[0]) &&
+    typeof (value.available_portions[0] as UnknownRecord).grams === "number"
+      ? ((value.available_portions[0] as UnknownRecord).grams as number)
+      : undefined);
+
+  if (servingGrams === undefined) {
+    return undefined;
+  }
+
+  return gramsForQuantity(params.quantity ?? 1, params.unit ?? "serving", servingGrams);
 }
 
 function hasMeaningfulNutrients(nutrients: NutrientMap): boolean {
