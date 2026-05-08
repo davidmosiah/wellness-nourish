@@ -6,6 +6,14 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-05-08
+
+### Fixed
+
+- Add MCP `structuredContent` to object payload responses while keeping the
+  existing text/JSON body. This makes agent clients consume Nourish outputs
+  the same way they consume the other wellness MCP connectors.
+
 ## [0.3.1] - 2026-05-08
 
 ### Fixed

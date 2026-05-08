@@ -386,6 +386,8 @@ async function assertCoachLoopReadsGoalsAndWearableContext() {
   const payload = JSON.parse(textFromToolResult(coach));
 
   assert.equal(coach.isError, undefined);
+  assert.equal(coach.structuredContent?.mode, "daily_coach");
+  assert.equal(coach.structuredContent?.suggested_next_meal?.text, payload.suggested_next_meal.text);
   assert.equal(payload.mode, "daily_coach");
   assert.equal(payload.requires_confirmation_to_log, true);
   assert.ok(payload.gaps.protein_g.remaining >= 0);

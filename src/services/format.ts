@@ -2,6 +2,7 @@ import type { ResponseFormat } from "../types.js";
 
 export interface McpTextResponse {
   isError?: boolean;
+  structuredContent?: Record<string, unknown>;
   content: Array<{
     type: "text";
     text: string;
@@ -18,7 +19,12 @@ export function makeResponse(
       ? (markdown ?? bulletList("Nourish", payload))
       : JSON.stringify(payload);
 
+  const structuredContent = payload !== null && typeof payload === "object" && !Array.isArray(payload)
+    ? payload as Record<string, unknown>
+    : undefined;
+
   return {
+    ...(structuredContent === undefined ? {} : { structuredContent }),
     content: [{ type: "text", text }],
   };
 }
