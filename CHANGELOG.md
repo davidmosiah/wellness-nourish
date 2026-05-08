@@ -6,6 +6,14 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-05-08
+
+### Fixed
+
+- Refresh audited lockfile transitive dependencies after the `0.3.0`
+  merge train: `express-rate-limit` now resolves to `8.5.1` and
+  `ip-address` to `10.2.0`, clearing the production `npm audit` gate.
+
 ## [0.3.0] - 2026-05-08
 
 🌱 **Cross-connector wellness coaching release.** Closes the audit-trail
