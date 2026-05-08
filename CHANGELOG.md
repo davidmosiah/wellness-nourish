@@ -6,6 +6,70 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-05-08
+
+Sprint 3 — data-integrity (timezone) + first agent UX win (`undo_last`).
+Lays groundwork for the upcoming dataset-enrichment work (TACO, CIQUAL,
+Agribalyse carbon footprint).
+
+### Fixed
+
+- **A1 — Timezone-aware date bucketing.** Three independently-defined
+  `todayDate()` helpers in `summary.ts` / `coach.ts` / `hydration-store.ts`
+  all returned `new Date().toISOString().slice(0, 10)` (UTC). A user in
+  São Paulo at 22:30 BRT saw `nourish_daily_summary` return data for
+  "tomorrow"; a user in Los Angeles lost ~7-8 hrs of late-evening logs
+  from "today". Same bug in `dateToNoonTimestamp` (used `${date}T12:00:00.000Z`
+  = early morning for users east of UTC).
+  
+  Replaced all four sites with a single `services/local-date.ts` helper:
+  - `localDate(tz?)` — today's YYYY-MM-DD in active timezone
+  - `localDateFor(date, tz?)` — bucket a Date into local YYYY-MM-DD
+  - `dateToNoonTimestamp(date, tz?)` — UTC ISO of noon-LOCAL on that date
+  - `getActiveTimezone()` — resolved IANA tz
+  
+  Resolution order: `NOURISH_TIMEZONE` env var (e.g. `America/Sao_Paulo`),
+  then `Intl.DateTimeFormat().resolvedOptions().timeZone` (system tz), then
+  fallback to `UTC`. Also fixes B4 (intake-store and hydration-store no
+  longer derive `entry.date` via `timestamp.slice(0, 10)`).
+
+### Added
+
+- **`nourish_undo_last`** (D1 from QA backlog) — undo the most recent
+  intake or hydration entry. The most common Telegram/agent recovery
+  move ("I logged the wrong thing"). Schema:
+  
+  ```ts
+  { kind?: "intake" | "hydration" | "any" = "any", explicit_user_intent: true }
+  ```
+  
+  Returns `{ ok: true, deleted, undone: { kind, entry } }` so the agent
+  can confirm or re-log if the undo was a mistake. Requires explicit
+  user intent (same guard pattern as `delete_intake` / `clear_day`).
+- **`timezone` field** in `nourish_connection_status` — exposes the
+  active IANA timezone so agents can sanity-check date bucketing.
+
+### Tests
+
+- New `scripts/test-local-date.mjs` — 8 cases covering São Paulo /
+  Tokyo / UTC bucketing, noon-local conversion (BRT, JST, UTC),
+  `dateToNoonTimestamp(undefined)` and garbage input passthrough.
+- `scripts/smoke-tools.mjs` adds 2 MCP-level assertions:
+  `assertConnectionStatusExposesTimezone` and `assertUndoLastWorks`
+  (which covers the explicit-intent guard, the empty-store no-op,
+  intake-then-undo, and `kind: "any"` cross-store ordering).
+- Existing tests pinned to `NOURISH_TIMEZONE=UTC` so date-bucket
+  assertions stay timezone-independent on contributor machines (was
+  the actual cause of the only test break this sprint).
+
+### Notes
+
+- Tool count: **34 → 35** (`nourish_undo_last`).
+- `connection_status` adds optional `timezone` field; agents reading
+  the old shape keep working.
+- No upstream provider changes in this release — pure local logic +
+  one new tool.
+
 ## [0.2.4] - 2026-05-08
 
 Sprint 2 / resilience release. Layers on top of 0.2.3 with: a centralized
