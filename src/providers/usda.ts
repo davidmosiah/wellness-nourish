@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { USDA_BASE_URL, USER_AGENT } from "../constants.js";
+import { enrichWithCarbon } from "../services/carbon-enrichment.js";
 import { foodCompleteness, makeFoodId } from "../services/food-normalization.js";
 import { fetchWithTimeout, NourishHttpError } from "../services/http.js";
 import { roundNutrient, scaleNutrients } from "../services/nutrients.js";
@@ -237,7 +238,7 @@ export async function searchUsdaFoods(
 
   return {
     provider: "usda",
-    foods: rankSearchFoods(query, search.foods ?? []).slice(0, limit).map(mapFood),
+    foods: rankSearchFoods(query, search.foods ?? []).slice(0, limit).map(mapFood).map(enrichWithCarbon),
   };
 }
 
@@ -251,7 +252,7 @@ export async function getUsdaFood(sourceId: string): Promise<FoodItem> {
     throw new Error(`USDA fixture not found for source_id ${sourceId}`);
   }
 
-  return mapFood(food);
+  return enrichWithCarbon(mapFood(food));
 }
 
 function rankSearchFoods(query: string, foods: UsdaSearchFood[]): UsdaSearchFood[] {

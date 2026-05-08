@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { OFF_BASE_URL, USER_AGENT } from "../constants.js";
+import { enrichWithCarbon } from "../services/carbon-enrichment.js";
 import { foodCompleteness, makeFoodId } from "../services/food-normalization.js";
 import { fetchWithTimeout, isTransientHttpError, NourishHttpError } from "../services/http.js";
 import { nutrientsForGrams } from "../services/portion-engine.js";
@@ -274,7 +275,7 @@ export async function lookupOpenFoodFactsBarcode(
 
   const result: OpenFoodFactsLookupResult = {
     provider: "open_food_facts",
-    food: mapProduct(response, barcode),
+    food: enrichWithCarbon(mapProduct(response, barcode)),
   };
   setCachedLookup(barcode, result, config.cache_ttl_seconds);
 
@@ -325,7 +326,7 @@ export async function searchOpenFoodFactsByName(
         return [];
       }
 
-      return [mapProduct({ product, code: product.code }, product.code)];
+      return [enrichWithCarbon(mapProduct({ product, code: product.code }, product.code))];
     })
     .slice(0, limit);
 

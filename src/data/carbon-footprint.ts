@@ -123,4 +123,84 @@ export const CARBON_FOOTPRINT: readonly CarbonEntry[] = [
   { name_en: "pão de queijo", name_pt: "pão de queijo", aliases: ["pão de queijo", "pao de queijo", "cheese bread"], kg_co2e_per_kg: 5.0, source: "single_study", source_id: "pao-de-queijo-recipe", confidence: "low", note: "Composite of cheese + cassava starch + eggs; recipe-level estimate." },
   { name_en: "coxinha", name_pt: "coxinha", aliases: ["coxinha", "coxinha de frango"], kg_co2e_per_kg: 3.5, source: "single_study", source_id: "coxinha-recipe", confidence: "low", note: "Composite chicken + wheat dough + frying oil." },
   { name_en: "brigadeiro", name_pt: "brigadeiro", aliases: ["brigadeiro", "negrinho"], kg_co2e_per_kg: 8.0, source: "single_study", source_id: "brigadeiro-recipe", confidence: "low", note: "Dominated by condensed milk + chocolate." },
+
+  // ---- Expanded dairy ----
+  { name_en: "mozzarella", name_pt: "mussarela", aliases: ["mozzarella", "mussarela", "muzzarela"], kg_co2e_per_kg: 8.6, source: "agribalyse", source_id: "21563", confidence: "high" },
+  { name_en: "parmesan", name_pt: "parmesão", aliases: ["parmesan", "parmesão", "parmesao"], kg_co2e_per_kg: 13.5, source: "agribalyse", source_id: "21564", confidence: "high" },
+  { name_en: "cream cheese", name_pt: "requeijão", aliases: ["cream cheese", "requeijão", "requeijao", "catupiry"], kg_co2e_per_kg: 11.0, source: "single_study", source_id: "cream-cheese-mean", confidence: "low" },
+  { name_en: "condensed milk", name_pt: "leite condensado", aliases: ["condensed milk", "leite condensado", "leite moça"], kg_co2e_per_kg: 4.8, source: "agribalyse", source_id: "19015", confidence: "high" },
+  { name_en: "cottage cheese", name_pt: "queijo cottage", aliases: ["cottage cheese", "queijo cottage"], kg_co2e_per_kg: 4.5, source: "owid_poore_nemecek_2018", source_id: "fresh-cheese", confidence: "medium" },
+  { name_en: "ice cream", name_pt: "sorvete", aliases: ["ice cream", "sorvete", "gelato"], kg_co2e_per_kg: 6.5, source: "agribalyse", source_id: "19030", confidence: "high" },
+
+  // ---- Expanded meats ----
+  { name_en: "turkey", name_pt: "peru", aliases: ["turkey", "peru", "turkey breast", "peito de peru"], kg_co2e_per_kg: 5.4, source: "owid_poore_nemecek_2018", source_id: "poultry-meat", confidence: "medium" },
+  { name_en: "duck", name_pt: "pato", aliases: ["duck", "pato"], kg_co2e_per_kg: 7.0, source: "single_study", source_id: "duck-mean", confidence: "low" },
+  { name_en: "ham", name_pt: "presunto", aliases: ["ham", "presunto", "presunto cozido"], kg_co2e_per_kg: 7.6, source: "owid_poore_nemecek_2018", source_id: "pig-meat", confidence: "medium" },
+  { name_en: "bacon", name_pt: "bacon", aliases: ["bacon"], kg_co2e_per_kg: 12.3, source: "agribalyse", source_id: "28102", confidence: "high" },
+  { name_en: "sausage (pork)", name_pt: "linguiça", aliases: ["sausage", "linguiça", "linguica", "salsicha", "calabresa"], kg_co2e_per_kg: 7.9, source: "owid_poore_nemecek_2018", source_id: "pig-meat", confidence: "medium" },
+  { name_en: "ground beef (lean)", name_pt: "carne moída magra", aliases: ["lean beef", "ground beef lean", "patinho moído"], kg_co2e_per_kg: 60, source: "owid_poore_nemecek_2018", source_id: "beef-beef-herd", confidence: "medium" },
+
+  // ---- Expanded fish ----
+  { name_en: "salmon (farmed)", name_pt: "salmão de cativeiro", aliases: ["salmon", "salmão", "salmao", "filé de salmão"], kg_co2e_per_kg: 5.1, source: "agribalyse", source_id: "26020", confidence: "high" },
+  { name_en: "salmon (wild)", name_pt: "salmão selvagem", aliases: ["wild salmon", "salmão selvagem"], kg_co2e_per_kg: 11.8, source: "single_study", source_id: "wild-salmon-mean", confidence: "low", note: "Wild salmon has higher emissions than farmed due to fuel-intensive trawling." },
+  { name_en: "cod", name_pt: "bacalhau", aliases: ["cod", "bacalhau"], kg_co2e_per_kg: 6.5, source: "owid_poore_nemecek_2018", source_id: "fish-wild-trawl", confidence: "medium" },
+  { name_en: "tilapia", name_pt: "tilápia", aliases: ["tilapia", "tilápia"], kg_co2e_per_kg: 4.0, source: "owid_poore_nemecek_2018", source_id: "fish-farmed-warmwater", confidence: "medium" },
+  { name_en: "mackerel", name_pt: "cavala", aliases: ["mackerel", "cavala"], kg_co2e_per_kg: 2.5, source: "owid_poore_nemecek_2018", source_id: "fish-wild-pelagic", confidence: "medium" },
+
+  // ---- Expanded vegetables ----
+  { name_en: "spinach", name_pt: "espinafre", aliases: ["spinach", "espinafre"], kg_co2e_per_kg: 0.5, source: "owid_poore_nemecek_2018", source_id: "leafy-vegetables", confidence: "medium" },
+  { name_en: "kale", name_pt: "couve", aliases: ["kale", "couve", "couve manteiga", "couve refogada"], kg_co2e_per_kg: 0.5, source: "owid_poore_nemecek_2018", source_id: "leafy-vegetables", confidence: "medium" },
+  { name_en: "bell pepper", name_pt: "pimentão", aliases: ["bell pepper", "pimentão", "pimentao"], kg_co2e_per_kg: 1.4, source: "agribalyse", source_id: "20034", confidence: "high" },
+  { name_en: "cucumber", name_pt: "pepino", aliases: ["cucumber", "pepino"], kg_co2e_per_kg: 0.5, source: "agribalyse", source_id: "20070", confidence: "high" },
+  { name_en: "zucchini", name_pt: "abobrinha", aliases: ["zucchini", "abobrinha", "courgette"], kg_co2e_per_kg: 0.4, source: "agribalyse", source_id: "20011", confidence: "high" },
+  { name_en: "eggplant", name_pt: "berinjela", aliases: ["eggplant", "berinjela", "aubergine"], kg_co2e_per_kg: 1.4, source: "agribalyse", source_id: "20044", confidence: "high" },
+  { name_en: "mushrooms", name_pt: "cogumelos", aliases: ["mushroom", "mushrooms", "cogumelo", "cogumelos", "champignon"], kg_co2e_per_kg: 1.7, source: "agribalyse", source_id: "20082", confidence: "high" },
+  { name_en: "asparagus", name_pt: "aspargos", aliases: ["asparagus", "aspargos"], kg_co2e_per_kg: 1.2, source: "agribalyse", source_id: "20003", confidence: "high" },
+  { name_en: "beetroot", name_pt: "beterraba", aliases: ["beetroot", "beet", "beterraba"], kg_co2e_per_kg: 0.4, source: "owid_poore_nemecek_2018", source_id: "root-vegetables", confidence: "medium" },
+  { name_en: "corn (sweet)", name_pt: "milho doce", aliases: ["corn", "milho", "milho doce", "sweet corn"], kg_co2e_per_kg: 0.7, source: "agribalyse", source_id: "20066", confidence: "high" },
+
+  // ---- Expanded fruits ----
+  { name_en: "grapes", name_pt: "uva", aliases: ["grape", "grapes", "uva", "uvas"], kg_co2e_per_kg: 1.1, source: "owid_poore_nemecek_2018", source_id: "berries-grapes", confidence: "medium" },
+  { name_en: "pear", name_pt: "pera", aliases: ["pear", "pera"], kg_co2e_per_kg: 0.4, source: "agribalyse", source_id: "13059", confidence: "high" },
+  { name_en: "melon", name_pt: "melão", aliases: ["melon", "melão", "melao", "cantaloupe"], kg_co2e_per_kg: 0.4, source: "agribalyse", source_id: "13050", confidence: "high" },
+  { name_en: "peach", name_pt: "pêssego", aliases: ["peach", "pêssego", "pessego"], kg_co2e_per_kg: 0.5, source: "agribalyse", source_id: "13063", confidence: "high" },
+  { name_en: "plum", name_pt: "ameixa", aliases: ["plum", "ameixa"], kg_co2e_per_kg: 0.4, source: "agribalyse", source_id: "13066", confidence: "high" },
+  { name_en: "kiwi", name_pt: "kiwi", aliases: ["kiwi", "kiwifruit"], kg_co2e_per_kg: 1.4, source: "owid_poore_nemecek_2018", source_id: "tropical-shipped", confidence: "medium" },
+  { name_en: "guava", name_pt: "goiaba", aliases: ["guava", "goiaba"], kg_co2e_per_kg: 0.6, source: "owid_poore_nemecek_2018", source_id: "tropical-fruit-aggregate", confidence: "medium" },
+  { name_en: "passion fruit", name_pt: "maracujá", aliases: ["passion fruit", "maracujá", "maracuja"], kg_co2e_per_kg: 0.6, source: "owid_poore_nemecek_2018", source_id: "tropical-fruit-aggregate", confidence: "medium" },
+  { name_en: "coconut", name_pt: "coco", aliases: ["coconut", "coco", "coconut milk", "leite de coco"], kg_co2e_per_kg: 1.0, source: "single_study", source_id: "coconut-mean", confidence: "low" },
+  { name_en: "raisins", name_pt: "passas", aliases: ["raisin", "raisins", "uva passa", "passas"], kg_co2e_per_kg: 2.5, source: "single_study", source_id: "dried-fruit", confidence: "low", note: "Dried fruit concentrates the carbon (~10x by weight vs fresh)." },
+
+  // ---- Expanded grains ----
+  { name_en: "quinoa", name_pt: "quinoa", aliases: ["quinoa", "quinua"], kg_co2e_per_kg: 1.5, source: "single_study", source_id: "quinoa-mean", confidence: "low" },
+  { name_en: "barley", name_pt: "cevada", aliases: ["barley", "cevada"], kg_co2e_per_kg: 1.2, source: "owid_poore_nemecek_2018", source_id: "barley", confidence: "medium" },
+  { name_en: "popcorn", name_pt: "pipoca", aliases: ["popcorn", "pipoca"], kg_co2e_per_kg: 1.4, source: "single_study", source_id: "popcorn-recipe", confidence: "low", note: "Per kg of popped corn, including small oil/butter add-on." },
+  { name_en: "polenta", name_pt: "polenta", aliases: ["polenta", "fubá", "fuba"], kg_co2e_per_kg: 1.0, source: "agribalyse", source_id: "9425", confidence: "high" },
+
+  // ---- Nuts ----
+  { name_en: "walnuts", name_pt: "nozes", aliases: ["walnut", "walnuts", "noz", "nozes"], kg_co2e_per_kg: 0.9, source: "owid_poore_nemecek_2018", source_id: "nuts-aggregate", confidence: "medium" },
+  { name_en: "cashews", name_pt: "castanha de caju", aliases: ["cashew", "cashews", "castanha de caju", "caju nut"], kg_co2e_per_kg: 2.7, source: "single_study", source_id: "cashew-mean", confidence: "low" },
+  { name_en: "brazil nuts", name_pt: "castanha do Pará", aliases: ["brazil nut", "brazil nuts", "castanha do pará", "castanha do para"], kg_co2e_per_kg: 1.1, source: "single_study", source_id: "brazil-nut-mean", confidence: "low" },
+
+  // ---- Plant proteins ----
+  { name_en: "tempeh", name_pt: "tempeh", aliases: ["tempeh"], kg_co2e_per_kg: 2.0, source: "owid_poore_nemecek_2018", source_id: "tofu", confidence: "medium" },
+  { name_en: "edamame", name_pt: "edamame", aliases: ["edamame", "soja verde"], kg_co2e_per_kg: 0.9, source: "owid_poore_nemecek_2018", source_id: "soybeans", confidence: "medium" },
+  { name_en: "hummus", name_pt: "homus", aliases: ["hummus", "homus"], kg_co2e_per_kg: 1.1, source: "single_study", source_id: "hummus-recipe", confidence: "low" },
+
+  // ---- Processed / fast food ----
+  { name_en: "pizza margherita", name_pt: "pizza margherita", aliases: ["pizza", "pizza margherita"], kg_co2e_per_kg: 4.5, source: "single_study", source_id: "pizza-margherita-recipe", confidence: "low", note: "Margherita; meat pizzas are ~6-9 kg." },
+  { name_en: "hamburger", name_pt: "hambúrguer", aliases: ["hamburger", "hambúrguer", "burger", "x-burger"], kg_co2e_per_kg: 13.0, source: "single_study", source_id: "burger-recipe", confidence: "low", note: "Beef burger including bun + cheese; chicken burger ~3.5 kg." },
+  { name_en: "fried chicken", name_pt: "frango frito", aliases: ["fried chicken", "frango frito"], kg_co2e_per_kg: 6.5, source: "single_study", source_id: "fried-chicken-recipe", confidence: "low" },
+  { name_en: "french fries", name_pt: "batata frita", aliases: ["french fries", "fries", "batata frita"], kg_co2e_per_kg: 3.6, source: "agribalyse", source_id: "20109", confidence: "high" },
+  { name_en: "biscuits", name_pt: "biscoitos", aliases: ["biscuit", "biscuits", "cookie", "cookies", "bolacha", "biscoito"], kg_co2e_per_kg: 2.5, source: "agribalyse", source_id: "9301", confidence: "high" },
+
+  // ---- Drinks expanded ----
+  { name_en: "coca-cola / sugar soda", name_pt: "refrigerante", aliases: ["coca cola", "coca-cola", "refrigerante", "soda", "guaraná"], kg_co2e_per_kg: 0.5, source: "single_study", source_id: "soda-mean", confidence: "low" },
+  { name_en: "coconut water", name_pt: "água de coco", aliases: ["coconut water", "água de coco", "agua de coco"], kg_co2e_per_kg: 0.7, source: "single_study", source_id: "coconut-water", confidence: "low" },
+  { name_en: "tea (black)", name_pt: "chá preto", aliases: ["tea", "black tea", "chá preto", "cha preto"], kg_co2e_per_kg: 6.0, source: "single_study", source_id: "tea-dry", confidence: "low", note: "Per kg of dry tea leaves; a 200ml cup uses ~2-3g." },
+  { name_en: "tea (green)", name_pt: "chá verde", aliases: ["green tea", "chá verde", "cha verde", "matcha"], kg_co2e_per_kg: 6.0, source: "single_study", source_id: "tea-dry", confidence: "low" },
+
+  // ---- Other staples ----
+  { name_en: "honey", name_pt: "mel", aliases: ["honey", "mel"], kg_co2e_per_kg: 1.2, source: "single_study", source_id: "honey-mean", confidence: "low" },
+  { name_en: "salt", name_pt: "sal", aliases: ["salt", "sal", "table salt", "sea salt"], kg_co2e_per_kg: 0.3, source: "single_study", source_id: "salt-mean", confidence: "low" },
 ];
