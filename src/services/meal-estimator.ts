@@ -43,6 +43,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
       "ovo mexido",
       "ovos cozidos",
       "ovo cozido",
+      "ovos fritos",
+      "ovo frito",
       "eggs",
       "egg",
       "ovos",
@@ -72,9 +74,14 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "pão francês",
+    displayNamePtBr: "pão francês",
     aliases: [
+      "fatias de pão",
+      "fatias de pao",
       "fatia de pão",
       "fatia de pao",
+      "pães franceses",
+      "paes franceses",
       "pão francês",
       "pao frances",
       "pão na chapa",
@@ -85,6 +92,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
       "toast",
       "bread roll",
       "bread",
+      "pães",
+      "paes",
       "pão",
       "pao",
     ],
@@ -110,7 +119,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "pão de queijo",
-    aliases: ["pão de queijo", "pao de queijo", "cheese bread"],
+    displayNamePtBr: "pão de queijo",
+    aliases: ["pães de queijo", "paes de queijo", "pão de queijo", "pao de queijo", "cheese bread"],
     servingGrams: 50,
     nutrientsPer100g: {
       calories_kcal: 330,
@@ -133,7 +143,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "tapioca",
-    aliases: ["tapioca", "goma de tapioca"],
+    displayNamePtBr: "tapioca",
+    aliases: ["tapiocas", "tapioca", "goma de tapioca"],
     servingGrams: 80,
     nutrientsPer100g: {
       calories_kcal: 240,
@@ -144,7 +155,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "queijo minas",
-    aliases: ["queijo minas", "minas cheese", "queijo branco"],
+    displayNamePtBr: "queijo minas",
+    aliases: ["queijos minas", "queijo minas", "minas cheese", "queijo branco"],
     servingGrams: 40,
     nutrientsPer100g: {
       calories_kcal: 264,
@@ -155,7 +167,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "queijo coalho",
-    aliases: ["queijo coalho", "coalho cheese"],
+    displayNamePtBr: "queijo coalho",
+    aliases: ["queijos coalho", "queijo coalho", "coalho cheese"],
     servingGrams: 50,
     nutrientsPer100g: {
       calories_kcal: 320,
@@ -166,7 +179,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "coxinha",
-    aliases: ["coxinha", "chicken croquette"],
+    displayNamePtBr: "coxinha",
+    aliases: ["coxinhas", "coxinha", "chicken croquette"],
     servingGrams: 100,
     nutrientsPer100g: {
       calories_kcal: 285,
@@ -177,7 +191,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "brigadeiro",
-    aliases: ["brigadeiro", "chocolate truffle"],
+    displayNamePtBr: "brigadeiro",
+    aliases: ["brigadeiros", "brigadeiro", "chocolate truffle"],
     servingGrams: 30,
     nutrientsPer100g: {
       calories_kcal: 390,
@@ -189,6 +204,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "açaí",
+    displayNamePtBr: "açaí",
     aliases: ["açaí", "acai", "açaí na tigela", "acai bowl"],
     servingGrams: 200,
     nutrientsPer100g: {
@@ -278,6 +294,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "cuscuz",
+    displayNamePtBr: "cuscuz",
     aliases: ["cuscuz", "cuscuz nordestino", "couscous"],
     servingGrams: 150,
     nutrientsPer100g: {
@@ -290,6 +307,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "macaxeira",
+    displayNamePtBr: "macaxeira",
     aliases: ["macaxeira", "aipim", "mandioca", "cassava", "yuca"],
     servingGrams: 150,
     nutrientsPer100g: {
@@ -302,7 +320,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "batata doce",
-    aliases: ["batata doce", "sweet potato"],
+    displayNamePtBr: "batata doce",
+    aliases: ["batatas doces", "batata doce", "sweet potato"],
     servingGrams: 130,
     nutrientsPer100g: {
       calories_kcal: 86,
@@ -314,6 +333,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "carne moída",
+    displayNamePtBr: "carne moída",
     aliases: ["carne moída", "carne moida", "ground beef"],
     servingGrams: 100,
     nutrientsPer100g: {
@@ -325,7 +345,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "peixe grelhado",
-    aliases: ["peixe grelhado", "fish", "grilled fish"],
+    displayNamePtBr: "peixe grelhado",
+    aliases: ["peixes grelhados", "peixe grelhado", "fish", "grilled fish"],
     servingGrams: 120,
     nutrientsPer100g: {
       calories_kcal: 130,
@@ -336,7 +357,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "picanha",
-    aliases: ["picanha"],
+    displayNamePtBr: "picanha",
+    aliases: ["picanhas", "picanha"],
     servingGrams: 150,
     nutrientsPer100g: {
       calories_kcal: 289,
@@ -347,7 +369,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "alcatra",
-    aliases: ["alcatra"],
+    displayNamePtBr: "alcatra",
+    aliases: ["alcatras", "alcatra"],
     servingGrams: 150,
     nutrientsPer100g: {
       calories_kcal: 220,
@@ -358,7 +381,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "costela",
-    aliases: ["costela", "beef ribs"],
+    displayNamePtBr: "costela",
+    aliases: ["costelas", "costela", "beef ribs"],
     servingGrams: 150,
     nutrientsPer100g: {
       calories_kcal: 330,
@@ -369,7 +393,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "feijoada",
-    aliases: ["feijoada completa", "feijoada"],
+    displayNamePtBr: "feijoada",
+    aliases: ["feijoadas", "feijoada completa", "feijoada"],
     servingGrams: 250,
     nutrientsPer100g: {
       calories_kcal: 150,
@@ -381,6 +406,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "feijão tropeiro",
+    displayNamePtBr: "feijão tropeiro",
     aliases: ["feijão tropeiro", "feijao tropeiro"],
     servingGrams: 180,
     nutrientsPer100g: {
@@ -393,7 +419,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "farofa",
-    aliases: ["farofa"],
+    displayNamePtBr: "farofa",
+    aliases: ["farofas", "farofa"],
     servingGrams: 50,
     nutrientsPer100g: {
       calories_kcal: 360,
@@ -405,6 +432,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "couve refogada",
+    displayNamePtBr: "couve refogada",
     aliases: ["couve refogada", "couve"],
     servingGrams: 70,
     nutrientsPer100g: {
@@ -417,7 +445,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "vinagrete",
-    aliases: ["vinagrete"],
+    displayNamePtBr: "vinagrete",
+    aliases: ["vinagretes", "vinagrete"],
     servingGrams: 60,
     nutrientsPer100g: {
       calories_kcal: 35,
@@ -429,7 +458,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "iogurte natural",
-    aliases: ["iogurte natural", "iogurte", "plain yogurt", "yogurt"],
+    displayNamePtBr: "iogurte natural",
+    aliases: ["iogurtes naturais", "iogurte natural", "iogurtes", "iogurte", "plain yogurt", "yogurt"],
     servingGrams: 170,
     nutrientsPer100g: {
       calories_kcal: 61,
@@ -479,7 +509,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
   {
     canonical: "cafezinho",
-    aliases: ["cafezinho"],
+    displayNamePtBr: "cafezinho",
+    aliases: ["cafezinhos", "cafezinho"],
     servingGrams: 50,
     nutrientsPer100g: {
       calories_kcal: 1,
@@ -491,7 +522,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   {
     canonical: "apple",
     displayNamePtBr: "maçã",
-    aliases: ["apple", "apples"],
+    aliases: ["apple", "apples", "maçãs", "macas", "maçã", "maca"],
     servingGrams: 182,
     nutrientsPer100g: {
       calories_kcal: 52,
