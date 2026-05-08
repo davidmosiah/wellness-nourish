@@ -6,6 +6,89 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-05-08
+
+Sprint 2 / resilience release. Layers on top of 0.2.3 with: a centralized
+HTTP helper that adds per-attempt timeout + single-retry-with-backoff to all
+USDA + OFF calls, graceful degradation when Open Food Facts is down, image
+analysis fallback when a barcode lookup fails mid-call, and several new QA
+findings (E1, B1, B5) caught by a follow-up audit. No breaking changes.
+
+### Added
+
+- **`services/http.ts`** — single fetch wrapper with `AbortController`-based
+  timeout (default 10s, configurable via `NOURISH_PROVIDER_TIMEOUT_MS`),
+  one retry on transient failures (`5xx`, `429`, network, timeout) with
+  exponential backoff, and a structured `NourishHttpError` exposing
+  `kind` (`timeout` | `rate_limit` | `server_error` | `network` | `http`),
+  `attempts`, and a `transient` flag. `isTransientHttpError(err)` is the
+  recommended predicate for callers deciding between hard failure and
+  graceful degradation. Regression tests in
+  `scripts/test-http-helper.mjs` (timeout, 503-then-200 retry,
+  persistent 503, persistent 429, non-retryable 404).
+- **`provider_timeout_ms`** in `nourish_connection_status` so agents can see
+  the configured timeout, plus a new top-level `warnings: string[]` array
+  and a `usda_using_demo_key: boolean` flag (true when no `FDC_API_KEY` is
+  set and we're not in fixture mode — the heavily rate-limited shared key
+  many users hit silently).
+- Agent-manifest and usage-guide now list `nourish_delete_water` and
+  `nourish_clear_hydration_day` (added in 0.2.3 but not surfaced in the
+  discovery surfaces, so agents booting cold couldn't find them — fixed
+  here as the QA-found "E1" gap).
+
+### Fixed
+
+- **N-007 — Open Food Facts search now degrades gracefully on transient
+  failures.** A 503/timeout/network error from `/cgi/search.pl` no longer
+  throws. `searchOpenFoodFactsByName` returns
+  `{ foods: [], warnings: ["Open Food Facts search …; returning empty
+  results."] }`, so partial results from other providers still flow through
+  in `provider: "all"` and the agent gets actionable information instead of
+  a hard error. Direct `nourish_lookup_barcode` keeps throwing because the
+  caller asked for a specific product.
+- **N-008 — image-analysis routes now fall back when the barcode lookup
+  fails mid-call.** If `nourish_analyze_food_image` is given a barcode AND
+  `nutrition_label_text` (or `detected_items`/`image_description`) and OFF is
+  unavailable, the call now uses the label/meal hints instead of failing.
+  The barcode that was tried surfaces as `barcode_attempted` in the
+  response so the agent can explain the fallback.
+- **N-009 — nutrition-label OCR with no parseable nutrients no longer emits
+  `suggested_log_intake`.** Before, an unparseable label created an empty
+  `nutrients_per_serving` and the agent could log it (writing `nutrients: {}`
+  — the same class of bug 0.2.3's N-001 just fixed). Now the route is
+  `"needs_more_ocr"` with explicit warnings and no logging suggestion.
+- **B5 — HTTP transport `close()` errors are no longer unhandled
+  rejections.** `transport.close()` and `server.close()` rejections (which
+  fire when the response was already cancelled) are now swallowed with a
+  comment explaining why.
+- **`provider: "all"` fan-out is now parallel** (`Promise.allSettled`
+  instead of sequential `for` loop). Every per-provider warning is tagged
+  with the provider name (e.g. `open_food_facts: …`) so partial failures
+  are attributable. Latency drops from ~3× single-provider to ~1× the
+  slowest provider.
+- **B1 — Open Food Facts cache is now LRU-bounded.** Was a `Map` that grew
+  forever (≈400MB at 100K barcodes in a long-running stdio process). Capped
+  at 500 entries with insertion-order LRU eviction.
+
+### New regression coverage
+
+- `scripts/test-http-helper.mjs` — 5 cases for the new helper: timeout,
+  503-then-success retry, persistent 503, persistent 429, non-retryable 404.
+- `scripts/smoke-tools.mjs` adds:
+  - `assertConnectionStatusEnriched` — `provider_timeout_ms`, `warnings[]`,
+    `usda_using_demo_key`
+  - `assertAgentManifestIncludesHydrationTools` — E1 fix
+  - `assertLabelOcrWithoutNutrientsDoesNotSuggestLog` — N-009
+  - `assertParallelAllProviderTagsWarnings` — provider-tagged warnings
+
+### Notes
+
+- No changes to the public tool surface (still 34 tools at 0.2.3 + 0.2.4).
+- No breaking schema changes. `connection_status` adds optional fields;
+  agents reading the old shape continue to work.
+- Hermes wrapper update (`wellness-nourish@0.2.3 → @0.2.4`) lands separately
+  after this PR is merged + published to npm.
+
 ## [0.2.3] - 2026-05-08
 
 This release lands every P1 finding from the deep QA report: the intake input
