@@ -35,6 +35,7 @@ const expectedTools = [
   "nourish_update_intake",
   "nourish_delete_intake",
   "nourish_clear_day",
+  "nourish_undo_last",
   "nourish_log_water",
   "nourish_delete_water",
   "nourish_clear_hydration_day",
@@ -66,6 +67,9 @@ const transport = new StdioClientTransport({
     NOURISH_FIXTURE_MODE: "1",
     NOURISH_FIXTURE_DIR: fixtureDir,
     NOURISH_LOCAL_DIR: localDir,
+    // Pin to UTC so date-bucket assertions ("2099-01-15", etc.) stay
+    // timezone-independent on contributor machines.
+    NOURISH_TIMEZONE: "UTC",
   },
 });
 
@@ -98,6 +102,8 @@ try {
   await assertAgentManifestIncludesHydrationTools();
   await assertLabelOcrWithoutNutrientsDoesNotSuggestLog();
   await assertParallelAllProviderTagsWarnings();
+  await assertConnectionStatusExposesTimezone();
+  await assertUndoLastWorks();
 
 } finally {
   await client.close();
@@ -693,6 +699,95 @@ async function assertParallelAllProviderTagsWarnings() {
       );
     }
   }
+}
+
+// --- Sprint 3 / A1: connection_status now exposes the active timezone so
+//     agents can sanity-check date bucketing. ---
+async function assertConnectionStatusExposesTimezone() {
+  const result = await client.callTool({
+    name: "nourish_connection_status",
+    arguments: {},
+  });
+  const payload = JSON.parse(textFromToolResult(result));
+
+  assert.notEqual(result.isError, true);
+  assert.equal(typeof payload.timezone, "string", "connection_status must expose timezone");
+  assert.ok(payload.timezone.length > 0);
+  // Either the env-set value or a real IANA name. Both contain "/" except UTC.
+  assert.ok(
+    payload.timezone === "UTC" || payload.timezone.includes("/"),
+    `expected IANA tz or "UTC", got: ${payload.timezone}`,
+  );
+}
+
+// --- Sprint 3 / D1: nourish_undo_last removes the most recent intake or
+//     hydration entry and returns it so the agent can re-log if it was a
+//     mistake. Requires explicit_user_intent. ---
+async function assertUndoLastWorks() {
+  // First, the guard.
+  const guarded = await client.callTool({
+    name: "nourish_undo_last",
+    arguments: { kind: "any" },
+  });
+  const guardedPayload = JSON.parse(textFromToolResult(guarded));
+  assert.equal(guardedPayload.error?.code, "USER_ACTION_REQUIRED", "explicit_user_intent guard");
+
+  // Empty case — undo when nothing to undo should be a no-op (ok: true, undone: null).
+  // (Some leftover data may exist from previous assertions; clear by undoing
+  //  until empty for both kinds.)
+  for (let i = 0; i < 30; i++) {
+    const r = await client.callTool({
+      name: "nourish_undo_last",
+      arguments: { kind: "any", explicit_user_intent: true },
+    });
+    const p = JSON.parse(textFromToolResult(r));
+    if (p.undone === null) break;
+  }
+
+  const emptyResult = await client.callTool({
+    name: "nourish_undo_last",
+    arguments: { kind: "any", explicit_user_intent: true },
+  });
+  const emptyPayload = JSON.parse(textFromToolResult(emptyResult));
+  assert.equal(emptyPayload.undone, null, "undo with empty stores returns undone:null");
+
+  // Log an intake entry, then undo it.
+  const logIntake = await client.callTool({
+    name: "nourish_log_intake",
+    arguments: {
+      explicit_user_intent: true,
+      text: "qa undo test - 1 banana",
+      meal_type: "snack",
+    },
+  });
+  const intakePayload = JSON.parse(textFromToolResult(logIntake));
+  assert.notEqual(logIntake.isError, true);
+
+  const undoIntake = await client.callTool({
+    name: "nourish_undo_last",
+    arguments: { kind: "intake", explicit_user_intent: true },
+  });
+  const undoIntakePayload = JSON.parse(textFromToolResult(undoIntake));
+  assert.notEqual(undoIntake.isError, true);
+  assert.equal(undoIntakePayload.undone?.kind, "intake");
+  assert.equal(undoIntakePayload.undone?.entry?.id, intakePayload.id, "must undo the entry we just logged");
+  assert.equal(undoIntakePayload.deleted, true);
+
+  // Log a water entry, then undo with kind:"any" — must pick the water entry
+  // because that's now the most recent.
+  await client.callTool({
+    name: "nourish_log_water",
+    arguments: { explicit_user_intent: true, amount_ml: 250 },
+  });
+
+  const undoAny = await client.callTool({
+    name: "nourish_undo_last",
+    arguments: { kind: "any", explicit_user_intent: true },
+  });
+  const undoAnyPayload = JSON.parse(textFromToolResult(undoAny));
+  assert.notEqual(undoAny.isError, true);
+  assert.equal(undoAnyPayload.undone?.kind, "hydration", "kind:'any' must pick the most recent across stores");
+  assert.equal(undoAnyPayload.deleted, true);
 }
 
 function assertSearchSchemaHonest(tools) {

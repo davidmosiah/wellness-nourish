@@ -8,6 +8,9 @@ execFileSync("npm", ["run", "build"], { stdio: "inherit" });
 
 const localDir = await mkdtemp(join(tmpdir(), "nourish-hydration-goals-"));
 process.env.NOURISH_LOCAL_DIR = localDir;
+// Pin to UTC so the date-bucket assertions (e.g. "2026-05-05") stay
+// timezone-independent. See comment in test-intake-store.mjs.
+process.env.NOURISH_TIMEZONE = "UTC";
 
 try {
   const { logWater, buildHydrationSummary } = await import("../dist/services/hydration-store.js");

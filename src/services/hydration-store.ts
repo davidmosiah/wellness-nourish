@@ -6,6 +6,7 @@ import { dirname, join } from "node:path";
 
 import { getConfig } from "./config.js";
 import { getGoals } from "./goals-store.js";
+import { localDate, localDateFor } from "./local-date.js";
 import { roundNutrient } from "./nutrients.js";
 import type { HydrationEntry, HydrationSummary } from "../types.js";
 
@@ -71,7 +72,10 @@ export async function logWater(input: LogWaterInput): Promise<HydrationEntry> {
     const entryBase: HydrationEntry = {
       id: `water_${randomUUID()}`,
       timestamp,
-      date: timestamp.slice(0, 10),
+      // Bucket against the user's local date, not UTC. `slice(0, 10)` would
+      // put a São Paulo 22:30 BRT log into "tomorrow" because the timestamp
+      // is already shifted to UTC.
+      date: localDateFor(new Date(timestamp)),
       amount_ml: roundNutrient(input.amount_ml),
       source: input.source ?? "manual",
     };
@@ -152,6 +156,7 @@ export async function buildHydrationSummary(date = todayDate()): Promise<Hydrati
   };
 }
 
+// Was UTC — see services/local-date.ts.
 function todayDate(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localDate();
 }

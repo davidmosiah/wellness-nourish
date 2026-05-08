@@ -580,8 +580,12 @@ function parsePositiveNumber(value: string, label: string): number {
   return parsed;
 }
 
+// Replaced UTC noon (`${date}T12:00:00.000Z`) with the timezone-aware helper
+// from services/local-date.ts. The legacy form put logs into the wrong day
+// for any user not on UTC.
+import { dateToNoonTimestamp as dateToNoonTimestampLocal } from "../services/local-date.js";
 function dateToNoonTimestamp(date: string | undefined): string | undefined {
-  return date === undefined ? undefined : `${date}T12:00:00.000Z`;
+  return dateToNoonTimestampLocal(date);
 }
 
 function sumGrams(items: Array<{ grams: number }>): number | undefined {

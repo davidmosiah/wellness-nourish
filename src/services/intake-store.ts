@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
 
 import { getConfig } from "./config.js";
+import { localDateFor } from "./local-date.js";
 import { scaleNutrients } from "./nutrients.js";
 import type { IntakeEntry } from "../types.js";
 
@@ -67,7 +68,8 @@ export async function addIntakeEntry(input: AddIntakeEntryInput): Promise<Intake
       ...input,
       id: `intake_${randomUUID()}`,
       timestamp,
-      date: timestamp.slice(0, 10),
+      // Bucket against the user's local date, not UTC. See services/local-date.ts.
+      date: localDateFor(new Date(timestamp)),
     };
 
     entries.push(entry);
@@ -106,7 +108,9 @@ export async function updateIntakeEntry(id: string, patch: UpdateIntakeEntryPatc
       ...current,
       ...patch,
       timestamp,
-      date: timestamp.slice(0, 10),
+      // Bucket against the user's local date, not UTC. Fixes B4 from the QA
+      // follow-up audit (timezone-aware update_intake date drift).
+      date: localDateFor(new Date(timestamp)),
     };
     if (factor !== undefined) {
       updated.nutrients = scaleNutrients(current.nutrients, factor);

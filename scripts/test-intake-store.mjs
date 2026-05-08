@@ -8,6 +8,11 @@ execFileSync("npm", ["run", "build"], { stdio: "inherit" });
 
 const localDir = await mkdtemp(join(tmpdir(), "nourish-intake-store-"));
 process.env.NOURISH_LOCAL_DIR = localDir;
+// Pin to UTC so the date-bucket assertions (e.g. "2024-01-01") stay
+// timezone-independent. Without this, a São Paulo runner would bucket
+// `2024-01-01T00:00:00Z` as `2023-12-31` (correctly — that's 21:00 BRT
+// the previous day) and the assertion would break.
+process.env.NOURISH_TIMEZONE = "UTC";
 
 try {
   const {

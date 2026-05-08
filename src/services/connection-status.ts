@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import { getConfig } from "./config.js";
+import { getActiveTimezone } from "./local-date.js";
 
 export interface NourishConnectionStatus {
   ok: true;
@@ -17,6 +18,8 @@ export interface NourishConnectionStatus {
   max_results: number;
   /** Per-attempt timeout (ms) for outbound USDA/OFF HTTP calls. */
   provider_timeout_ms: number;
+  /** IANA timezone used for "today" / date bucketing. NOURISH_TIMEZONE env wins; otherwise the system tz. */
+  timezone: string;
   warnings: string[];
   next_steps: string[];
 }
@@ -50,6 +53,7 @@ export function buildConnectionStatus(): NourishConnectionStatus {
     cache_ttl_seconds: config.cache_ttl_seconds,
     max_results: config.max_results,
     provider_timeout_ms: config.provider_timeout_ms,
+    timezone: getActiveTimezone(),
     warnings,
     next_steps: buildNextSteps(usdaApiKeyConfigured, config.off_enabled),
   };

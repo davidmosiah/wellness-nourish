@@ -11,6 +11,7 @@ import {
   ClearDayInputSchema,
   ClearHydrationDayInputSchema,
   HydrationDeleteInputSchema,
+  UndoLastInputSchema,
   ExportInputSchema,
   FoodImageAnalysisInputSchema,
   FoodGetInputSchema,
@@ -55,7 +56,7 @@ import {
   updateIntakeEntry,
   type AddIntakeEntryInput,
 } from "../services/intake-store.js";
-import { buildHydrationSummary, clearHydrationDay, deleteWaterEntry, logWater } from "../services/hydration-store.js";
+import { buildHydrationSummary, clearHydrationDay, deleteWaterEntry, listWaterEntries, logWater } from "../services/hydration-store.js";
 import { getGoals, updateGoals } from "../services/goals-store.js";
 import { analyzeFoodImage } from "../services/food-image-analysis.js";
 import { decodeBarcodeImage } from "../services/image-decoder.js";
@@ -658,6 +659,95 @@ export function registerNourishTools(server: McpServer): void {
         const result = await clearHydrationDay(params.date);
 
         return toolResponse(makeResponse(result, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_undo_last",
+    {
+      title: "Undo last entry",
+      description:
+        "Undo the most recently logged intake or hydration entry. The most common Telegram/agent recovery move ('I logged the wrong thing'). Returns what was undone so the agent can confirm. Requires explicit_user_intent. Pass kind: 'intake' | 'hydration' | 'any' (default 'any') to scope the undo.",
+      inputSchema: UndoLastInputSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async (input) => {
+      try {
+        const params = UndoLastInputSchema.parse(input);
+        if (params.explicit_user_intent !== true) {
+          return explicitIntentRequired(
+            "explicit_user_intent must be true to undo the last entry.",
+            params.response_format,
+          );
+        }
+
+        // Pick the most recent entry from each store and decide which to delete.
+        const [intakeAll, waterAll] = await Promise.all([
+          params.kind === "hydration" ? Promise.resolve([]) : listIntakeEntries(),
+          params.kind === "intake" ? Promise.resolve([]) : listWaterEntries(),
+        ]);
+
+        const lastIntake =
+          intakeAll.length === 0
+            ? undefined
+            : [...intakeAll].sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
+        const lastWater =
+          waterAll.length === 0
+            ? undefined
+            : [...waterAll].sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
+
+        let chosen: { kind: "intake"; entry: typeof lastIntake } | { kind: "hydration"; entry: typeof lastWater } | undefined;
+
+        if (lastIntake !== undefined && lastWater !== undefined) {
+          chosen = lastIntake.timestamp >= lastWater.timestamp
+            ? { kind: "intake", entry: lastIntake }
+            : { kind: "hydration", entry: lastWater };
+        } else if (lastIntake !== undefined) {
+          chosen = { kind: "intake", entry: lastIntake };
+        } else if (lastWater !== undefined) {
+          chosen = { kind: "hydration", entry: lastWater };
+        }
+
+        if (chosen === undefined || chosen.entry === undefined) {
+          return toolResponse(
+            makeResponse(
+              {
+                ok: true,
+                undone: null,
+                message: "No matching entries to undo (kind: " + params.kind + ").",
+              },
+              params.response_format,
+            ),
+          );
+        }
+
+        const undoneEntry = chosen.entry;
+        const deleted = chosen.kind === "intake"
+          ? await deleteIntakeEntry(undoneEntry.id)
+          : await deleteWaterEntry(undoneEntry.id);
+
+        return toolResponse(
+          makeResponse(
+            {
+              ok: true,
+              deleted,
+              undone: {
+                kind: chosen.kind,
+                entry: undoneEntry,
+              },
+              note: "Undo is permanent — the entry is removed from the JSONL store. The full entry is returned so the agent can re-log it if the undo was a mistake.",
+            },
+            params.response_format,
+          ),
+        );
       } catch (error) {
         return toolError(error);
       }
@@ -1427,8 +1517,12 @@ function stableEstimateId(text: string): string {
   return `estimate:${Buffer.from(text).toString("base64url").slice(0, 48)}`;
 }
 
+// Replaced with the timezone-aware helper. The legacy `${date}T12:00:00.000Z`
+// was UTC noon — early morning for users east of UTC, evening for users
+// west. See services/local-date.ts.
+import { dateToNoonTimestamp as dateToNoonTimestampLocal } from "../services/local-date.js";
 function dateToNoonTimestamp(date: string | undefined): string | undefined {
-  return date === undefined ? undefined : `${date}T12:00:00.000Z`;
+  return dateToNoonTimestampLocal(date);
 }
 
 function toolError(error: unknown, responseFormat: ResponseFormat = "json"): CallToolResult {

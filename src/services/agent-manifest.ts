@@ -92,6 +92,7 @@ const TOOLS = [
   "nourish_update_intake",
   "nourish_delete_intake",
   "nourish_clear_day",
+  "nourish_undo_last",
   "nourish_log_water",
   "nourish_delete_water",
   "nourish_clear_hydration_day",

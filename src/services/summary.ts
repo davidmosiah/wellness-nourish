@@ -2,6 +2,7 @@ import type { IntakeEntry, MealType, NutrientMap } from "../types.js";
 import { getGoals } from "./goals-store.js";
 import { buildHydrationSummary } from "./hydration-store.js";
 import { listIntakeEntries } from "./intake-store.js";
+import { localDate } from "./local-date.js";
 import { addNutrients, roundNutrient } from "./nutrients.js";
 
 const MEAL_TYPES: readonly MealType[] = ["breakfast", "lunch", "dinner", "snack", "other"];
@@ -123,8 +124,10 @@ function buildGoalProgress(
   return progress;
 }
 
+// Was UTC — silently bucketed late-evening logs into "tomorrow" for any user
+// east of UTC. Now timezone-aware via services/local-date.ts.
 function todayDate(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localDate();
 }
 
 function addDays(date: string, days: number): string {

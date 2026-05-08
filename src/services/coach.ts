@@ -1,5 +1,6 @@
 import type { MealType, NutrientMap } from "../types.js";
 import { buildDailySummary, type DailySummary } from "./summary.js";
+import { localDate } from "./local-date.js";
 import { getPersonalNutritionMemory } from "./personal-memory.js";
 import { estimateMeal } from "./meal-estimator.js";
 import { roundNutrient } from "./nutrients.js";
@@ -237,6 +238,8 @@ function defaultFocus(mode: CoachMode): string {
   return "balanced";
 }
 
+// Was UTC — see services/local-date.ts. A São Paulo user at 22:00 BRT used
+// to see coach output for "tomorrow" instead of today.
 function todayDate(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localDate();
 }

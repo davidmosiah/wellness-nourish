@@ -79,6 +79,19 @@ export const ClearHydrationDayInputSchema = z
   })
   .strict();
 
+export const UndoLastInputSchema = z
+  .object({
+    kind: z
+      .enum(["intake", "hydration", "any"])
+      .default("any")
+      .describe(
+        "Which most-recent entry to undo: 'intake' = last logged meal, 'hydration' = last logged water, 'any' = whichever was most recent across both stores. Defaults to 'any'.",
+      ),
+    explicit_user_intent: ExplicitUserIntentSchema,
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
 export const HydrationLogInputSchema = z
   .object({
     amount_ml: z.number().describe("Water amount in milliliters. Must be greater than 0."),
