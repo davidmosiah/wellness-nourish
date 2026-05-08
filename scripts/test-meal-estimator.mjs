@@ -209,6 +209,56 @@ assert.equal(twoEggsPortuguese.items[0].name, "egg");
 assert.equal(twoEggsPortuguese.items[0].quantity, 2);
 assert.equal(twoEggsPortuguese.items[0].grams, 100);
 
+// pt-BR plural coverage: ovos / maçãs / tapiocas / coxinhas / brigadeiros
+const threeEggsPortuguese = await estimateMeal({
+  text: "3 ovos cozidos",
+  meal_type: "snack",
+  locale: "pt-BR",
+});
+assert.equal(threeEggsPortuguese.items.length, 1, "3 ovos cozidos should resolve to a single egg item");
+assert.equal(threeEggsPortuguese.items[0].name, "egg");
+assert.equal(threeEggsPortuguese.items[0].quantity, 3);
+assert.equal(threeEggsPortuguese.items[0].grams, 150);
+
+const twoApples = await estimateMeal({
+  text: "2 maçãs",
+  meal_type: "snack",
+  locale: "pt-BR",
+});
+assert.equal(twoApples.items.length, 1, "'2 maçãs' should resolve apple");
+assert.equal(twoApples.items[0].name, "apple");
+assert.equal(twoApples.items[0].quantity, 2);
+
+const twoSmallTapiocas = await estimateMeal({
+  text: "duas tapiocas pequenas",
+  meal_type: "breakfast",
+  locale: "pt-BR",
+});
+assert.ok(
+  twoSmallTapiocas.items.some((item) => item.name === "tapioca"),
+  "'duas tapiocas pequenas' should resolve tapioca",
+);
+const tapiocaItem = twoSmallTapiocas.items.find((item) => item.name === "tapioca");
+assert.equal(tapiocaItem.quantity, 2);
+
+const threeCoxinhas = await estimateMeal({
+  text: "3 coxinhas",
+  meal_type: "snack",
+  locale: "pt-BR",
+});
+assert.equal(threeCoxinhas.items.length, 1, "'3 coxinhas' should resolve coxinha");
+assert.equal(threeCoxinhas.items[0].name, "coxinha");
+assert.equal(threeCoxinhas.items[0].quantity, 3);
+
+const fourBrigadeiros = await estimateMeal({
+  text: "4 brigadeiros",
+  meal_type: "snack",
+  locale: "pt-BR",
+});
+assert.equal(fourBrigadeiros.items.length, 1, "'4 brigadeiros' should resolve brigadeiro");
+assert.equal(fourBrigadeiros.items[0].name, "brigadeiro");
+assert.equal(fourBrigadeiros.items[0].quantity, 4);
+
 // --- N-004: pt-BR decimal comma should NOT split clauses ---
 const decimalComma = await estimateMeal({
   text: "1,5 banana e 200g arroz cozido",
