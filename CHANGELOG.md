@@ -6,6 +6,23 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-10
+
+### Added
+
+- `community` field on `nourish_agent_manifest` resource so agents can
+  surface a feedback/star/issues link to the human user (`repo`, `issues`,
+  `twitter`, `docs`, `invite`).
+- One-line stderr CTA at the end of `doctor`, `setup`, and `status` CLI
+  commands inviting humans to star the repo. Suppressed automatically
+  when stderr is not a TTY (so agent stdio and CI logs stay clean) and
+  also via `NOURISH_QUIET=1` or `NOURISH_NO_CTA=1`.
+
+### Changed
+
+- README hero now lists the OpenClaw profile pack alongside Hermes for the
+  one-command install path.
+
 ## [0.3.2] - 2026-05-08
 
 ### Fixed

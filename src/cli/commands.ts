@@ -1,6 +1,25 @@
 import { lookupOpenFoodFactsBarcode } from "../providers/open-food-facts.js";
 import { searchUsdaFoods } from "../providers/usda.js";
-import { NPM_PACKAGE_NAME } from "../constants.js";
+import { NPM_PACKAGE_NAME, SERVER_VERSION } from "../constants.js";
+
+/**
+ * Print a one-time community CTA to stderr (so it doesn't pollute the JSON
+ * stdout that agents parse). Suppressed when NOURISH_QUIET=1 or when output
+ * is not a TTY (CI / agent stdio).
+ */
+function printCommunityCTA(): void {
+  if (process.env.NOURISH_QUIET === "1") return;
+  if (process.env.NOURISH_NO_CTA === "1") return;
+  // Skip in non-interactive contexts (agent stdio, CI) so we don't spam logs.
+  if (!process.stderr.isTTY) return;
+  process.stderr.write(
+    `\n✨ wellness-nourish v${SERVER_VERSION} — if this helps your agent, a star ⚭ makes the project visible to other AI builders.\n` +
+      `   ⭐  https://github.com/davidmosiah/wellness-nourish\n` +
+      `   💬  Issues & ideas: https://github.com/davidmosiah/wellness-nourish/issues\n` +
+      `   🐦  Updates:        https://x.com/delx369\n` +
+      `   (silence with NOURISH_QUIET=1)\n\n`,
+  );
+}
 import { inspectHermes, setupHermes } from "./hermes.js";
 import { buildConnectionStatus } from "../services/connection-status.js";
 import { getGoals, updateGoals } from "../services/goals-store.js";
@@ -102,6 +121,7 @@ export async function runCliCommand(args: string[]): Promise<number> {
 function printStatus(): number {
   console.log("Nourish MCP");
   console.log(JSON.stringify(buildConnectionStatus(), null, 2));
+  printCommunityCTA();
   return 0;
 }
 
@@ -145,6 +165,7 @@ function doctorCommand(args: string[]): number {
       2,
     ),
   );
+  printCommunityCTA();
   return 0;
 }
 
@@ -195,6 +216,7 @@ function setupCommand(args: string[]): number {
       2,
     ),
   );
+  printCommunityCTA();
   return 0;
 }
 

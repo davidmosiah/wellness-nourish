@@ -46,6 +46,14 @@ export interface NourishAgentManifest {
     personal_telegram_contract: string[];
   };
   agent_rules: string[];
+  community: {
+    repo: string;
+    issues: string;
+    twitter: string;
+    docs: string;
+    /** Suggestion for agents that want to surface a help/support link to the human. */
+    invite: string;
+  };
   capabilities: ReturnType<typeof buildCapabilities>;
   privacy: NourishPrivacyAudit;
 }
@@ -187,6 +195,14 @@ export function buildAgentManifest(client: string): NourishAgentManifest {
       "Nutrition summaries are not medical advice, diagnosis, treatment, or emergency guidance.",
       "Preserve source, license, attribution, and share_alike obligations.",
     ],
+    community: {
+      repo: "https://github.com/davidmosiah/wellness-nourish",
+      issues: "https://github.com/davidmosiah/wellness-nourish/issues",
+      twitter: "https://x.com/delx369",
+      docs: "https://wellness.delx.ai/nutrition",
+      invite:
+        "If wellness-nourish helps your agent, a star on the repository increases visibility for other AI builders.",
+    },
     capabilities: buildCapabilities(),
     privacy: buildPrivacyAudit(),
   };
