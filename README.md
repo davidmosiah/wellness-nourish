@@ -21,13 +21,20 @@
   <a href="https://github.com/davidmosiah/wellness-nourish/stargazers"><img src="https://img.shields.io/github/stars/davidmosiah/wellness-nourish?style=for-the-badge&labelColor=0F172A&color=FBBF24&logo=github" alt="GitHub stars" /></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/BUILT_FOR-MCP-7C3AED?style=for-the-badge&labelColor=0F172A" alt="Built for MCP" /></a>
   <a href="https://github.com/davidmosiah/delx-wellness-hermes"><img src="https://img.shields.io/badge/HERMES-one--command_setup-10B981?style=for-the-badge&labelColor=0F172A" alt="Hermes one-command setup" /></a>
+  <a href="https://github.com/davidmosiah/delx-wellness-openclaw"><img src="https://img.shields.io/badge/OPENCLAW-one--command_setup-FB923C?style=for-the-badge&labelColor=0F172A" alt="OpenClaw one-command setup" /></a>
   <a href="https://github.com/davidmosiah/delx-wellness"><img src="https://img.shields.io/badge/Nourish-10B981?style=for-the-badge&labelColor=0F172A&logoColor=white" alt="Nourish" /></a>
 </p>
 
-> ⚡ **One-command install** with [Delx Wellness for Hermes](https://github.com/davidmosiah/delx-wellness-hermes):
-> `npx -y delx-wellness-hermes setup` &mdash; preconfigures this connector and the rest of the Delx Wellness stack in a dedicated Hermes profile.
+<p align="center">
+  <strong>📈 Active in the wild: <a href="https://www.npmjs.com/package/wellness-nourish">~500 npm downloads/day</a> across AI agents and MCP clients.</strong><br>
+  <sub>If Nourish helps your agent, a ⭐ on this repo makes it easier for other AI builders to find.</sub>
+</p>
+
+> ⚡ **One-command install** &mdash; pick your runtime:
+> - [Delx Wellness for Hermes](https://github.com/davidmosiah/delx-wellness-hermes): `npx -y delx-wellness-hermes setup`
+> - [Delx Wellness for OpenClaw](https://github.com/davidmosiah/delx-wellness-openclaw): `npx -y delx-wellness-openclaw setup`
 >
-> Or wire it standalone into Claude Desktop / Cursor / ChatGPT Desktop &mdash; see the install section below.
+> Both preconfigure this connector and the full Delx Wellness stack into a dedicated profile. Or wire it standalone into Claude Desktop / Cursor / ChatGPT Desktop &mdash; see the install section below.
 
 ---
 
