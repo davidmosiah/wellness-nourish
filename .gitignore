@@ -6,3 +6,4 @@ coverage/
 logs/
 .wellness-nourish/
 fixtures/private/
+.mcpregistry_*

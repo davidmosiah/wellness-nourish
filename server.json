@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.davidmosiah/wellness-nourish",
-  "description": "Local-first MCP for pt-BR nutrition estimates, barcode photo lookup, meal photo estimates, intake logging, hydration, goals and summaries.",
+  "description": "Local-first nutrition MCP for AI agents: food, barcode, photo, intake, hydration, goals.",
   "repository": {
     "url": "https://github.com/davidmosiah/wellness-nourish",
     "source": "github"
   },
-  "version": "0.4.0",
+  "version": "0.5.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "wellness-nourish",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "transport": {
         "type": "stdio"
       }

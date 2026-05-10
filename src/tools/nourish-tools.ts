@@ -152,6 +152,131 @@ export function registerNourishTools(server: McpServer): void {
   );
 
   server.registerTool(
+    "nourish_quickstart",
+    {
+      title: "Nourish quickstart",
+      description:
+        "Personalized 3-step setup walkthrough for the human user. Adapts to current state (USDA key set? OFF enabled? local-dir writable?). Call this first when the user asks 'how do I use this?'",
+      inputSchema: ResponseOnlyInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = ResponseOnlyInputSchema.parse(input);
+        const status = buildConnectionStatus();
+        const hasUsdaKey = Boolean(process.env.FDC_API_KEY);
+        const offEnabled = status.open_food_facts_enabled;
+        const steps = [
+          {
+            step: 1,
+            title: hasUsdaKey ? "(done) USDA FoodData Central key configured" : "(Optional) Add a free USDA API key",
+            action: hasUsdaKey
+              ? "FDC_API_KEY is set. USDA search returns the full FoodData Central catalog."
+              : "Sign up at https://fdc.nal.usda.gov/api-key-signup.html (free, 30 seconds). Set FDC_API_KEY in env. Without it, USDA search uses the rate-limited DEMO_KEY.",
+            done: hasUsdaKey,
+          },
+          {
+            step: 2,
+            title: offEnabled ? "(done) Open Food Facts enabled" : "Enable Open Food Facts for barcode coverage",
+            action: offEnabled
+              ? "NOURISH_OFF_ENABLED=1 is set. Barcode lookups query the full OFF database (1.5M packaged products)."
+              : "Set NOURISH_OFF_ENABLED=1 in env or MCP config to unlock barcode + barcode-photo lookup.",
+            done: offEnabled,
+          },
+          {
+            step: 3,
+            title: "Verify with the agent",
+            action:
+              "Try `nourish_search_food { query: 'banana' }` or `nourish_estimate_meal { text: '100g chicken + 1 cup rice' }`. The agent should return calories + macros + carbon footprint.",
+            example:
+              hasUsdaKey && offEnabled
+                ? "All set — you can also try nourish_estimate_meal_photo (with agent vision), nourish_lookup_barcode, nourish_daily_coach."
+                : "After steps 1-2, the full surface activates.",
+            done: false,
+          },
+        ];
+        const remaining = steps.filter((s) => !s.done && s.step !== 3).length;
+        const payload = {
+          ok: true,
+          ready: remaining === 0,
+          configured: { usda_key: hasUsdaKey, off_enabled: offEnabled },
+          steps,
+          next: steps.find((s) => !s.done) ?? steps[steps.length - 1],
+          cross_connector_hints: [
+            "Pair with whoop-mcp / ouramcp / garminmcp for wearable-aware meal coaching (nourish_daily_coach takes wearable_context).",
+            "Pair with wellness-cgm-mcp for meal→glucose response correlation.",
+            "Pair with wellness-cycle-coach for phase-aware nutrition (iron in menstrual, magnesium in luteal, etc.).",
+          ],
+        };
+        return toolResponse(makeResponse(payload, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_demo",
+    {
+      title: "Nourish demo",
+      description:
+        "Returns realistic example payloads of nourish_search_food, nourish_estimate_meal, and nourish_daily_summary so agents see the contract before any real call.",
+      inputSchema: ResponseOnlyInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = ResponseOnlyInputSchema.parse(input);
+        const payload = {
+          ok: true,
+          is_demo: true,
+          sample: {
+            nourish_search_food: {
+              ok: true,
+              results: [
+                {
+                  source: "usda",
+                  name: "Banana, raw",
+                  serving: { quantity: 1, unit: "medium (118g)", grams: 118 },
+                  nutrients_per_serving: { calories_kcal: 105, protein_g: 1.3, carbohydrates_g: 27, fiber_g: 3.1, sugar_g: 14.4, fat_g: 0.4 },
+                  carbon: { kg_co2e_per_kg: 0.7, source: "agribalyse:fruits-banana", confidence: "high" },
+                  data_quality: { completeness: "high", confidence: 0.95, warnings: [] },
+                },
+              ],
+            },
+            nourish_estimate_meal: {
+              ok: true,
+              text: "100g grilled chicken breast + 1 cup white rice",
+              total_grams: 258,
+              total_nutrients: { calories_kcal: 370, protein_g: 35.1, carbohydrates_g: 45.6, fat_g: 4.2 },
+              total_carbon_kg_co2e: 0.74,
+              confidence: 0.82,
+              warnings: [],
+              source: "estimate",
+            },
+            nourish_daily_summary: {
+              date: new Date().toISOString().slice(0, 10),
+              meals: 3,
+              hydration_ml: 1850,
+              nutrients: { calories_kcal: 2104, protein_g: 128, carbohydrates_g: 224, fat_g: 78, fiber_g: 28 },
+              carbon_kg_co2e: 4.2,
+              goals_met: { calories: true, protein: true, fiber: false, hydration: false },
+              insights: ["Protein on target.", "Fiber 4g short of goal — try adding berries to breakfast."],
+            },
+          },
+          notes: [
+            "All sample data is synthetic; tagged with is_demo=true.",
+            "In real use, results return live USDA + Open Food Facts + Brazilian TACO matches with full carbon-footprint enrichment.",
+          ],
+        };
+        return toolResponse(makeResponse(payload, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
     "nourish_privacy_audit",
     {
       title: "Nourish privacy audit",

@@ -69,6 +69,8 @@ const SUPPORTED_CLIENTS: NourishAgentClient[] = [
 ];
 
 const RECOMMENDED_FIRST_CALLS = [
+  "nourish_quickstart",
+  "nourish_demo",
   "nourish_connection_status",
   "nourish_capabilities",
   "nourish_search_food",
@@ -77,6 +79,8 @@ const RECOMMENDED_FIRST_CALLS = [
 const TOOLS = [
   "nourish_agent_manifest",
   "nourish_capabilities",
+  "nourish_quickstart",
+  "nourish_demo",
   "nourish_privacy_audit",
   "nourish_connection_status",
   "nourish_search_food",

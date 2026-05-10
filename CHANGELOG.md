@@ -6,6 +6,17 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-10
+
+### Added
+
+- `nourish_quickstart` tool — personalized 3-step setup walkthrough adapted to current state (USDA key configured? Open Food Facts enabled? what's left?). First call any agent should make. Includes cross-connector hints to pair with WHOOP/Oura/Garmin recovery, wellness-cgm-mcp glucose, and wellness-cycle-coach phase context.
+- `nourish_demo` tool — realistic example payloads of `nourish_search_food`, `nourish_estimate_meal`, and `nourish_daily_summary` so agents see the contract before any real call (banana / chicken+rice / day summary with carbon footprint).
+
+### Changed
+
+- `recommended_first_calls` on the agent manifest now leads with `nourish_quickstart` and `nourish_demo`.
+
 ## [0.4.0] - 2026-05-10
 
 ### Added
