@@ -81,7 +81,7 @@ export function buildUsageGuide(): NourishUsageGuide {
         name: "coach loop",
         steps: [
           "Call nourish_daily_coach for a compact Telegram-ready read of the day.",
-          "Pass wearable_context after calling WHOOP/Garmin/Oura tools when available.",
+          "Pass wearable_context after calling WHOOP/Garmin/Oura/Eight Sleep tools when available.",
           "Use nourish_suggest_next_meal, nourish_pre_workout_nutrition, or nourish_evening_checkin for specific next-step questions.",
           "Never log the suggestion until the user confirms.",
         ],

@@ -214,7 +214,7 @@ export function registerNourishTools(server: McpServer): void {
           steps,
           next: steps.find((s) => !s.done) ?? steps[steps.length - 1],
           cross_connector_hints: [
-            "Pair with whoop-mcp / ouramcp / garminmcp for wearable-aware meal coaching (nourish_daily_coach takes wearable_context).",
+            "Pair with whoop-mcp / ouramcp / garminmcp / eight-sleep-mcp for wearable-aware meal coaching (nourish_daily_coach takes wearable_context).",
             "Pair with wellness-cgm-mcp for meal→glucose response correlation.",
             "Pair with wellness-cycle-coach for phase-aware nutrition (iron in menstrual, magnesium in luteal, etc.).",
           ],

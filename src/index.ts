@@ -42,7 +42,7 @@ function serverInstructions(): string {
     "Only log intake, water, goals, or clear-day after explicit user save intent. Then pass explicit_user_intent: true; otherwise these tools return USER_ACTION_REQUIRED.",
     "For photos, the agent must describe visible foods/portions and call nourish_estimate_meal_photo, then ask for confirmation before logging.",
     "For Telegram food images with barcode, label OCR, or meal observations, call nourish_analyze_food_image to route safely without logging.",
-    "For 'what should I eat' questions, use nourish_daily_coach or nourish_suggest_next_meal with optional wearable_context from WHOOP/Garmin/Oura tools.",
+    "For 'what should I eat' questions, use nourish_daily_coach or nourish_suggest_next_meal with optional wearable_context from WHOOP/Garmin/Oura/Eight Sleep tools.",
     "For recurring meals, use nourish_remember_meal only after explicit user intent; future estimates can expand saved labels locally.",
     "This is not medical advice and local storage may contain personal nutrition data.",
   ].join(" ");
