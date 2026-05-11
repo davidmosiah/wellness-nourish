@@ -379,7 +379,7 @@ const QUESTIONS_EN: OnboardingQuestion[] = [
   { id: "body_basics", category: "profile", required: false, prompt: "Share age or birth year, height, weight, and gender/sex only if you want the agent to use that context." },
   { id: "primary_goal", category: "goals", required: true, prompt: "What is your primary wellness goal right now?" },
   { id: "secondary_goals", category: "goals", required: false, prompt: "What secondary goals matter: fat loss, muscle, endurance, sleep, recovery, longevity, stress, consistency?" },
-  { id: "devices", category: "devices", required: true, prompt: "Which sources do you use: WHOOP, Garmin, Oura, Strava, Fitbit, Google Health, Withings, Apple Health, Samsung Health, Polar, Eight Sleep, Nourish, Air, CGM, Cycle Coach?" },
+  { id: "devices", category: "devices", required: true, prompt: "Which sources do you use: WHOOP, Garmin, Oura, Strava, Fitbit, Google Health, Withings, Apple Health, Samsung Health, Polar, Nourish, Air, CGM, Cycle Coach?" },
   { id: "training_context", category: "training", required: true, prompt: "What sports do you train, how often, and what does a normal week look like?" },
   { id: "nutrition_context", category: "nutrition", required: false, prompt: "What nutrition context should the agent know: meals, calories, macros, restrictions, allergies, or food preferences?" },
   { id: "exercise_preferences", category: "exercise", required: false, prompt: "What equipment, location, duration, exercises to avoid, or limitations should workouts respect?" },
@@ -393,7 +393,7 @@ const QUESTIONS_PT_BR: OnboardingQuestion[] = [
   { id: "body_basics", category: "profile", required: false, prompt: "Compartilhe idade ou ano de nascimento, altura, peso e gênero/sexo apenas se quiser que o agente use esse contexto." },
   { id: "primary_goal", category: "goals", required: true, prompt: "Qual é seu principal objetivo de wellness agora?" },
   { id: "secondary_goals", category: "goals", required: false, prompt: "Quais objetivos secundários importam: perda de gordura, massa, endurance, sono, recuperação, longevidade, estresse ou consistência?" },
-  { id: "devices", category: "devices", required: true, prompt: "Quais fontes você usa: WHOOP, Garmin, Oura, Strava, Fitbit, Google Health, Withings, Apple Health, Samsung Health, Polar, Eight Sleep, Nourish, Air, CGM, Cycle Coach?" },
+  { id: "devices", category: "devices", required: true, prompt: "Quais fontes você usa: WHOOP, Garmin, Oura, Strava, Fitbit, Google Health, Withings, Apple Health, Samsung Health, Polar, Nourish, Air, CGM, Cycle Coach?" },
   { id: "training_context", category: "training", required: true, prompt: "Quais esportes você treina, com que frequência, e como é uma semana normal?" },
   { id: "nutrition_context", category: "nutrition", required: false, prompt: "Que contexto nutricional o agente deve saber: refeições, calorias, macros, restrições, alergias ou preferências alimentares?" },
   { id: "exercise_preferences", category: "exercise", required: false, prompt: "Quais equipamentos, local, duração, exercícios a evitar ou limitações os treinos devem respeitar?" },
@@ -413,7 +413,7 @@ export function getOnboardingFlow(locale: WellnessLanguage = "en"): OnboardingFl
     storage_path: PROFILE_PATH,
     privacy_note:
       "Profile NEVER stores OAuth tokens, API keys, refresh tokens, cookies, or raw provider secrets. " +
-      "Tokens stay in each connector's own local config (e.g. ~/.whoop-mcp/, ~/.oura-mcp/, ~/.garmin-mcp/, ~/.eight-sleep-mcp/, etc.), " +
+      "Tokens stay in each connector's own local config (e.g. ~/.whoop-mcp/, ~/.oura-mcp/, ~/.garmin-mcp/, etc.), " +
       "separate from this shared profile.",
   };
 }
