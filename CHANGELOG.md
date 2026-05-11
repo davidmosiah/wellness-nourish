@@ -6,6 +6,14 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-05-11
+
+### Fixed
+
+- **Profile-store regex no longer false-positives on common wellness words.** Split `SECRET_PATTERNS` into two: `SECRET_KEY_PATTERNS` (broad, matches field names like `oauth_token`) and `SECRET_VALUE_PATTERNS` (high-specificity, only matches actual credential shapes: JWTs, `Bearer <token>`, `sk_live_`, `sk-proj-`, `xoxb-`, `github_pat_`, raw `Authorization:` headers). Previously, profile updates with legitimate text like "5 training sessions per week", "limit cookies", "I need to refresh my approach", or "secret sauce: more sleep" were rejected.
+- **Partial-profile reads no longer crash downstream.** `readProfileFile` now structurally merges with `DEFAULT_PROFILE` when legacy Hermes/OpenClaw profile-pack files lacked one or more sub-objects (goals, devices, training, nutrition, preferences, safety). Previously `buildProfileSummary` and `missingCriticalFields` would throw `Cannot read properties of undefined`.
+- **Onboarding `privacy_note` no longer hard-codes a single connector path.** Updated to list multiple example paths (`~/.whoop-mcp/`, `~/.oura-mcp/`, `~/.garmin-mcp/`, etc.) so the message reads correctly from every connector.
+
 ## [0.6.0] - 2026-05-11
 
 ### Added
