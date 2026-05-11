@@ -1,6 +1,12 @@
 import { lookupOpenFoodFactsBarcode } from "../providers/open-food-facts.js";
 import { searchUsdaFoods } from "../providers/usda.js";
 import { NPM_PACKAGE_NAME, SERVER_VERSION } from "../constants.js";
+import {
+  getOnboardingFlow,
+  getProfile,
+  getProfilePath,
+  missingCriticalFields,
+} from "../services/profile-store.js";
 
 /**
  * Print a one-time community CTA to stderr (so it doesn't pollute the JSON
@@ -53,6 +59,7 @@ const COMMANDS = new Set([
   "clear-day",
   "goals",
   "water",
+  "onboarding",
 ]);
 const MEAL_TYPES: readonly MealType[] = ["breakfast", "lunch", "dinner", "snack", "other"];
 
@@ -108,6 +115,8 @@ export async function runCliCommand(args: string[]): Promise<number> {
         return await goalsCommand(rest);
       case "water":
         return await waterCommand(rest);
+      case "onboarding":
+        return await onboardingCommand(rest);
       default:
         console.error("Unknown command");
         return 1;
@@ -448,6 +457,39 @@ async function goalsCommand(args: string[]): Promise<number> {
   }
 
   console.log(JSON.stringify(await updateGoals(input), null, 2));
+  return 0;
+}
+
+async function onboardingCommand(args: string[]): Promise<number> {
+  const parsed = parseArgs(args);
+  const localeArg = optionString(parsed, "locale") ?? parsed.positionals[0];
+  const locale = localeArg === "pt-BR" ? "pt-BR" : "en";
+  const flow = getOnboardingFlow(locale);
+  const profile = await getProfile();
+  const missing = missingCriticalFields(profile);
+  console.log(
+    JSON.stringify(
+      {
+        ...flow,
+        current_profile: profile,
+        missing_critical: missing,
+      },
+      null,
+      2,
+    ),
+  );
+  if (process.stderr.isTTY && process.env.NOURISH_QUIET !== "1" && process.env.NOURISH_NO_CTA !== "1") {
+    process.stderr.write(
+      `\n## Delx Wellness shared onboarding (${locale})\n` +
+        `\nThe agent will ask these 11 questions next so wellness-nourish (and the rest of\n` +
+        `the wellness stack) can personalize responses — non-secret data only, stored at\n` +
+        `${getProfilePath()}.\n\n` +
+        flow.questions
+          .map((q, i) => `${i + 1}. (${q.required ? "required" : "optional"}) ${q.prompt}`)
+          .join("\n") +
+        `\n\nPrivacy: ${flow.privacy_note}\n\n`,
+    );
+  }
   return 0;
 }
 

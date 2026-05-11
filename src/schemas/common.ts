@@ -520,3 +520,22 @@ export const ForgetMemoryInputSchema = z
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
+
+export const ProfileUpdateInputSchema = z
+  .object({
+    patch: z
+      .record(z.string(), z.unknown())
+      .describe(
+        "Partial WellnessProfileDocument patch. Top-level keys: profile, goals, devices, training, nutrition, preferences, safety, notes.",
+      ),
+    explicit_user_intent: ExplicitUserIntentSchema,
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
+export const OnboardingInputSchema = z
+  .object({
+    locale: z.enum(["en", "pt-BR"]).default("en"),
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();

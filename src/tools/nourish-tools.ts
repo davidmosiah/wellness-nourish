@@ -28,7 +28,9 @@ import {
   IntakeLogInputSchema,
   IntakeUpdateInputSchema,
   MealEstimateInputSchema,
+  OnboardingInputSchema,
   PhotoMealEstimateInputSchema,
+  ProfileUpdateInputSchema,
   RememberMealInputSchema,
   ResponseOnlyInputSchema,
   SummaryInputSchema,
@@ -82,6 +84,15 @@ import {
 import { gramsForQuantity, nutrientsForGrams } from "../services/portion-engine.js";
 import { estimateMealFromPhotoObservation } from "../services/photo-meal-estimator.js";
 import { buildPrivacyAudit } from "../services/privacy-audit.js";
+import {
+  buildProfileSummary,
+  getOnboardingFlow,
+  getProfile,
+  getProfilePath,
+  missingCriticalFields,
+  updateProfile,
+  type WellnessProfileDocument,
+} from "../services/profile-store.js";
 import { buildDailySummary, buildWeeklySummary } from "../services/summary.js";
 import type { FoodItem, IntakeEntry, NutrientMap, ProviderSource, ResponseFormat } from "../types.js";
 
@@ -288,6 +299,110 @@ export function registerNourishTools(server: McpServer): void {
       try {
         const params = ResponseOnlyInputSchema.parse(input);
         return toolResponse(makeResponse(buildPrivacyAudit(), params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_profile_get",
+    {
+      title: "Nourish profile get",
+      description:
+        "Returns the shared Delx Wellness profile (~/.delx-wellness/profile.json). Read-only. Surfaces calorie/macro targets, dietary preferences, restrictions/allergies, and goals so nourish coach/suggest tools can personalize meals.",
+      inputSchema: ResponseOnlyInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = ResponseOnlyInputSchema.parse(input);
+        const profile = await getProfile();
+        const payload = {
+          ok: true,
+          profile,
+          summary: buildProfileSummary(profile),
+          missing_critical: missingCriticalFields(profile),
+          storage_path: getProfilePath(),
+        };
+        const markdown = bulletList("Nourish profile", {
+          summary: payload.summary,
+          missing_critical: payload.missing_critical.join(", ") || "—",
+          storage_path: payload.storage_path,
+        });
+        return toolResponse(makeResponse(payload, params.response_format, markdown));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_profile_update",
+    {
+      title: "Nourish profile update",
+      description:
+        "Persist a partial patch to the shared Delx Wellness profile. Requires explicit_user_intent: true. Rejects any field containing oauth/token/secret/password/cookie/refresh/api_key/session — the profile is for non-secret wellness context only.",
+      inputSchema: ProfileUpdateInputSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async (input) => {
+      try {
+        const params = ProfileUpdateInputSchema.parse(input);
+        if (params.explicit_user_intent !== true) {
+          return explicitIntentRequired(
+            "explicit_user_intent must be true to update the shared wellness profile.",
+            params.response_format,
+          );
+        }
+        try {
+          const profile = await updateProfile(params.patch as Partial<WellnessProfileDocument>);
+          const payload = {
+            ok: true,
+            profile,
+            summary: buildProfileSummary(profile),
+            storage_path: getProfilePath(),
+          };
+          return toolResponse(makeResponse(payload, params.response_format));
+        } catch (err) {
+          return toolResponse(
+            makeError("PROFILE_UPDATE_FAILED", (err as Error).message, params.response_format),
+          );
+        }
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_onboarding",
+    {
+      title: "Nourish onboarding",
+      description:
+        "Returns the 11-question onboarding flow for the shared Delx Wellness profile. Read-only. The agent should ask these questions next so wellness-nourish (and the rest of the wellness stack) can personalize responses — non-secret data only, stored at ~/.delx-wellness/profile.json.",
+      inputSchema: OnboardingInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = OnboardingInputSchema.parse(input);
+        const flow = getOnboardingFlow(params.locale);
+        const profile = await getProfile();
+        const payload = {
+          ok: true,
+          ...flow,
+          current_profile: profile,
+          missing_critical: missingCriticalFields(profile),
+          cross_connector_hint:
+            "wellness-nourish reads profile.nutrition.calorie_target / protein_target_g / hydration_target_ml / dietary_preferences / restrictions_or_allergies. Pair with wellness-cgm-mcp for meal-glucose response correlation.",
+        };
+        return toolResponse(makeResponse(payload, params.response_format));
       } catch (error) {
         return toolError(error);
       }

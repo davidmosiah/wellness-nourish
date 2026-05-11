@@ -6,6 +6,21 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-11
+
+### Added
+
+- **Shared wellness profile support** — vendored canonical `profile-store` (Delx Wellness `ab83d1a`) at `src/services/profile-store.ts`. Reads/writes `~/.delx-wellness/profile.json` (the same file every Delx Wellness MCP can read).
+- `nourish_profile_get` MCP tool — returns the user's shared profile, one-line summary, and missing critical fields. Read-only. Surfaces calorie/macro/hydration targets so coach + suggest tools can personalize meals.
+- `nourish_profile_update` MCP tool — persist a partial patch with `explicit_user_intent: true`. Rejects secret-like fields (oauth/token/secret/password/cookie/refresh/api_key/session).
+- `nourish_onboarding` MCP tool — returns the 11-question onboarding flow + the current profile + a cross-connector hint that nourish feeds calorie/macro targets (pair with wellness-cgm-mcp for glucose response).
+- `wellness-nourish onboarding [pt-BR|en]` CLI command — emits the flow as JSON on stdout plus a TTY-gated Markdown walkthrough on stderr ("the agent will ask these 11 questions next — non-secret data only, stored at ~/.delx-wellness/profile.json").
+
+### Changed
+
+- Tool count: 38 → 41.
+- `recommended_first_calls` on the agent manifest now leads with `nourish_profile_get` so agents fetch the user's calorie/macro targets and dietary restrictions before any coach call.
+
 ## [0.5.0] - 2026-05-10
 
 ### Added
