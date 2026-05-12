@@ -12,6 +12,7 @@ execFileSync("npm", ["run", "build"], { stdio: "inherit" });
 
 const expectedTools = [
   "nourish_agent_manifest",
+  "nourish_chatgpt_dashboard",
   "nourish_capabilities",
   "nourish_connection_status",
   "nourish_privacy_audit",
@@ -121,6 +122,19 @@ try {
 
     assert.notEqual(status.isError, true);
     assert.match(textFromToolResult(status), /"ok":true/);
+
+    const dashboard = await client.callTool({
+      name: "nourish_chatgpt_dashboard",
+      arguments: {
+        date: "2099-01-15",
+      },
+    });
+
+    assert.notEqual(dashboard.isError, true);
+    assert.match(
+      textFromToolResult(dashboard),
+      /"resource_uri":"ui:\/\/widget\/nourish-dashboard-v1.html"/,
+    );
   } finally {
     await client.close();
   }

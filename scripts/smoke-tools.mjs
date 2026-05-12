@@ -11,6 +11,7 @@ execFileSync("npm", ["run", "build"], { stdio: "inherit" });
 
 const expectedTools = [
   "nourish_agent_manifest",
+  "nourish_chatgpt_dashboard",
   "nourish_capabilities",
   "nourish_connection_status",
   "nourish_privacy_audit",
@@ -90,7 +91,9 @@ try {
   assertSearchSchemaHonest(result.tools);
   assertBarcodeSchemaHonest(result.tools);
   assertSchemaDx(result.tools);
+  assertChatGptAppToolSurface(result.tools);
   await assertResourceSurface();
+  await assertChatGptDashboardTool();
   await assertConfirmationGuardsAreUserActionRequired();
   await assertValidationErrorsAreStructured();
   await assertSdkVisibleValidationErrorsAreStructured();
@@ -1009,9 +1012,46 @@ async function assertResourceSurface() {
   const uris = resources.resources.map((resource) => resource.uri);
 
   assert.ok(uris.includes("nourish://usage-guide"));
+  assert.ok(uris.includes("ui://widget/nourish-dashboard-v1.html"));
+
   const guide = await client.readResource({ uri: "nourish://usage-guide" });
   assert.match(guide.contents[0]?.text ?? "", /preview/i);
   assert.match(guide.contents[0]?.text ?? "", /explicit user intent/i);
+
+  const dashboard = await client.readResource({ uri: "ui://widget/nourish-dashboard-v1.html" });
+  const content = dashboard.contents[0];
+  assert.equal(content?.mimeType, "text/html;profile=mcp-app");
+  assert.match(content?.text ?? "", /nourish-app-root/);
+  assert.match(content?.text ?? "", /ui\/initialize/);
+  assert.match(content?.text ?? "", /tools\/call/);
+}
+
+function assertChatGptAppToolSurface(tools) {
+  const dashboard = findTool(tools, "nourish_chatgpt_dashboard");
+
+  assert.equal(dashboard._meta?.ui?.resourceUri, "ui://widget/nourish-dashboard-v1.html");
+  assert.equal(dashboard._meta?.["ui/resourceUri"], "ui://widget/nourish-dashboard-v1.html");
+  assert.equal(dashboard._meta?.["openai/outputTemplate"], "ui://widget/nourish-dashboard-v1.html");
+  assert.deepEqual(dashboard._meta?.ui?.visibility, ["model", "app"]);
+  assert.equal(dashboard.annotations?.readOnlyHint, true);
+}
+
+async function assertChatGptDashboardTool() {
+  const result = await client.callTool({
+    name: "nourish_chatgpt_dashboard",
+    arguments: {
+      date: "2099-01-15",
+      locale: "en",
+    },
+  });
+  const payload = JSON.parse(textFromToolResult(result));
+
+  assert.notEqual(result.isError, true);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.app.resource_uri, "ui://widget/nourish-dashboard-v1.html");
+  assert.equal(payload.summary.entry_count, 0);
+  assert.equal(payload.privacy.local_first, true);
+  assert.equal(payload.privacy.writes_disabled_in_widget, true);
 }
 
 function findTool(tools, name) {

@@ -86,6 +86,16 @@ Run Streamable HTTP locally:
 node dist/index.js --http
 ```
 
+### ChatGPT App / MCP Apps UI
+
+Nourish also exposes a compact MCP Apps-compatible dashboard for ChatGPT and other compatible hosts:
+
+- Tool: `nourish_chatgpt_dashboard`
+- UI resource: `ui://widget/nourish-dashboard-v1.html`
+- MIME type: `text/html;profile=mcp-app`
+
+The dashboard shows the daily nutrition summary, hydration progress, profile gaps and next-meal coaching, and it can call `nourish_estimate_meal` from the embedded UI for preview-only estimates. It does not write intake, water or goals; mutating tools still require explicit user confirmation through the normal MCP tools.
+
 Optional environment:
 
 ```bash

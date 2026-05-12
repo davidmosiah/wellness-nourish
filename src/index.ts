@@ -9,6 +9,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 
+import { registerNourishChatGptApp } from "./apps/nourish-chatgpt-app.js";
 import { isCliCommand, isUnknownCliCommand, runCliCommand } from "./cli/commands.js";
 import { DEFAULT_HOST, DEFAULT_PORT, SERVER_NAME, SERVER_VERSION } from "./constants.js";
 import { registerNourishPrompts } from "./prompts/nourish-prompts.js";
@@ -27,6 +28,7 @@ export function createServer(): McpServer {
   );
 
   registerNourishTools(server);
+  registerNourishChatGptApp(server);
   registerNourishResources(server);
   registerNourishPrompts(server);
 

@@ -64,6 +64,7 @@
     "quantified-self"
   ],
   "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.7.1",
     "@modelcontextprotocol/sdk": "^1.21.0",
     "@zxing/library": "^0.21.3",
     "cors": "^2.8.6",
