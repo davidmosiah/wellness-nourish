@@ -6,6 +6,17 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-05-19
+
+### Added
+
+- **30 commonly-missing Brazilian regional foods added to the TACO subset.** The curated TACO dataset grew from 105 to 135 entries with regional specialties that agents frequently encountered as misses. New coverage: cassava family (`farinha de mandioca`, `polvilho azedo`, `biscoito de polvilho`), corn-based desserts (`pamonha`, `curau`, `canjica branca`), regional bean dishes (`feijão tropeiro`, `baião de dois`), jerked-beef preparations (`carne seca`, `paçoca de carne seca`, `arroz carreteiro`, `escondidinho de carne seca`), Bahian/Afro-Brazilian dishes (`acarajé`, `vatapá`, `caruru`, `bobó de camarão`, `moqueca baiana`), Amazonian (`tucupi`, `cupuaçu`, `açaí na tigela`), drinks (`guaraná`, `mate gelado`, `chocolate quente`, `caldo de cana`), and classic desserts (`beijinho`, `quindim`, `pudim de leite`, `goiabada cascão`, `cocada branca`, `paçoca de amendoim`). Each entry ships with realistic per-100g macros, common-serving size, pt-BR aliases, and TACO-style row id (700-range is reserved for regional entries not in the original 597-row publication). Source attribution: TACO 4 (NEPA/UNICAMP) primary, IBGE POF 2017-18 + USDA SR Legacy cross-reference for the entries that were never published in the original table.
+
+### Fixed
+
+- **`refrigerante, cola` no longer claims `guaraná` as an alias.** Guaraná is a distinct soda (now its own entry, taco_id 588). Searching "guaraná" used to incorrectly return cola.
+- **`açaí, polpa congelada` no longer claims `açaí na tigela` / `acai bowl` as aliases.** The complete bowl with toppings is a new dedicated entry (taco_id 392) with realistic macros; the polpa entry returns to representing just the frozen pulp.
+
 ## [0.6.1] - 2026-05-11
 
 ### Fixed

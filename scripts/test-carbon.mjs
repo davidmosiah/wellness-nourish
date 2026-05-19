@@ -108,4 +108,47 @@ assert.ok(tacoFeijao.foods.length > 0, "TACO must match 'feijao' (no diacritic) 
 const tacoBeans = await searchTacoFoods("black beans", 5);
 assert.ok(tacoBeans.foods.length > 0, "TACO English alias 'black beans' must match");
 
+// --- v0.6.2: regional Brazilian foods present + searchable ---
+assert.ok(tacoDatasetSize() >= 135, `TACO subset must include the v0.6.2 expansion (>=135 entries; got ${tacoDatasetSize()})`);
+
+const regionalProbes = [
+  // [query, expectedNameSubstring, expectedKcalRange]
+  ["farinha de mandioca", /[Ff]arinha de mandioca/, [340, 390]],
+  ["paçoca de carne seca", /[Pp]a[çc]oca de carne/, [240, 340]],
+  ["acarajé", /[Aa]caraj[ée]/, [280, 340]],
+  ["vatapá", /[Vv]atap[áa]/, [180, 250]],
+  ["caruru", /[Cc]aruru/, [140, 210]],
+  ["bobó de camarão", /[Bb]ob[óo]/, [140, 200]],
+  ["moqueca baiana", /[Mm]oqueca/, [120, 180]],
+  ["feijão tropeiro", /[Ff]eij[ãa]o tropeiro/, [180, 250]],
+  ["pamonha", /[Pp]amonha/, [150, 210]],
+  ["curau", /[Cc]urau/, [140, 200]],
+  ["canjica", /[Cc]anjica/, [150, 200]],
+  ["arroz carreteiro", /[Cc]arreteiro/, [140, 200]],
+  ["escondidinho", /[Ee]scondidinho/, [160, 220]],
+  ["goiabada", /[Gg]oiabada/, [260, 320]],
+  ["cocada", /[Cc]ocada/, [370, 450]],
+  ["beijinho", /[Bb]eijinho/, [370, 440]],
+  ["quindim", /[Qq]uindim/, [280, 360]],
+  ["pudim de leite", /[Pp]udim/, [200, 260]],
+  ["chocolate quente", /[Cc]hocolate quente/, [70, 100]],
+  ["mate gelado", /[Mm]ate/, [20, 50]],
+  ["guaraná", /[Gg]uaran[áa]/, [35, 60]],
+  ["açaí na tigela", /[Aa][çc]a[íi]/, [120, 200]],
+  ["tucupi", /[Tt]ucupi/, [20, 50]],
+  ["polvilho", /[Pp]olvilho/, [340, 380]],
+  ["paçoca de amendoim", /[Pp]a[çc]oca/, [400, 510]],
+];
+
+for (const [query, namePattern, [kcalMin, kcalMax]] of regionalProbes) {
+  const res = await searchTacoFoods(query, 3);
+  assert.ok(res.foods.length > 0, `v0.6.2 TACO regional entry missing: '${query}' returned no matches`);
+  assert.match(res.foods[0].name, namePattern, `'${query}' top hit name should match ${namePattern} (got '${res.foods[0].name}')`);
+  const kcal = res.foods[0].nutrients_per_100g?.calories_kcal;
+  assert.ok(
+    kcal !== undefined && kcal >= kcalMin && kcal <= kcalMax,
+    `'${query}' kcal/100g should be in [${kcalMin}, ${kcalMax}]; got ${kcal}`,
+  );
+}
+
 console.log("carbon + TACO tests ok");
