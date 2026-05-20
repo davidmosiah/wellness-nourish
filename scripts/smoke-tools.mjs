@@ -48,6 +48,7 @@ const expectedTools = [
   "nourish_clear_hydration_day",
   "nourish_hydration_summary",
   "nourish_get_goals",
+  "nourish_goal_progress",
   "nourish_set_goals",
   "nourish_daily_summary",
   "nourish_weekly_summary",

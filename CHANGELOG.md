@@ -6,6 +6,12 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-05-20
+
+### Added
+
+- **`nourish_goal_progress` workflow tool.** Reads local intake + hydration + configured goals and returns daily/weekly progress for `today`, `yesterday`, `last_7_days`, or `last_30_days`. Per-day shape includes `kcal/protein_g/carb_g/fat_g/water_ml` (consumed, goal, pct, delta_to_goal), plus an `on_target` flag (every configured macro within ±10% of goal). Multi-day periods also return totals, per-day averages, `days_on_target`, and `days_with_data`. Output includes locale-aware `recommendations[]` (pt-BR if profile language is Portuguese, else en) — concrete next actions like "Hidratação 600 ml abaixo da meta hoje — beba 2 copo(s) de água nas próximas horas". Read-only: no logging side effects, no `explicit_user_intent` required. Registered in agent manifest `RECOMMENDED_FIRST_CALLS` right after `nourish_connection_status` so agents reach for it before reasoning about meal suggestions. Tool count: 41 → 42.
+
 ## [0.6.2] - 2026-05-19
 
 ### Added

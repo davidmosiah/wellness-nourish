@@ -72,6 +72,7 @@ const RECOMMENDED_FIRST_CALLS = [
   "nourish_profile_get",
   "nourish_quickstart",
   "nourish_connection_status",
+  "nourish_goal_progress",
   "nourish_search_food",
 ];
 
@@ -99,6 +100,7 @@ const TOOLS = [
   "nourish_forget_memory",
   "nourish_get_food",
   "nourish_get_goals",
+  "nourish_goal_progress",
   "nourish_hydration_summary",
   "nourish_list_intake",
   "nourish_list_memory",

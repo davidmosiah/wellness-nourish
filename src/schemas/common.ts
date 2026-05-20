@@ -158,6 +158,16 @@ export const DailySummaryInputSchema = z
   })
   .strict();
 
+export const GoalProgressInputSchema = z
+  .object({
+    period: z
+      .enum(["today", "yesterday", "last_7_days", "last_30_days"])
+      .default("today")
+      .describe("Window to evaluate: today (default), yesterday, last_7_days, or last_30_days. All bucketed in the active timezone."),
+    response_format: ResponseFormatSchema.default("json"),
+  })
+  .strict();
+
 export const CarbonSummaryInputSchema = z
   .object({
     /**

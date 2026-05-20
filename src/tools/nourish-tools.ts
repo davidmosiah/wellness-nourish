@@ -14,6 +14,7 @@ import {
   ClearHydrationDayInputSchema,
   CompareDaysInputSchema,
   DailySummaryInputSchema,
+  GoalProgressInputSchema,
   HydrationDeleteInputSchema,
   UndoLastInputSchema,
   ExportInputSchema,
@@ -70,6 +71,7 @@ import {
   type AddIntakeEntryInput,
 } from "../services/intake-store.js";
 import { buildHydrationSummary, clearHydrationDay, deleteWaterEntry, listWaterEntries, logWater } from "../services/hydration-store.js";
+import { buildGoalProgress } from "../services/goal-progress.js";
 import { getGoals, updateGoals } from "../services/goals-store.js";
 import { analyzeFoodImage } from "../services/food-image-analysis.js";
 import { decodeBarcodeImage } from "../services/image-decoder.js";
@@ -1261,6 +1263,26 @@ export function registerNourishTools(server: McpServer): void {
         });
 
         return toolResponse(makeResponse(result, params.response_format));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "nourish_goal_progress",
+    {
+      title: "Goal progress",
+      description:
+        "Compute per-day progress vs configured goals (kcal, protein, carbs, fat, water) for today / yesterday / last_7_days / last_30_days. Returns per-day breakdown (consumed, goal, pct, delta_to_goal), period totals, multi-day averages, days_on_target count, and locale-aware next-action recommendations (pt-BR if profile language is Portuguese, otherwise en). Read-only: no logging side effects, no explicit_user_intent required.",
+      inputSchema: GoalProgressInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = GoalProgressInputSchema.parse(input);
+        const report = await buildGoalProgress(params.period);
+        return toolResponse(makeResponse(report, params.response_format));
       } catch (error) {
         return toolError(error);
       }
