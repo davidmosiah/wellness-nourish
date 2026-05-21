@@ -47,7 +47,8 @@
     "url": "git+https://github.com/davidmosiah/wellness-nourish.git"
   },
   "bugs": {
-    "url": "https://github.com/davidmosiah/wellness-nourish/issues"
+    "url": "https://github.com/davidmosiah/wellness-nourish/issues",
+    "email": "support@delx.ai"
   },
   "keywords": [
     "mcp",
