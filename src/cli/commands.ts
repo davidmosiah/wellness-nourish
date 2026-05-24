@@ -127,9 +127,28 @@ export async function runCliCommand(args: string[]): Promise<number> {
   }
 }
 
+
+function safeConnectionStatus(status: ReturnType<typeof buildConnectionStatus>): unknown {
+  return {
+    ok: status.ok,
+    fixture_mode: status.fixture_mode,
+    local_storage: status.local_dir ? "configured" : "missing",
+    intake_store_exists: status.intake_store_exists,
+    usda_provider: status.usda_mode,
+    usda_using_demo_key: status.usda_using_demo_key,
+    open_food_facts_enabled: status.open_food_facts_enabled,
+    cache_ttl_seconds: status.cache_ttl_seconds,
+    max_results: status.max_results,
+    provider_timeout_ms: status.provider_timeout_ms,
+    timezone: status.timezone,
+    warnings: status.warnings,
+    next_steps: status.next_steps,
+  };
+}
+
 function printStatus(): number {
   console.log("Nourish MCP");
-  console.log(JSON.stringify(buildConnectionStatus(), null, 2));
+  console.log(JSON.stringify(safeConnectionStatus(buildConnectionStatus()), null, 2));
   printCommunityCTA();
   return 0;
 }
@@ -149,7 +168,7 @@ function doctorCommand(args: string[]): number {
           {
             name: "storage",
             ok: true,
-            detail: status.local_dir,
+            detail: status.local_dir ? "configured" : "missing",
           },
           {
             name: "mcp",
@@ -167,7 +186,7 @@ function doctorCommand(args: string[]): number {
             detail: status.open_food_facts_enabled ? "enabled" : "disabled",
           },
         ],
-        status,
+        status: safeConnectionStatus(status),
         ...(hermes === undefined ? {} : { client_checks: { hermes } }),
       },
       null,
