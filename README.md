@@ -35,6 +35,8 @@
 > - [Delx Wellness for OpenClaw](https://github.com/davidmosiah/delx-wellness-openclaw): `npx -y delx-wellness-openclaw setup`
 >
 > Both preconfigure this connector and the full Delx Wellness stack into a dedicated profile. Or wire it standalone into Claude Desktop / Cursor / ChatGPT Desktop &mdash; see the install section below.
+>
+> Want runnable agent examples? Use the [Delx Agent Workbench](https://github.com/davidmosiah/delx-agent-workbench) for prompt packs, MCP client configs and local-first workflow templates.
 
 ---
 
@@ -49,6 +51,8 @@ Wellness Nourish is a local MCP server for nutrition search, barcode lookup, bar
 <p align="center">
   <img src="assets/telegram-nourish-demo.svg" alt="Wellness Nourish Telegram and Hermes nutrition workflow demo" width="92%" />
 </p>
+
+Field guide: [Why local-first wellness agents need MCP](https://github.com/davidmosiah/davidmosiah/blob/main/docs/local-first-wellness-agents.md).
 
 ## Try It In 60 Seconds
 
@@ -276,4 +280,3 @@ The full [Delx Wellness](https://wellness.delx.ai) connector library:
 - 🐛 **Bug reports / feature requests** — [GitHub Issues](https://github.com/davidmosiah/wellness-nourish/issues)
 - 🐦 **Updates** — [@delx369](https://x.com/delx369) on X
 - 🌐 **Site** — [wellness.delx.ai](https://wellness.delx.ai)
-
