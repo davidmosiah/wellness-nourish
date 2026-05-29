@@ -26,7 +26,7 @@
 </p>
 
 <p align="center">
-  <strong>📈 Active in the wild: <a href="https://www.npmjs.com/package/wellness-nourish">~500 npm downloads/day</a> across AI agents and MCP clients.</strong><br>
+  <strong>📈 Published on npm and used by AI agents and MCP clients</strong> &mdash; see the live <a href="https://www.npmjs.com/package/wellness-nourish">download badge</a> above for current numbers.<br>
   <sub>If Nourish helps your agent, a ⭐ on this repo makes it easier for other AI builders to find.</sub>
 </p>
 
