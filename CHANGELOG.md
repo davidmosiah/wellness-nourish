@@ -6,6 +6,16 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.6] - 2026-05-29
+
+### Fixed
+
+- **`log --preview "<text>"` no longer fails with a usage error.** The CLI argument parser was greedy: boolean flags consumed the following token as their value, so the documented Quickstart form `wellness-nourish log --preview "2 eggs and banana"` swallowed the meal text as the value of `--preview` and exited with `Usage:`. `--preview` and `--yes` are now treated as boolean flags that never consume the next token, so the bare `log --preview "<text>"` form works as documented. The longer forms (`log --preview --meal breakfast "<text>"`, `log "<text>" --preview`) and `clear-day <date> --yes` gating are unchanged. Added a CLI-UX regression test for the bare form.
+
+### Docs
+
+- **README Quickstart now shows real captured output.** Added an offline demo (`NOURISH_FIXTURE_MODE=1`, no API key/network) with verbatim output for `search`, `barcode`, and `log --preview`, so new users can see the exact response shapes before wiring up a provider key.
+
 ## [0.6.3] - 2026-05-20
 
 ### Added

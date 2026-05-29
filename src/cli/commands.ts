@@ -609,6 +609,12 @@ function weeklySummaryMarkdown(summary: WeeklySummary): string {
   ].join("\n");
 }
 
+// Flags that never take a value. Without this, a greedy parser treats the
+// next token as their value, so `log --preview "2 eggs"` would consume the
+// meal text as the value of --preview and leave no positionals. Keeping these
+// boolean lets the documented `log --preview "<text>"` form work.
+const BOOLEAN_FLAGS = new Set(["preview", "yes"]);
+
 function parseArgs(args: string[]): ParsedArgs {
   const options: CliOptions = {};
   const positionals: string[] = [];
@@ -626,7 +632,7 @@ function parseArgs(args: string[]): ParsedArgs {
 
     const key = arg.slice(2);
     const next = args[index + 1];
-    if (next !== undefined && !next.startsWith("--")) {
+    if (!BOOLEAN_FLAGS.has(key) && next !== undefined && !next.startsWith("--")) {
       options[key] = next;
       index += 1;
     } else {

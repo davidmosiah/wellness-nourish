@@ -43,6 +43,12 @@ assert.equal(preview.would_write, false);
 assert.equal(preview.estimate.meal_type, "breakfast");
 assert.equal(preview.estimate.items.length, 2);
 
+// Bare `log --preview "<text>"` (the README Quickstart form): the boolean
+// --preview flag must not consume the meal text as its value.
+const previewBare = JSON.parse(run(["log", "--preview", "2 eggs and banana"]));
+assert.equal(previewBare.would_write, false);
+assert.equal(previewBare.estimate.items.length, 2);
+
 const logged = JSON.parse(run(["log", "--meal", "breakfast", "--timestamp", "2026-05-05T08:00:00.000Z", "2 eggs and banana"]));
 assert.match(logged.id, /^intake_/);
 assert.equal(logged.meal_type, "breakfast");

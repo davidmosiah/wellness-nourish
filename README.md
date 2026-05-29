@@ -59,7 +59,68 @@ Field guide: [Why local-first wellness agents need MCP](https://github.com/david
 ```bash
 npx -y wellness-nourish doctor
 npx -y wellness-nourish search banana
+npx -y wellness-nourish barcode 0000000000000
 npx -y wellness-nourish log --preview "2 ovos, banana e café preto"
+```
+
+### Demo (offline, no API key)
+
+`NOURISH_FIXTURE_MODE=1` serves the bundled `fixtures/` instead of calling
+USDA or Open Food Facts, so you can see the exact shape of every response with
+zero network access or keys. The outputs below are captured verbatim from this
+mode:
+
+```bash
+$ NOURISH_FIXTURE_MODE=1 wellness-nourish search banana
+Bananas, raw	usda	89 kcal/100g
+BANANA	usda	312 kcal/100g
+```
+
+```bash
+$ NOURISH_FIXTURE_MODE=1 NOURISH_OFF_ENABLED=1 wellness-nourish barcode 737628064502
+```
+```jsonc
+{
+  "name": "Peanut Butter",
+  "barcode": "737628064502",
+  "brand": "Fixture Foods",
+  "serving": { "quantity": 1, "unit": "serving", "grams": 32 },
+  "nutrients_per_serving": {
+    "calories_kcal": 188.16,
+    "protein_g": 8,
+    "carbohydrates_g": 6.4,
+    "fat_g": 16,
+    "fiber_g": 1.92,
+    "sugar_g": 2.88,
+    "saturated_fat_g": 3.2,
+    "sodium_mg": 128
+  },
+  "license": { "name": "Open Food Facts ODbL" },
+  "data_quality": { "completeness": "high", "confidence": 0.75, "warnings": [] }
+  // ...full record also includes nutrients_per_100g, available_portions, carbon
+}
+```
+
+`log --preview` estimates a meal locally without writing anything:
+
+```bash
+$ wellness-nourish log --preview "2 eggs and a banana"
+```
+```jsonc
+{
+  "would_write": false,
+  "total_nutrients": {
+    "calories_kcal": 248.02,
+    "protein_g": 13.89,
+    "carbohydrates_g": 27.65,
+    "fat_g": 9.89,
+    "fiber_g": 3.07,
+    "sugar_g": 14.43
+  },
+  "confidence": 0.7,
+  "warnings": ["Nutrition values are estimates from simple food defaults."]
+  // ...full record also includes per-item breakdown and entry_preview
+}
 ```
 
 For the full Telegram/Hermes flow:
