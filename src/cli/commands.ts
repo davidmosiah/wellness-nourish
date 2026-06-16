@@ -1,3 +1,7 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+
 import { lookupOpenFoodFactsBarcode } from "../providers/open-food-facts.js";
 import { searchUsdaFoods } from "../providers/usda.js";
 import { NPM_PACKAGE_NAME, SERVER_VERSION } from "../constants.js";
@@ -197,6 +201,69 @@ function doctorCommand(args: string[]): number {
   return 0;
 }
 
+function nourishConfigSnippet() {
+  return {
+    command: "npx",
+    args: ["-y", NPM_PACKAGE_NAME],
+    env: {
+      FDC_API_KEY: "${FDC_API_KEY}",
+      NOURISH_OFF_ENABLED: "1",
+      NOURISH_LOCAL_DIR: "~/.wellness-nourish",
+    },
+  };
+}
+
+/**
+ * Resolve the on-disk MCP config path for clients that have a well-known
+ * location. Returns undefined for clients we only print config for.
+ */
+function clientConfigPath(client: string, homeDir: string): string | undefined {
+  switch (client) {
+    case "cursor":
+      return join(homeDir, ".cursor", "mcp.json");
+    case "windsurf":
+      return join(homeDir, ".codeium", "windsurf", "mcp_config.json");
+    case "claude":
+      return process.platform === "darwin"
+        ? join(homeDir, "Library", "Application Support", "Claude", "claude_desktop_config.json")
+        : join(homeDir, ".config", "Claude", "claude_desktop_config.json");
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Merge the nourish server block into an existing mcpServers config (or create
+ * the file), preserving any other servers the user has configured. Written
+ * with mode 0600 since MCP configs can reference secret-bearing env.
+ */
+function writeClientMcpConfig(path: string): { path: string; merged: boolean } {
+  mkdirSync(dirname(path), { recursive: true });
+  let existing: Record<string, unknown> = {};
+  let merged = false;
+  if (existsSync(path)) {
+    try {
+      existing = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+      merged = true;
+    } catch {
+      existing = {};
+    }
+  }
+  const mcpServers =
+    typeof existing.mcpServers === "object" && existing.mcpServers !== null
+      ? (existing.mcpServers as Record<string, unknown>)
+      : {};
+  const next = {
+    ...existing,
+    mcpServers: {
+      ...mcpServers,
+      nourish: nourishConfigSnippet(),
+    },
+  };
+  writeFileSync(path, `${JSON.stringify(next, null, 2)}\n`, { mode: 0o600 });
+  return { path, merged };
+}
+
 function setupCommand(args: string[]): number {
   const parsed = parseArgs(args);
   const client = optionString(parsed, "client") ?? "generic";
@@ -215,30 +282,46 @@ function setupCommand(args: string[]): number {
     return 0;
   }
 
-  const config = {
-    mcpServers: {
-      nourish: {
-        command: "npx",
-        args: ["-y", NPM_PACKAGE_NAME],
-        env: {
-          FDC_API_KEY: "${FDC_API_KEY}",
-          NOURISH_OFF_ENABLED: "1",
-          NOURISH_LOCAL_DIR: "~/.wellness-nourish",
-        },
-      },
-    },
-  };
+  const config = { mcpServers: { nourish: nourishConfigSnippet() } };
+  const homeDir = optionString(parsed, "home-dir") ?? homedir();
+  const noWrite = hasFlag(parsed, "no-write");
+  const targetPath = clientConfigPath(client, homeDir);
+
+  let written: { path: string; merged: boolean } | undefined;
+  let writeError: string | undefined;
+  if (targetPath !== undefined && !noWrite) {
+    try {
+      written = writeClientMcpConfig(targetPath);
+    } catch (error) {
+      writeError = error instanceof Error ? error.message : String(error);
+    }
+  }
+
+  const nextSteps = [
+    "Run wellness-nourish doctor.",
+    "In agents, call nourish_connection_status before provider-backed tools.",
+    "Use preview before write for food logs.",
+  ];
+  if (written !== undefined) {
+    nextSteps.unshift(
+      `Restart ${client} (or reload its MCP servers) so it picks up the nourish server.`,
+    );
+  }
 
   console.log(
     JSON.stringify(
       {
         client,
         config,
-        next_steps: [
-          "Run wellness-nourish doctor.",
-          "In agents, call nourish_connection_status before provider-backed tools.",
-          "Use preview before write for food logs.",
-        ],
+        ...(targetPath === undefined
+          ? {}
+          : {
+              config_path: targetPath,
+              config_written: written !== undefined,
+              config_merged: written?.merged ?? false,
+              ...(writeError === undefined ? {} : { write_error: writeError }),
+            }),
+        next_steps: nextSteps,
       },
       null,
       2,
@@ -613,7 +696,7 @@ function weeklySummaryMarkdown(summary: WeeklySummary): string {
 // next token as their value, so `log --preview "2 eggs"` would consume the
 // meal text as the value of --preview and leave no positionals. Keeping these
 // boolean lets the documented `log --preview "<text>"` form work.
-const BOOLEAN_FLAGS = new Set(["preview", "yes"]);
+const BOOLEAN_FLAGS = new Set(["preview", "yes", "no-write"]);
 
 function parseArgs(args: string[]): ParsedArgs {
   const options: CliOptions = {};

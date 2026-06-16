@@ -4,6 +4,7 @@ import { localDate } from "./local-date.js";
 import { getPersonalNutritionMemory } from "./personal-memory.js";
 import { estimateMeal } from "./meal-estimator.js";
 import { roundNutrient } from "./nutrients.js";
+import { readLatestWearableContext } from "./wearable-context-store.js";
 
 export type CoachMode =
   | "daily_coach"
@@ -19,6 +20,12 @@ export interface CoachInput {
   focus?: "balanced" | "protein" | "calories" | "hydration" | "training" | undefined;
   meal_type?: MealType | undefined;
   wearable_context?: Record<string, unknown> | undefined;
+  /**
+   * When true and no inline wearable_context is provided, attempt to read the
+   * most recent shared wellness_context from ~/.delx-wellness/. Reported in
+   * `wellness_context.wearable_pull`; never fabricates data.
+   */
+  auto_wearable?: boolean | undefined;
   workout_context?: string | undefined;
   recent_intake_id?: string | undefined;
 }
@@ -49,6 +56,17 @@ export interface CoachOutput {
     wearable_context?: Record<string, unknown>;
     workout_context?: string;
     intake_refs: string[];
+    /**
+     * Provenance for the wearable_context when auto_wearable was requested.
+     * `mode` is "inline" (passed by caller), "auto" (read from shared file),
+     * or "none" (requested but nothing on disk / not requested).
+     */
+    wearable_pull?: {
+      mode: "inline" | "auto" | "none";
+      available: boolean;
+      source_path?: string;
+      note: string;
+    };
   };
   suggested_next_meal: {
     text: string;
@@ -62,7 +80,60 @@ export interface CoachOutput {
   warnings: string[];
 }
 
-export async function buildNutritionCoach(input: CoachInput): Promise<CoachOutput> {
+interface WearablePull {
+  mode: "inline" | "auto" | "none";
+  available: boolean;
+  source_path?: string;
+  note: string;
+}
+
+/**
+ * Resolve the effective wearable_context for this call, honoring `auto_wearable`.
+ * Inline context always wins. When auto-pull is requested and no inline context
+ * exists, read the most recent shared snapshot from disk. Never fabricates data.
+ */
+async function resolveWearableContext(
+  input: CoachInput,
+): Promise<{ context: Record<string, unknown> | undefined; pull: WearablePull }> {
+  if (input.wearable_context !== undefined) {
+    return {
+      context: input.wearable_context,
+      pull: { mode: "inline", available: true, note: "Using wearable_context passed inline by the caller." },
+    };
+  }
+
+  if (input.auto_wearable !== true) {
+    return {
+      context: undefined,
+      pull: {
+        mode: "none",
+        available: false,
+        note: "No wearable_context provided. Pass one inline or set auto_wearable: true to read the shared context.",
+      },
+    };
+  }
+
+  const result = await readLatestWearableContext();
+  if (result.available && result.context !== undefined) {
+    const pull: WearablePull = { mode: "auto", available: true, note: result.note };
+    if (result.source_path !== undefined) {
+      pull.source_path = result.source_path;
+    }
+    return { context: result.context, pull };
+  }
+
+  return {
+    context: undefined,
+    pull: { mode: "none", available: false, note: result.note },
+  };
+}
+
+export async function buildNutritionCoach(rawInput: CoachInput): Promise<CoachOutput> {
+  const { context: resolvedWearable, pull } = await resolveWearableContext(rawInput);
+  // Downstream reasoning reads `input.wearable_context`; normalize so an
+  // auto-pulled context drives suggestions exactly like an inline one.
+  const input: CoachInput = { ...rawInput, wearable_context: resolvedWearable };
+
   const date = input.date ?? todayDate();
   const summary = await buildDailySummary(date);
   const memory = await getPersonalNutritionMemory();
@@ -81,7 +152,7 @@ export async function buildNutritionCoach(input: CoachInput): Promise<CoachOutpu
     requires_confirmation_to_log: true,
     summary: compactSummary(summary),
     gaps: buildGaps(summary),
-    wellness_context: buildWellnessContext(input, summary),
+    wellness_context: buildWellnessContext(input, summary, pull),
     suggested_next_meal: {
       text: suggestionText,
       meal_type: input.meal_type ?? suggestedMealType(input.mode),
@@ -128,7 +199,11 @@ function buildGaps(summary: DailySummary): CoachOutput["gaps"] {
   return gaps;
 }
 
-function buildWellnessContext(input: CoachInput, summary: DailySummary): CoachOutput["wellness_context"] {
+function buildWellnessContext(
+  input: CoachInput,
+  summary: DailySummary,
+  pull?: WearablePull,
+): CoachOutput["wellness_context"] {
   const wearableSource = sourceFromWearable(input.wearable_context);
   const sources = [
     ...(wearableSource === undefined ? [] : [wearableSource]),
@@ -146,6 +221,9 @@ function buildWellnessContext(input: CoachInput, summary: DailySummary): CoachOu
   }
   if (input.workout_context !== undefined) {
     context.workout_context = input.workout_context;
+  }
+  if (pull !== undefined) {
+    context.wearable_pull = pull;
   }
 
   return context;

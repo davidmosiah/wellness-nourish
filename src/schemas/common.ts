@@ -257,6 +257,21 @@ export const GoalsSetInputSchema = z
 export const ExportInputSchema = z
   .object({
     export_format: z.enum(["jsonl", "csv"]).default("jsonl"),
+    since: DateSchema.optional().describe(
+      "Only include entries on or after this date (inclusive, YYYY-MM-DD). Use to keep the response small instead of dumping months of history into chat.",
+    ),
+    until: DateSchema.optional().describe(
+      "Only include entries on or before this date (inclusive, YYYY-MM-DD).",
+    ),
+    max_rows: z
+      .number()
+      .int()
+      .positive()
+      .max(5000)
+      .default(500)
+      .describe(
+        "Max data rows to return in the response (most recent first). Defaults to 500. Omitted rows are reported as a count so the agent can refine by date or fall back to the `wellness-nourish export` CLI for a full dump.",
+      ),
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
@@ -504,6 +519,12 @@ export const CoachInputSchema = z
     focus: z.enum(["balanced", "protein", "calories", "hydration", "training"]).optional(),
     meal_type: z.enum(["breakfast", "lunch", "dinner", "snack", "other"]).optional(),
     wearable_context: z.record(z.string(), z.unknown()).optional(),
+    auto_wearable: z
+      .boolean()
+      .default(false)
+      .describe(
+        "If true and no wearable_context is passed inline, try to read the most recent shared wellness_context from ~/.delx-wellness/ (written by a wearable connector). The coach reports whether a context was actually found; it never fabricates wearable data. Inline wearable_context always wins over the auto-pulled one.",
+      ),
     workout_context: z.string().trim().min(1).optional(),
     recent_intake_id: z.string().trim().min(1).optional(),
     response_format: ResponseFormatSchema.default("json"),

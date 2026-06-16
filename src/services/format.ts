@@ -1,4 +1,4 @@
-import type { ResponseFormat } from "../types.js";
+import type { NutrientMap, ResponseFormat } from "../types.js";
 
 export interface McpTextResponse {
   isError?: boolean;
@@ -120,6 +120,108 @@ export function compactTable(rows: Array<Record<string, unknown>>, columns?: str
   const header = `| ${headers.join(" | ")} |`;
   const divider = `| ${headers.map(() => "---").join(" | ")} |`;
   const body = rows.map((row) => `| ${headers.map((key) => formatValue(row[key])).join(" | ")} |`);
+
+  return [header, divider, ...body].join("\n");
+}
+
+// Human-friendly labels (with units) for the tracked nutrient keys. Keeps the
+// prose/table formatters from leaking machine keys like `calories_kcal` into
+// chat surfaces. Anything not listed falls back to a title-cased key.
+const NUTRIENT_LABELS: Record<string, string> = {
+  calories_kcal: "Calories (kcal)",
+  protein_g: "Protein (g)",
+  carbohydrates_g: "Carbs (g)",
+  fat_g: "Fat (g)",
+  fiber_g: "Fiber (g)",
+  sugar_g: "Sugar (g)",
+  saturated_fat_g: "Saturated fat (g)",
+  sodium_mg: "Sodium (mg)",
+};
+
+const NUTRIENT_ORDER = [
+  "calories_kcal",
+  "protein_g",
+  "carbohydrates_g",
+  "fat_g",
+  "fiber_g",
+  "sugar_g",
+  "saturated_fat_g",
+  "sodium_mg",
+] as const;
+
+function nutrientLabel(key: string): string {
+  return (
+    NUTRIENT_LABELS[key] ??
+    key
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+  );
+}
+
+/**
+ * Render a nutrient map as a readable two-column markdown table instead of a
+ * one-line JSON blob. Skips undefined/null values, keeps a stable nutrient
+ * order, and appends any extra numeric keys not in the canonical order.
+ * Returns "" when there is nothing meaningful to show.
+ */
+export function nutrientTable(
+  nutrients: NutrientMap | Record<string, unknown> | undefined,
+  valueHeader = "Amount",
+): string {
+  if (nutrients === null || typeof nutrients !== "object") {
+    return "";
+  }
+
+  const record = nutrients as Record<string, unknown>;
+  const orderedKeys = [
+    ...NUTRIENT_ORDER.filter((key) => key in record),
+    ...Object.keys(record).filter((key) => !(NUTRIENT_ORDER as readonly string[]).includes(key)),
+  ];
+
+  const rows = orderedKeys
+    .map((key) => ({ key, value: record[key] }))
+    .filter((row) => row.value !== null && row.value !== undefined);
+
+  if (rows.length === 0) {
+    return "";
+  }
+
+  const header = `| Nutrient | ${valueHeader} |`;
+  const divider = `| --- | --- |`;
+  const body = rows.map((row) => `| ${nutrientLabel(row.key)} | ${formatValue(row.value)} |`);
+
+  return [header, divider, ...body].join("\n");
+}
+
+/**
+ * Render an arbitrary flat record as a two-column key/value markdown table.
+ * Optional `labels` overrides display names; `order` fixes row order.
+ */
+export function keyValueTable(
+  values: Record<string, unknown>,
+  options?: { labels?: Record<string, string>; order?: readonly string[]; keyHeader?: string; valueHeader?: string },
+): string {
+  const labels = options?.labels ?? {};
+  const keyHeader = options?.keyHeader ?? "Field";
+  const valueHeader = options?.valueHeader ?? "Value";
+  const orderedKeys = options?.order
+    ? [
+        ...options.order.filter((key) => key in values),
+        ...Object.keys(values).filter((key) => !options.order!.includes(key)),
+      ]
+    : Object.keys(values);
+
+  const rows = orderedKeys
+    .map((key) => ({ key, value: values[key] }))
+    .filter((row) => row.value !== null && row.value !== undefined);
+
+  if (rows.length === 0) {
+    return "";
+  }
+
+  const header = `| ${keyHeader} | ${valueHeader} |`;
+  const divider = `| --- | --- |`;
+  const body = rows.map((row) => `| ${labels[row.key] ?? row.key} | ${formatValue(row.value)} |`);
 
   return [header, divider, ...body].join("\n");
 }

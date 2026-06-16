@@ -65,7 +65,7 @@ function helpText(): string {
     "Commands:",
     "  status                         Print connection status.",
     "  doctor                         Run local DX checks.",
-    "  setup --client <name>           Print MCP config; writes Hermes config/skill for --client hermes.",
+    "  setup --client <name>           Print MCP config; writes config for cursor/windsurf/claude/hermes (--no-write to print only).",
     "  search <query>                 Search USDA foods.",
     "  barcode <barcode>              Lookup an Open Food Facts barcode.",
     "  log [--preview] <text...>       Estimate or log a meal.",

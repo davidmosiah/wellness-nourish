@@ -128,6 +128,7 @@ const TOOLS = [
   "nourish_pre_workout_nutrition",
   "nourish_privacy_audit",
   "nourish_profile_get",
+  "nourish_pull_wearable_context",
   "nourish_profile_update",
   "nourish_quickstart",
   "nourish_remember_meal",

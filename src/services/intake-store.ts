@@ -233,6 +233,97 @@ export async function exportIntakeCsvData(): Promise<string> {
   return `${headers.join(",")}\n${rows.map((row) => row.join(",")).join("\n")}${rows.length > 0 ? "\n" : ""}`;
 }
 
+export interface ExportFilter {
+  since?: string | undefined;
+  until?: string | undefined;
+  max_rows?: number | undefined;
+}
+
+export interface FilteredExport {
+  text: string;
+  total_rows: number;
+  included_rows: number;
+  omitted_rows: number;
+  truncated: boolean;
+}
+
+const CSV_HEADERS = [
+  "id",
+  "timestamp",
+  "date",
+  "meal_type",
+  "food_name",
+  "quantity",
+  "unit",
+  "grams_estimate",
+  "calories_kcal",
+  "protein_g",
+  "carbohydrates_g",
+  "fat_g",
+  "confidence",
+  "source_trace",
+  "notes",
+] as const;
+
+function entryToCsvRow(entry: IntakeEntry): string {
+  return [
+    entry.id,
+    entry.timestamp,
+    entry.date,
+    entry.meal_type,
+    entry.food_ref?.name ?? entry.custom_food?.name ?? "",
+    entry.quantity,
+    entry.unit,
+    entry.grams_estimate ?? "",
+    entry.nutrients.calories_kcal ?? "",
+    entry.nutrients.protein_g ?? "",
+    entry.nutrients.carbohydrates_g ?? "",
+    entry.nutrients.fat_g ?? "",
+    entry.confidence,
+    entry.source_trace,
+    entry.notes ?? "",
+  ]
+    .map(csvCell)
+    .join(",");
+}
+
+/**
+ * Export intake data with optional date range + row cap, returning the text
+ * plus counts so the caller can tell the user how many rows were omitted.
+ * Rows are selected most-recent-first before capping, so a small `max_rows`
+ * keeps the latest activity rather than the oldest.
+ */
+export async function exportIntakeDataFiltered(
+  format: "jsonl" | "csv",
+  filter: ExportFilter = {},
+): Promise<FilteredExport> {
+  const all = await readEntries();
+  const matched = all
+    .filter((entry) => (filter.since === undefined ? true : entry.date >= filter.since))
+    .filter((entry) => (filter.until === undefined ? true : entry.date <= filter.until))
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+  const limit = filter.max_rows ?? matched.length;
+  const included = matched.slice(0, limit);
+  const omitted = matched.length - included.length;
+
+  let text: string;
+  if (format === "csv") {
+    const rows = included.map(entryToCsvRow);
+    text = `${CSV_HEADERS.join(",")}\n${rows.join("\n")}${rows.length > 0 ? "\n" : ""}`;
+  } else {
+    text = included.length === 0 ? "" : `${included.map((entry) => JSON.stringify(entry)).join("\n")}\n`;
+  }
+
+  return {
+    text,
+    total_rows: matched.length,
+    included_rows: included.length,
+    omitted_rows: omitted,
+    truncated: omitted > 0,
+  };
+}
+
 function csvCell(value: unknown): string {
   const text = String(value);
   if (!/[",\n]/.test(text)) {

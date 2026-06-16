@@ -58,14 +58,15 @@ import {
   makeResponse,
   bulletList,
   compactTable,
+  nutrientTable,
+  keyValueTable,
   type McpTextResponse,
 } from "../services/format.js";
 import {
   addIntakeEntry,
   clearIntakeDay,
   deleteIntakeEntry,
-  exportIntakeCsvData,
-  exportIntakeData,
+  exportIntakeDataFiltered,
   listIntakeEntries,
   updateIntakeEntry,
   type AddIntakeEntryInput,
@@ -86,6 +87,7 @@ import {
 import { gramsForQuantity, nutrientsForGrams } from "../services/portion-engine.js";
 import { estimateMealFromPhotoObservation } from "../services/photo-meal-estimator.js";
 import { buildPrivacyAudit } from "../services/privacy-audit.js";
+import { getWearableContextPath, readLatestWearableContext } from "../services/wearable-context-store.js";
 import {
   buildProfileSummary,
   getOnboardingFlow,
@@ -445,7 +447,7 @@ export function registerNourishTools(server: McpServer): void {
         const params = BarcodeLookupInputSchema.parse(input);
         const result = await lookupOpenFoodFactsBarcode(params.barcode);
 
-        return toolResponse(makeResponse(result, params.response_format));
+        return toolResponse(makeResponse(result, params.response_format, foodMarkdown(result.food)));
       } catch (error) {
         return toolError(error);
       }
@@ -526,7 +528,7 @@ export function registerNourishTools(server: McpServer): void {
         const params = FoodGetInputSchema.parse(input);
         const result = await getFoodBySource(params.source, params.source_id);
 
-        return toolResponse(makeResponse(result, params.response_format));
+        return toolResponse(makeResponse(result, params.response_format, foodMarkdown(result.food)));
       } catch (error) {
         return toolError(error);
       }
@@ -560,7 +562,7 @@ export function registerNourishTools(server: McpServer): void {
           },
         };
 
-        return toolResponse(makeResponse(payload, params.response_format));
+        return toolResponse(makeResponse(payload, params.response_format, mealEstimateMarkdown(payload)));
       } catch (error) {
         return toolError(error);
       }
@@ -641,6 +643,44 @@ export function registerNourishTools(server: McpServer): void {
   registerCoachTool(server, "nourish_after_log_review", "after_log_review", "After-log review", "Review the day after a meal log and explain what changed plus the next correction or action.");
   registerCoachTool(server, "nourish_pre_workout_nutrition", "pre_workout_nutrition", "Pre-workout nutrition", "Suggest light pre-workout nutrition using goals, current intake, and optional WHOOP/Garmin context.");
   registerCoachTool(server, "nourish_evening_checkin", "evening_checkin", "Evening check-in", "Check late-day protein, calories, and hydration gaps with a compact Telegram-friendly next step.");
+
+  server.registerTool(
+    "nourish_pull_wearable_context",
+    {
+      title: "Pull wearable context",
+      description:
+        "Read the most recent shared wellness_context (delx-wellness-context/v1) written by a wearable connector to ~/.delx-wellness/, so coach tools can be recovery/strain-aware without the agent passing it inline. Read-only; never fabricates wearable data. If no connector has persisted a context yet, returns available:false with the expected path. The returned context can be passed straight into nourish_daily_coach / nourish_suggest_next_meal / nourish_pre_workout_nutrition as wearable_context (or set auto_wearable:true on those tools to pull it automatically).",
+      inputSchema: ResponseOnlyInputSchema.shape,
+      annotations: readOnlyAnnotation(),
+    },
+    async (input) => {
+      try {
+        const params = ResponseOnlyInputSchema.parse(input);
+        const result = await readLatestWearableContext();
+        const payload = {
+          ok: true,
+          available: result.available,
+          wearable_context: result.context,
+          source_path: result.source_path,
+          expected_path: getWearableContextPath(),
+          checked_paths: result.checked_paths,
+          note: result.note,
+          next_action: result.available
+            ? "Pass wearable_context into a coach tool, or call a coach tool with auto_wearable: true."
+            : "No wearable context persisted yet — pass wearable_context inline from a connector's *_wellness_context tool.",
+        };
+        const markdown = bulletList("Wearable Context", {
+          available: result.available,
+          source_path: result.source_path ?? "—",
+          expected_path: getWearableContextPath(),
+          note: result.note,
+        });
+        return toolResponse(makeResponse(payload, params.response_format, markdown));
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
 
   server.registerTool(
     "nourish_remember_meal",
@@ -1200,7 +1240,7 @@ export function registerNourishTools(server: McpServer): void {
         const params = SummaryInputSchema.parse(input);
         const summary = await buildHydrationSummary(params.date);
 
-        return toolResponse(makeResponse(summary, params.response_format));
+        return toolResponse(makeResponse(summary, params.response_format, hydrationSummaryMarkdown(summary)));
       } catch (error) {
         return toolError(error);
       }
@@ -1282,7 +1322,7 @@ export function registerNourishTools(server: McpServer): void {
       try {
         const params = GoalProgressInputSchema.parse(input);
         const report = await buildGoalProgress(params.period);
-        return toolResponse(makeResponse(report, params.response_format));
+        return toolResponse(makeResponse(report, params.response_format, goalProgressMarkdown(report)));
       } catch (error) {
         return toolError(error);
       }
@@ -1325,11 +1365,9 @@ export function registerNourishTools(server: McpServer): void {
           };
         }
 
+        const payload = comparison === undefined ? summary : { ...summary, comparison };
         return toolResponse(
-          makeResponse(
-            comparison === undefined ? summary : { ...summary, comparison },
-            params.response_format,
-          ),
+          makeResponse(payload, params.response_format, dailySummaryMarkdown(summary, comparison)),
         );
       } catch (error) {
         return toolError(error);
@@ -1464,23 +1502,54 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_export_data",
     {
       title: "Export intake data",
-      description: "Export local intake data as JSONL or CSV without provider secrets or tokens.",
+      description:
+        "Export local intake data as JSONL or CSV without provider secrets or tokens. Defaults to the 500 most-recent rows; pass since/until to scope by date or max_rows to widen/narrow. Omitted rows are reported so you can refine instead of dumping months of history into chat (use the `wellness-nourish export` CLI for a full unbounded dump).",
       inputSchema: ExportInputSchema.shape,
       annotations: readOnlyAnnotation(),
     },
     async (input) => {
       try {
         const params = ExportInputSchema.parse(input);
-        const exportText =
-          params.export_format === "csv" ? await exportIntakeCsvData() : await exportIntakeData();
+        const result = await exportIntakeDataFiltered(params.export_format, {
+          since: params.since,
+          until: params.until,
+          max_rows: params.max_rows,
+        });
 
-        return toolResponse(
-          makeResponse(
-            params.export_format === "csv" ? { csv: exportText } : { jsonl: exportText },
-            params.response_format,
-            exportText,
-          ),
-        );
+        const notes: string[] = [];
+        if (result.truncated) {
+          notes.push(
+            `${result.omitted_rows} row(s) omitted (showing ${result.included_rows} of ${result.total_rows} matching). ` +
+              `Refine with since/until or a larger max_rows, or run \`wellness-nourish export --format ${params.export_format}\` for the full file.`,
+          );
+        }
+
+        const payload = {
+          ok: true,
+          export_format: params.export_format,
+          total_rows: result.total_rows,
+          included_rows: result.included_rows,
+          omitted_rows: result.omitted_rows,
+          truncated: result.truncated,
+          filters: { since: params.since, until: params.until, max_rows: params.max_rows },
+          notes,
+          ...(params.export_format === "csv" ? { csv: result.text } : { jsonl: result.text }),
+        };
+
+        const markdown = [
+          `# Nourish Export (${params.export_format})`,
+          "",
+          `- matching rows: ${result.total_rows}`,
+          `- included: ${result.included_rows}`,
+          `- omitted: ${result.omitted_rows}`,
+          ...(notes.length > 0 ? ["", ...notes.map((n) => `> ${n}`)] : []),
+          "",
+          "```",
+          result.text.trimEnd(),
+          "```",
+        ].join("\n");
+
+        return toolResponse(makeResponse(payload, params.response_format, markdown));
       } catch (error) {
         return toolError(error);
       }
@@ -1522,6 +1591,7 @@ function registerCoachTool(
           focus: params.focus,
           meal_type: params.meal_type,
           wearable_context: params.wearable_context,
+          auto_wearable: params.auto_wearable,
           workout_context: params.workout_context,
           recent_intake_id: params.recent_intake_id,
         });
@@ -1611,6 +1681,208 @@ function compactFoodTable(foods: FoodItem[]): string {
     })),
     ["name", "source", "calories", "protein"],
   );
+}
+
+// Markdown for a single resolved food (nourish_get_food, nourish_lookup_barcode).
+// Renders the per-100g nutrients as a readable table rather than a JSON blob.
+function foodMarkdown(food: FoodItem): string {
+  const lines = [`# ${food.name}`, ""];
+  const facts: Record<string, unknown> = {
+    source: food.source,
+    source_id: food.source_id,
+    brand: food.brand,
+    barcode: food.barcode,
+    serving: food.serving ? `${food.serving.quantity} ${food.serving.unit}${food.serving.grams ? ` (${food.serving.grams}g)` : ""}` : undefined,
+    completeness: food.data_quality.completeness,
+    confidence: food.data_quality.confidence,
+  };
+  if (food.carbon !== undefined) {
+    facts.carbon_kg_co2e_per_kg = food.carbon.kg_co2e_per_kg;
+  }
+  const factsTable = keyValueTable(facts);
+  if (factsTable) {
+    lines.push(factsTable, "");
+  }
+  const per100g = nutrientTable(food.nutrients_per_100g, "per 100g");
+  if (per100g) {
+    lines.push("## Nutrients per 100g", "", per100g);
+  }
+  if (food.nutrients_per_serving !== undefined) {
+    const perServing = nutrientTable(food.nutrients_per_serving, "per serving");
+    if (perServing) {
+      lines.push("", "## Nutrients per serving", "", perServing);
+    }
+  }
+  if (food.data_quality.warnings.length > 0) {
+    lines.push("", "## Warnings", ...food.data_quality.warnings.map((w) => `- ${w}`));
+  }
+  lines.push("", `_Source: ${food.license.name}._`);
+  return lines.join("\n");
+}
+
+// Markdown for nourish_estimate_meal. Surfaces the macro table, per-item
+// breakdown, confidence, and any unresolved terms the agent should clarify.
+function mealEstimateMarkdown(
+  payload: {
+    text: string;
+    items: Array<{ name: string; quantity: number; grams: number; nutrients: NutrientMap }>;
+    total_nutrients: NutrientMap;
+    confidence: number;
+    unresolved: string[];
+    warnings: string[];
+    personal_memory: { expanded: boolean; matches: Array<{ label?: string }> };
+  },
+): string {
+  const lines = [`# Meal Estimate`, "", `- text: ${payload.text}`, `- confidence: ${payload.confidence}`];
+  if (payload.personal_memory.expanded) {
+    lines.push(`- expanded from personal memory: yes`);
+  }
+  lines.push("");
+  const totals = nutrientTable(payload.total_nutrients, "Total");
+  if (totals) {
+    lines.push("## Total nutrients", "", totals, "");
+  }
+  if (payload.items.length > 0) {
+    lines.push(
+      "## Items",
+      "",
+      compactTable(
+        payload.items.map((item) => ({
+          food: item.name,
+          qty: item.quantity,
+          grams: item.grams,
+          calories: item.nutrients.calories_kcal,
+          protein: item.nutrients.protein_g,
+        })),
+        ["food", "qty", "grams", "calories", "protein"],
+      ),
+    );
+  }
+  if (payload.unresolved.length > 0) {
+    lines.push("", `## Unresolved (ask the user)`, ...payload.unresolved.map((u) => `- ${u}`));
+  }
+  if (payload.warnings.length > 0) {
+    lines.push("", "## Warnings", ...payload.warnings.map((w) => `- ${w}`));
+  }
+  return lines.join("\n");
+}
+
+// Markdown for nourish_daily_summary. Shows totals + goal progress as tables,
+// plus an optional comparison block when compare_to was supplied.
+function dailySummaryMarkdown(
+  summary: Awaited<ReturnType<typeof buildDailySummary>>,
+  comparison?: Record<string, unknown>,
+): string {
+  const lines = [
+    "# Nourish Daily Summary",
+    "",
+    `- date: ${summary.date}`,
+    `- entries: ${summary.entry_count}`,
+    `- hydration_ml: ${summary.hydration.total_ml}`,
+    `- confidence: ${summary.confidence}`,
+    "",
+  ];
+  const totals = nutrientTable(summary.total_nutrients, "Total");
+  if (totals) {
+    lines.push("## Total nutrients", "", totals, "");
+  }
+  const goalRows = Object.entries(summary.goal_progress).map(([key, progress]) => ({
+    goal: key,
+    actual: progress.actual,
+    target: progress.goal,
+    percent: `${progress.percent}%`,
+  }));
+  if (goalRows.length > 0) {
+    lines.push(
+      "## Goal progress",
+      "",
+      compactTable(goalRows, ["goal", "actual", "target", "percent"]),
+      "",
+    );
+  }
+  if (comparison !== undefined) {
+    lines.push(`## Comparison (${String(comparison.kind ?? "baseline")})`, "");
+    const deltas = comparison.deltas as Record<string, { delta: number; percent_change?: number }> | undefined;
+    if (deltas !== undefined) {
+      lines.push(
+        compactTable(
+          Object.entries(deltas).map(([key, value]) => ({
+            nutrient: key,
+            delta: value.delta,
+            percent_change: value.percent_change === undefined ? "" : `${value.percent_change}%`,
+          })),
+          ["nutrient", "delta", "percent_change"],
+        ),
+      );
+    }
+  }
+  return lines.join("\n").trimEnd();
+}
+
+// Markdown for nourish_goal_progress. Per-day table + period averages.
+function goalProgressMarkdown(report: Awaited<ReturnType<typeof buildGoalProgress>>): string {
+  const lines = [
+    "# Nourish Goal Progress",
+    "",
+    `- period: ${report.period}`,
+    `- window: ${report.window.start} → ${report.window.end}`,
+    `- days on target: ${report.days_on_target} / ${report.days_with_data}`,
+    "",
+  ];
+  if (report.days.length > 0) {
+    lines.push(
+      "## Per-day",
+      "",
+      compactTable(
+        report.days.map((day) => ({
+          date: day.date,
+          kcal: `${day.kcal.consumed}/${day.kcal.goal}`,
+          protein: `${day.protein_g.consumed}/${day.protein_g.goal}g`,
+          water: `${day.water_ml.consumed}/${day.water_ml.goal}ml`,
+          on_target: day.on_target ? "✓" : "",
+        })),
+        ["date", "kcal", "protein", "water", "on_target"],
+      ),
+      "",
+    );
+  }
+  if (report.averages !== undefined) {
+    lines.push(
+      "## Averages",
+      "",
+      keyValueTable(
+        {
+          "Calories/day": report.averages.kcal_per_day,
+          "Protein/day (g)": report.averages.protein_g_per_day,
+          "Carbs/day (g)": report.averages.carb_g_per_day,
+          "Fat/day (g)": report.averages.fat_g_per_day,
+          "Water/day (ml)": report.averages.water_ml_per_day,
+        },
+        { keyHeader: "Metric", valueHeader: "Average" },
+      ),
+      "",
+    );
+  }
+  if (report.recommendations.length > 0) {
+    lines.push("## Recommendations", ...report.recommendations.map((r) => `- ${r}`));
+  }
+  return lines.join("\n").trimEnd();
+}
+
+// Markdown for nourish_hydration_summary.
+function hydrationSummaryMarkdown(summary: Awaited<ReturnType<typeof buildHydrationSummary>>): string {
+  const facts: Record<string, unknown> = {
+    "Date": summary.date,
+    "Total (ml)": summary.total_ml,
+    "Goal (ml)": summary.goal_ml,
+    "Progress": summary.progress_percent === undefined ? undefined : `${summary.progress_percent}%`,
+    "Entries": summary.entries.length,
+  };
+  return [
+    "# Hydration Summary",
+    "",
+    keyValueTable(facts, { keyHeader: "Field", valueHeader: "Value" }),
+  ].join("\n").trimEnd();
 }
 
 function barcodeDecodeMarkdown(result: Awaited<ReturnType<typeof decodeBarcodeImage>>): string {

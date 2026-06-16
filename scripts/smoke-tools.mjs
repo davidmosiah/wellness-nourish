@@ -32,6 +32,7 @@ const expectedTools = [
   "nourish_after_log_review",
   "nourish_pre_workout_nutrition",
   "nourish_evening_checkin",
+  "nourish_pull_wearable_context",
   "nourish_remember_meal",
   "nourish_list_memory",
   "nourish_forget_memory",
