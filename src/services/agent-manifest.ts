@@ -22,6 +22,7 @@ export interface NourishAgentManifest {
     optional_env: string[];
   };
   recommended_first_calls: string[];
+  standard_tools: string[];
   tools: string[];
   resources: string[];
   hermes: {
@@ -74,6 +75,21 @@ const RECOMMENDED_FIRST_CALLS = [
   "nourish_connection_status",
   "nourish_goal_progress",
   "nourish_search_food",
+];
+
+// The everyday read tools an agent reaches for after onboarding: food lookup,
+// intake/goal reads, and daily/weekly summaries. All read-only (no gating).
+const STANDARD_TOOLS = [
+  "nourish_search_food",
+  "nourish_get_food",
+  "nourish_lookup_barcode",
+  "nourish_list_intake",
+  "nourish_list_memory",
+  "nourish_get_goals",
+  "nourish_goal_progress",
+  "nourish_hydration_summary",
+  "nourish_daily_summary",
+  "nourish_weekly_summary",
 ];
 
 const TOOLS = [
@@ -135,6 +151,7 @@ export function buildAgentManifest(client: string): NourishAgentManifest {
       optional_env: ["FDC_API_KEY", "NOURISH_OFF_ENABLED", "NOURISH_LOCAL_DIR"],
     },
     recommended_first_calls: RECOMMENDED_FIRST_CALLS,
+    standard_tools: STANDARD_TOOLS,
     tools: TOOLS,
     resources: [
       "nourish://agent-manifest",

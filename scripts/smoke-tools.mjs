@@ -84,6 +84,11 @@ const transport = new StdioClientTransport({
 try {
   await client.connect(transport);
   const result = await client.listTools();
+  // Hard floor: a server that advertises zero tools is unusable to agents.
+  if (result.tools.length === 0) {
+    console.error("smoke: server returned zero tools");
+    process.exit(1);
+  }
   const toolNames = result.tools.map((tool) => tool.name);
   const missingTools = expectedTools.filter((toolName) => !toolNames.includes(toolName));
 

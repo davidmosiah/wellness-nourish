@@ -722,7 +722,7 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_update_intake",
     {
       title: "Update intake",
-      description: "Update a local intake entry by id. Quantity or grams_estimate changes rescale nutrients to keep summaries consistent.",
+      description: "Update a local intake entry by id. Quantity or grams_estimate changes rescale nutrients to keep summaries consistent. Gated: requires explicit user intent — agents must not call this autonomously.",
       inputSchema: IntakeUpdateInputSchema.shape,
       annotations: {
         readOnlyHint: false,
@@ -841,7 +841,7 @@ export function registerNourishTools(server: McpServer): void {
     "nourish_delete_intake",
     {
       title: "Delete intake",
-      description: "Delete a local intake entry by id.",
+      description: "Delete a local intake entry by id. Gated: requires explicit user intent — agents must not call this autonomously.",
       inputSchema: IntakeDeleteInputSchema.shape,
       annotations: {
         readOnlyHint: false,
