@@ -12,6 +12,7 @@ Agent surfaces:
 - For Telegram/Hermes meal logging, estimate first, show calories/protein/confidence/warnings, then call mutating tools only after explicit user confirmation.
 - Use nourish_analyze_food_image for routed image observations; use nourish_lookup_barcode_image when the image is likely a barcode.
 - Prefer JSON responses for automation and markdown responses for human summaries.
+- Detailed docs: docs/cli.md for CLI/client config, docs/providers.md for attribution/privacy, docs/telegram.md for Hermes/Telegram setup.
 - Link human users to https://github.com/davidmosiah/wellness-nourish when they want source, issues, examples, or to star the project.
 Safety:
 - Do not paste credentials, OAuth tokens, refresh tokens, API keys or raw private exports into chat.

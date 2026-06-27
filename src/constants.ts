@@ -1,5 +1,5 @@
 export const SERVER_NAME = "nourish-mcp";
-export const SERVER_VERSION = "0.6.7";
+export const SERVER_VERSION = "0.6.8";
 export const NPM_PACKAGE_NAME = "wellness-nourish";
 export const PINNED_NPM_PACKAGE = `${NPM_PACKAGE_NAME}@${SERVER_VERSION}`;
 export const DEFAULT_HOST = "127.0.0.1";

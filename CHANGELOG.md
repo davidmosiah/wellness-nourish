@@ -6,6 +6,21 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.8] - 2026-06-27
+
+### Changed
+
+- Rework the README as a shorter agent-first front door with quickstart,
+  copy-paste prompts, privacy boundaries, Telegram/Hermes proof path and
+  Delx Living Body demo handoff above the fold.
+- Move the full CLI reference, MCP client config examples and ChatGPT dashboard
+  notes into `docs/cli.md`.
+- Move provider attribution, Open Food Facts ODbL notes, photo-estimation
+  boundaries and local-storage privacy details into `docs/providers.md`.
+- Move the Hermes/Telegram personal setup flow into `docs/telegram.md` so
+  nutrition bot builders can follow one stable runbook without scanning the
+  whole README.
+
 ## [0.6.7] - 2026-06-27
 
 ### Security
