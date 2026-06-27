@@ -6,6 +6,20 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.11] - 2026-06-27
+
+### Added
+
+- Added a compact WebP Telegram/Hermes demo capture generated from a real MCP
+  fixture-mode transcript. The README now shows the estimate -> user
+  confirmation -> `nourish_log_intake` -> `nourish_daily_summary` flow without
+  exposing tokens, chat IDs or private food logs.
+- Added `docs/telegram-demo-transcript.json` as auditable proof of the exact
+  tool sequence used to create the capture.
+- Added `npm run demo:capture` plus `npm run test:demo-capture` so the demo
+  asset stays tied to current MCP behavior instead of drifting into a static
+  mock.
+
 ## [0.6.10] - 2026-06-27
 
 ### Added

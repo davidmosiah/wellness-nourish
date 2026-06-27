@@ -94,6 +94,7 @@ Nourish exposes food search, barcode lookup (text + image), photo-assisted meal 
 - **Hermes / Telegram personal setup (10-step flow)** → [`docs/telegram.md`](docs/telegram.md)
 - **Data providers & attribution (USDA, Open Food Facts, ZXing)** → [`docs/providers.md`](docs/providers.md)
 - **pt-BR meal-estimator eval set (52 examples)** → [`docs/evals/pt-br-meal-estimator.json`](docs/evals/pt-br-meal-estimator.json)
+- **Reproducible Telegram/Hermes demo transcript** → [`docs/telegram-demo-transcript.json`](docs/telegram-demo-transcript.json)
 
 ### Food photo decision tree
 
@@ -122,8 +123,16 @@ Image tools accept exactly one of these input forms:
 If barcode decoding fails, the response includes `fallback` and `next_actions` so the agent can ask the user for the typed digits, OCR the nutrition label, or route the photo as a meal without silently inventing a food.
 
 <p align="center">
-  <img src="assets/telegram-nourish-demo.svg" alt="Wellness Nourish Telegram and Hermes nutrition workflow demo" width="92%" />
+  <img src="assets/telegram-hermes-nourish-demo.webp" alt="Wellness Nourish Telegram and Hermes demo capture showing estimate, confirmation, log and daily summary" width="92%" />
 </p>
+
+The capture above is generated from a real MCP run in fixture mode with a temporary local directory:
+
+```bash
+npm run demo:capture
+```
+
+The committed transcript proves the exact tool sequence: `nourish_estimate_meal` → user confirmation → `nourish_log_intake` → `nourish_daily_summary`.
 
 ## Privacy & what runs offline
 

@@ -1,0 +1,75 @@
+{
+  "kind": "telegram_hermes_nourish_demo_capture",
+  "version": 1,
+  "generated_by": "scripts/generate-telegram-demo-capture.mjs",
+  "deterministic_demo_date": "2026-06-27",
+  "privacy": {
+    "fixture_mode": true,
+    "local_storage": "temporary demo directory",
+    "no_real_messenger_secret": true,
+    "no_telegram_chat_identifier": true,
+    "no_personal_food_log": true
+  },
+  "acceptance": {
+    "shows_estimate_first": true,
+    "shows_confirmation_second": true,
+    "shows_saved_daily_summary_third": true,
+    "requires_explicit_user_intent_for_write": true
+  },
+  "conversation": [
+    {
+      "step": 1,
+      "actor": "telegram_user",
+      "message": "Almoco: arroz, feijao, frango grelhado e salada. Pode estimar?"
+    },
+    {
+      "step": 2,
+      "actor": "hermes",
+      "tool": "nourish_estimate_meal",
+      "result": {
+        "calories_kcal": 795,
+        "protein_g": 61.7,
+        "confidence": 0.7,
+        "unresolved": []
+      },
+      "reply": "Estimativa: 795 kcal, 61.7g proteina, confianca 0.7. Quer salvar?"
+    },
+    {
+      "step": 3,
+      "actor": "telegram_user",
+      "message": "Sim, pode salvar esse almoco."
+    },
+    {
+      "step": 4,
+      "actor": "hermes",
+      "tool": "nourish_log_intake",
+      "tool_args": {
+        "explicit_user_intent": true,
+        "meal_type": "lunch",
+        "tags": [
+          "demo",
+          "telegram-hermes"
+        ]
+      },
+      "result": {
+        "saved": true,
+        "intake_id_present": true,
+        "calories_kcal": 795,
+        "protein_g": 61.7
+      }
+    },
+    {
+      "step": 5,
+      "actor": "hermes",
+      "tool": "nourish_daily_summary",
+      "result": {
+        "date": "2026-06-27",
+        "entries": 1,
+        "calories_kcal": 795,
+        "protein_g": 61.7,
+        "confidence": 0.7
+      },
+      "reply": "Salvo. Hoje: 1 entrada, 795 kcal, 61.7g proteina."
+    }
+  ]
+}

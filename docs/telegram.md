@@ -25,6 +25,28 @@ Hermes setup also writes `~/.hermes/scripts/nourish-mcp-wrapper.sh`. The wrapper
 9. Hermes calls `nourish_log_intake` with `explicit_user_intent: true`.
 10. User can ask for `today`, weekly summaries, goals, hydration, edits, deletes or exports.
 
+## Reproducible demo capture
+
+The README capture is not a hand-written mock. It is generated from a real MCP
+session in fixture mode with a temporary local directory:
+
+```bash
+npm run demo:capture
+```
+
+The generator calls the tools in the same order Hermes should use from
+Telegram:
+
+1. `nourish_estimate_meal` for the user's meal text.
+2. A visible user confirmation before any write.
+3. `nourish_log_intake` with `explicit_user_intent: true`.
+4. `nourish_daily_summary` for the saved-day proof.
+
+Evidence lives in [`telegram-demo-transcript.json`](telegram-demo-transcript.json)
+and the compact WebP capture at
+[`../assets/telegram-hermes-nourish-demo.webp`](../assets/telegram-hermes-nourish-demo.webp).
+Both are synthetic: fixture mode, no Telegram token, no chat id, no real food log.
+
 ## One-command alternative
 
 Both runtime bundles preconfigure this connector plus the full Delx Wellness stack into a dedicated profile:
