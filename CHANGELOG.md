@@ -6,6 +6,18 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.9] - 2026-06-27
+
+### Added
+
+- **Public pt-BR meal-estimator eval set.** Added `docs/evals/pt-br-meal-estimator.json` with 52 Brazilian Portuguese meal examples spanning breakfast, lunch, snacks, dinner and churrasco-style meals. Each case tracks expected matched foods, unresolved terms, confidence range and approximate calorie range. The fixture covers grams plus Brazilian kitchen units: `concha`, `colher`, `xicara`, `fatia`, `unidade` and `prato`.
+- **`npm run test:pt-br-meal-eval`.** New regression gate fails if known pt-BR foods disappear silently, unresolved terms change, confidence does not drop on high-unresolved meals, required meal categories/units disappear, or calories drift outside the expected range.
+
+### Fixed
+
+- `unidade` / `unidades` now use the food's default serving grams, matching `piece` behavior. Previously `1 unidade de banana` was treated as 1g instead of one banana-sized serving.
+- Added common pt-BR estimator aliases used by the eval: `café`, `leite`, `aveia`, `salada verde`, `arroz integral`, `frango desfiado` and `frango assado`.
+
 ## [0.6.8] - 2026-06-27
 
 ### Changed

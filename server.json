@@ -6,12 +6,12 @@
     "url": "https://github.com/davidmosiah/wellness-nourish",
     "source": "github"
   },
-  "version": "0.6.8",
+  "version": "0.6.9",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "wellness-nourish",
-      "version": "0.6.8",
+      "version": "0.6.9",
       "transport": {
         "type": "stdio"
       }

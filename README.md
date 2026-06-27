@@ -93,6 +93,7 @@ Nourish exposes food search, barcode lookup (text + image), photo-assisted meal 
 - **Full CLI (20+ commands), install, client configs & ChatGPT dashboard** → [`docs/cli.md`](docs/cli.md)
 - **Hermes / Telegram personal setup (10-step flow)** → [`docs/telegram.md`](docs/telegram.md)
 - **Data providers & attribution (USDA, Open Food Facts, ZXing)** → [`docs/providers.md`](docs/providers.md)
+- **pt-BR meal-estimator eval set (52 examples)** → [`docs/evals/pt-br-meal-estimator.json`](docs/evals/pt-br-meal-estimator.json)
 
 <p align="center">
   <img src="assets/telegram-nourish-demo.svg" alt="Wellness Nourish Telegram and Hermes nutrition workflow demo" width="92%" />

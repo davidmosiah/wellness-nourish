@@ -6,6 +6,8 @@ The connector uses **USDA FoodData Central** as the primary food search provider
 
 Meal photos are estimated only from an agent-provided visual observation and always require confirmation before logging. The local estimator includes a pt-BR/Brazilian-food catalog for common meals, kitchen units, and shortcuts such as arroz, feijão, frango, ovos, banana, tapioca, picanha, feijoada and salada.
 
+The public pt-BR meal-estimator eval lives at [`docs/evals/pt-br-meal-estimator.json`](evals/pt-br-meal-estimator.json). It covers breakfast, lunch, snacks, dinner and churrasco-style meals with grams plus Brazilian kitchen units (`concha`, `colher`, `xicara`, `fatia`, `unidade`, `prato`). `npm run test:pt-br-meal-eval` fails if expected foods disappear, unresolved terms change silently, confidence ranges drift, or calorie estimates leave their approximate range.
+
 The connector does **not** provide hosted sync, autonomous photo upload, recipe generation, or medical advice.
 
 ## Attribution requirements

@@ -132,7 +132,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   {
     canonical: "black coffee",
     displayNamePtBr: "café preto",
-    aliases: ["café preto", "cafe preto", "café sem açúcar", "cafe sem acucar", "black coffee", "coffee"],
+    aliases: ["café preto", "cafe preto", "café sem açúcar", "cafe sem acucar", "café", "cafe", "black coffee", "coffee"],
     servingGrams: 240,
     nutrientsPer100g: {
       calories_kcal: 1,
@@ -225,6 +225,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
       "cooked white rice",
       "white rice",
       "brown rice",
+      "arroz integral",
       "arroz",
       "rice",
     ],
@@ -242,6 +243,8 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
     aliases: [
       "peito de frango grelhado",
       "frango grelhado",
+      "frango desfiado",
+      "frango assado",
       "grilled chicken breast",
       "chicken breast",
       "peito de frango",
@@ -472,7 +475,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   {
     canonical: "salad",
     displayNamePtBr: "salada",
-    aliases: ["salada simples", "simple salad", "salada", "salad"],
+    aliases: ["salada verde", "salada simples", "simple salad", "salada", "salad"],
     servingGrams: 80,
     nutrientsPer100g: {
       calories_kcal: 20,
@@ -485,7 +488,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   {
     canonical: "oatmeal",
     displayNamePtBr: "mingau de aveia",
-    aliases: ["oatmeal", "oats"],
+    aliases: ["mingau de aveia", "aveia em flocos", "aveia", "oatmeal", "oats"],
     servingGrams: 234,
     nutrientsPer100g: {
       calories_kcal: 71,
@@ -498,7 +501,7 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   {
     canonical: "milk",
     displayNamePtBr: "leite",
-    aliases: ["milk"],
+    aliases: ["leite integral", "leite", "milk"],
     servingGrams: 244,
     nutrientsPer100g: {
       calories_kcal: 61,

@@ -34,8 +34,6 @@ export const UNIT_TO_GRAMS: Readonly<Record<string, number>> = {
   slices: 30,
   piece: 1,
   pieces: 1,
-  unidade: 1,
-  unidades: 1,
   concha: 100,
   conchas: 100,
   prato: 350,
@@ -58,7 +56,7 @@ export function gramsForQuantity(
       : undefined;
   }
 
-  if (normalizedUnit === "piece" || normalizedUnit === "pieces") {
+  if (["piece", "pieces", "unidade", "unidades"].includes(normalizedUnit)) {
     return typeof servingGrams === "number" && Number.isFinite(servingGrams)
       ? roundGrams(quantity * servingGrams)
       : undefined;

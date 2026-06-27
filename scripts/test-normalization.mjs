@@ -68,6 +68,8 @@ assert.equal(gramsForQuantity(2, "tbsp"), 30);
 assert.equal(gramsForQuantity(3, "tsp"), 15);
 assert.equal(gramsForQuantity(2, "slices"), 60);
 assert.equal(gramsForQuantity(1, "piece", 118), 118);
+assert.equal(gramsForQuantity(1, "unidade", 118), 118);
+assert.equal(gramsForQuantity(2, "unidades", 50), 100);
 assert.deepEqual(nutrientsForGrams({ calories_kcal: 200, protein_g: 20 }, 50), {
   calories_kcal: 100,
   protein_g: 10,

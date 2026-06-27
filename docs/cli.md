@@ -30,7 +30,8 @@ wellness-nourish delete --entry intake_id
 
 - `log --preview` estimates a meal locally **without writing anything**.
 - Mutating MCP tools require explicit user intent; CLI commands are treated as explicit user actions, while destructive `clear-day` requires `--yes`.
-- The local estimator understands common lightweight portions such as `g`, `oz`, `cup`, `tbsp`, `tsp`, `slice`, `piece`, and `serving`. It still reports confidence and warnings because these are conservative tracking estimates, not lab-grade nutrition facts.
+- The local estimator understands common lightweight portions such as `g`, `oz`, `cup`, `tbsp`, `tsp`, `slice`, `piece`, `serving`, and Brazilian kitchen units (`concha`, `colher`, `xicara`, `fatia`, `unidade`, `prato`). It still reports confidence and warnings because these are conservative tracking estimates, not lab-grade nutrition facts.
+- The public pt-BR eval set is in [`docs/evals/pt-br-meal-estimator.json`](evals/pt-br-meal-estimator.json) and is enforced by `npm run test:pt-br-meal-eval`.
 
 ## Install / build / run
 

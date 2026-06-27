@@ -1,0 +1,523 @@
+[
+  {
+    "id": "ptbr-breakfast-001",
+    "category": "breakfast",
+    "meal_type": "breakfast",
+    "text": "2 ovos cozidos, 1 unidade de banana e café preto",
+    "expected_items": ["egg", "banana", "black coffee"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 220, "max": 280 }
+  },
+  {
+    "id": "ptbr-breakfast-002",
+    "category": "breakfast",
+    "meal_type": "breakfast",
+    "text": "1 pão francês, 1 fatia de queijo minas e café",
+    "expected_items": ["pão francês", "queijo minas", "black coffee"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 260, "max": 330 }
+  },
+  {
+    "id": "ptbr-breakfast-003",
+    "category": "breakfast",
+    "meal_type": "breakfast",
+    "text": "1 tapioca com queijo minas e 1 banana",
+    "expected_items": ["tapioca", "queijo minas", "banana"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 360, "max": 450 }
+  },
+  {
+    "id": "ptbr-breakfast-004",
+    "category": "breakfast",
+    "meal_type": "breakfast",
+    "text": "1 xícara de aveia com leite e banana",
+    "expected_items": ["oatmeal", "milk", "banana"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 380, "max": 470 }
+  },
+  {
+    "id": "ptbr-breakfast-005",
+    "category": "breakfast",
+    "meal_type": "breakfast",
+    "text": "2 fatias de pão, 1 colher de sopa de azeite e café sem açúcar",
+    "expected_items": ["pão francês", "olive oil", "black coffee"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 400, "max": 500 }
+  },
+  {
+    "id": "ptbr-breakfast-006",
+    "category": "breakfast",
+    "meal_type": "breakfast",
+    "text": "cuscuz, 2 ovos mexidos e café preto",
+    "expected_items": ["cuscuz", "egg", "black coffee"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 280, "max": 350 }
+  },
+  {
+    "id": "ptbr-breakfast-007",
+    "category": "breakfast",
+    "meal_type": "breakfast",
+    "text": "1 pão de queijo, iogurte natural e maçã",
+    "expected_items": ["pão de queijo", "iogurte natural", "apple"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 320, "max": 410 }
+  },
+  {
+    "id": "ptbr-breakfast-008",
+    "category": "breakfast",
+    "meal_type": "breakfast",
+    "text": "1 unidade de maçã, 1 unidade de banana e café",
+    "expected_items": ["apple", "banana", "black coffee"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 175, "max": 230 }
+  },
+  {
+    "id": "ptbr-breakfast-009",
+    "category": "breakfast",
+    "meal_type": "breakfast",
+    "text": "1 xícara de leite, aveia e banana",
+    "expected_items": ["milk", "oatmeal", "banana"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 375, "max": 465 }
+  },
+  {
+    "id": "ptbr-breakfast-010",
+    "category": "breakfast",
+    "meal_type": "breakfast",
+    "text": "pão na chapa, ovo frito e café preto",
+    "expected_items": ["pão francês", "egg", "black coffee"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 200, "max": 260 }
+  },
+  {
+    "id": "ptbr-lunch-001",
+    "category": "lunch",
+    "meal_type": "lunch",
+    "text": "200g arroz branco, 1 concha de feijão carioca, 150g frango grelhado e salada",
+    "expected_items": ["rice", "pinto beans", "chicken", "salad"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 540, "max": 670 }
+  },
+  {
+    "id": "ptbr-lunch-002",
+    "category": "lunch",
+    "meal_type": "lunch",
+    "text": "1 prato de arroz, 1 concha de feijão e 120g peixe grelhado",
+    "expected_items": ["rice", "pinto beans", "peixe grelhado"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 620, "max": 760 }
+  },
+  {
+    "id": "ptbr-lunch-003",
+    "category": "lunch",
+    "meal_type": "lunch",
+    "text": "150g macaxeira, 150g carne moída e salada verde",
+    "expected_items": ["macaxeira", "carne moída", "salad"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 520, "max": 650 }
+  },
+  {
+    "id": "ptbr-lunch-004",
+    "category": "lunch",
+    "meal_type": "lunch",
+    "text": "200g batata doce, 150g frango desfiado e couve refogada",
+    "expected_items": ["batata doce", "chicken", "couve refogada"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 400, "max": 510 }
+  },
+  {
+    "id": "ptbr-lunch-005",
+    "category": "lunch",
+    "meal_type": "lunch",
+    "text": "arroz integral, feijão preto, 120g frango assado e salada",
+    "expected_items": ["rice", "black beans", "chicken", "salad"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 460, "max": 570 }
+  },
+  {
+    "id": "ptbr-lunch-006",
+    "category": "lunch",
+    "meal_type": "lunch",
+    "text": "1 concha de feijoada, 1 colher de farofa e couve",
+    "expected_items": ["feijoada", "farofa", "couve refogada"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 200, "max": 280 }
+  },
+  {
+    "id": "ptbr-lunch-007",
+    "category": "lunch",
+    "meal_type": "lunch",
+    "text": "cuscuz, carne moída e vinagrete",
+    "expected_items": ["cuscuz", "carne moída", "vinagrete"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 390, "max": 500 }
+  },
+  {
+    "id": "ptbr-lunch-008",
+    "category": "lunch",
+    "meal_type": "lunch",
+    "text": "200g arroz, 120g feijão e 150g alcatra",
+    "expected_items": ["rice", "pinto beans", "alcatra"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 610, "max": 760 }
+  },
+  {
+    "id": "ptbr-lunch-009",
+    "category": "lunch",
+    "meal_type": "lunch",
+    "text": "peixe grelhado, macaxeira e salada simples",
+    "expected_items": ["peixe grelhado", "macaxeira", "salad"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 320, "max": 410 }
+  },
+  {
+    "id": "ptbr-lunch-010",
+    "category": "lunch",
+    "meal_type": "lunch",
+    "text": "1 prato de feijão tropeiro e vinagrete",
+    "expected_items": ["feijão tropeiro", "vinagrete"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 680, "max": 840 }
+  },
+  {
+    "id": "ptbr-snack-001",
+    "category": "snack",
+    "meal_type": "snack",
+    "text": "1 coxinha e 1 café preto",
+    "expected_items": ["coxinha", "black coffee"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 250, "max": 330 }
+  },
+  {
+    "id": "ptbr-snack-002",
+    "category": "snack",
+    "meal_type": "snack",
+    "text": "2 brigadeiros e café",
+    "expected_items": ["brigadeiro", "black coffee"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 200, "max": 270 }
+  },
+  {
+    "id": "ptbr-snack-003",
+    "category": "snack",
+    "meal_type": "snack",
+    "text": "açaí na tigela e banana",
+    "expected_items": ["açaí", "banana"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 285, "max": 370 }
+  },
+  {
+    "id": "ptbr-snack-004",
+    "category": "snack",
+    "meal_type": "snack",
+    "text": "1 iogurte natural, 1 colher de aveia e maçã",
+    "expected_items": ["iogurte natural", "oatmeal", "apple"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 180, "max": 240 }
+  },
+  {
+    "id": "ptbr-snack-005",
+    "category": "snack",
+    "meal_type": "snack",
+    "text": "2 pães de queijo e cafezinho",
+    "expected_items": ["pão de queijo", "cafezinho"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 290, "max": 370 }
+  },
+  {
+    "id": "ptbr-snack-006",
+    "category": "snack",
+    "meal_type": "snack",
+    "text": "1 tapioca com queijo coalho",
+    "expected_items": ["tapioca", "queijo coalho"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 315, "max": 400 }
+  },
+  {
+    "id": "ptbr-snack-007",
+    "category": "snack",
+    "meal_type": "snack",
+    "text": "banana, maçã e iogurte",
+    "expected_items": ["banana", "apple", "iogurte natural"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 265, "max": 340 }
+  },
+  {
+    "id": "ptbr-snack-008",
+    "category": "snack",
+    "meal_type": "snack",
+    "text": "1 fatia de pão com queijo minas",
+    "expected_items": ["pão francês", "queijo minas"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 230, "max": 300 }
+  },
+  {
+    "id": "ptbr-snack-009",
+    "category": "snack",
+    "meal_type": "snack",
+    "text": "3 unidades de coxinha",
+    "expected_items": ["coxinha"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 760, "max": 950 }
+  },
+  {
+    "id": "ptbr-snack-010",
+    "category": "snack",
+    "meal_type": "snack",
+    "text": "4 brigadeiros e 1 xícara de leite",
+    "expected_items": ["brigadeiro", "milk"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 550, "max": 690 }
+  },
+  {
+    "id": "ptbr-dinner-001",
+    "category": "dinner",
+    "meal_type": "dinner",
+    "text": "frango grelhado, arroz e salada",
+    "expected_items": ["chicken", "rice", "salad"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 340, "max": 440 }
+  },
+  {
+    "id": "ptbr-dinner-002",
+    "category": "dinner",
+    "meal_type": "dinner",
+    "text": "peixe grelhado, batata doce e couve",
+    "expected_items": ["peixe grelhado", "batata doce", "couve refogada"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 260, "max": 340 }
+  },
+  {
+    "id": "ptbr-dinner-003",
+    "category": "dinner",
+    "meal_type": "dinner",
+    "text": "omelete, salada verde e queijo minas",
+    "expected_items": ["egg", "salad", "queijo minas"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 165, "max": 230 }
+  },
+  {
+    "id": "ptbr-dinner-004",
+    "category": "dinner",
+    "meal_type": "dinner",
+    "text": "carne moída, arroz e feijão",
+    "expected_items": ["carne moída", "rice", "pinto beans"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 490, "max": 610 }
+  },
+  {
+    "id": "ptbr-dinner-005",
+    "category": "dinner",
+    "meal_type": "dinner",
+    "text": "macaxeira, peixe grelhado e vinagrete",
+    "expected_items": ["macaxeira", "peixe grelhado", "vinagrete"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 320, "max": 420 }
+  },
+  {
+    "id": "ptbr-dinner-006",
+    "category": "dinner",
+    "meal_type": "dinner",
+    "text": "feijoada completa, farofa e couve refogada",
+    "expected_items": ["feijoada", "farofa", "couve refogada"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 530, "max": 650 }
+  },
+  {
+    "id": "ptbr-dinner-007",
+    "category": "dinner",
+    "meal_type": "dinner",
+    "text": "cuscuz, frango desfiado e salada",
+    "expected_items": ["cuscuz", "chicken", "salad"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 310, "max": 390 }
+  },
+  {
+    "id": "ptbr-dinner-008",
+    "category": "dinner",
+    "meal_type": "dinner",
+    "text": "alcatra, arroz integral e salada",
+    "expected_items": ["alcatra", "rice", "salad"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 500, "max": 620 }
+  },
+  {
+    "id": "ptbr-dinner-009",
+    "category": "dinner",
+    "meal_type": "dinner",
+    "text": "tapioca, ovo mexido e queijo minas",
+    "expected_items": ["tapioca", "egg", "queijo minas"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 330, "max": 420 }
+  },
+  {
+    "id": "ptbr-dinner-010",
+    "category": "dinner",
+    "meal_type": "dinner",
+    "text": "iogurte natural, banana e aveia",
+    "expected_items": ["iogurte natural", "banana", "oatmeal"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 335, "max": 420 }
+  },
+  {
+    "id": "ptbr-churrasco-001",
+    "category": "churrasco",
+    "meal_type": "lunch",
+    "text": "150g picanha, farofa, vinagrete e salada",
+    "expected_items": ["picanha", "farofa", "vinagrete", "salad"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 585, "max": 725 }
+  },
+  {
+    "id": "ptbr-churrasco-002",
+    "category": "churrasco",
+    "meal_type": "lunch",
+    "text": "200g costela, 1 colher de farofa e vinagrete",
+    "expected_items": ["costela", "farofa", "vinagrete"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 660, "max": 810 }
+  },
+  {
+    "id": "ptbr-churrasco-003",
+    "category": "churrasco",
+    "meal_type": "lunch",
+    "text": "150g alcatra, 1 unidade de pão francês e vinagrete",
+    "expected_items": ["alcatra", "pão francês", "vinagrete"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 455, "max": 560 }
+  },
+  {
+    "id": "ptbr-churrasco-004",
+    "category": "churrasco",
+    "meal_type": "lunch",
+    "text": "picanha, queijo coalho e salada",
+    "expected_items": ["picanha", "queijo coalho", "salad"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 550, "max": 680 }
+  },
+  {
+    "id": "ptbr-churrasco-005",
+    "category": "churrasco",
+    "meal_type": "lunch",
+    "text": "costela, feijão tropeiro e couve",
+    "expected_items": ["costela", "feijão tropeiro", "couve refogada"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 815, "max": 1000 }
+  },
+  {
+    "id": "ptbr-churrasco-006",
+    "category": "churrasco",
+    "meal_type": "lunch",
+    "text": "alcatra, farofa, arroz e feijão",
+    "expected_items": ["alcatra", "farofa", "rice", "pinto beans"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 725, "max": 895 }
+  },
+  {
+    "id": "ptbr-churrasco-007",
+    "category": "churrasco",
+    "meal_type": "lunch",
+    "text": "picanha, costela, vinagrete e salada",
+    "expected_items": ["picanha", "costela", "vinagrete", "salad"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 870, "max": 1065 }
+  },
+  {
+    "id": "ptbr-churrasco-008",
+    "category": "churrasco",
+    "meal_type": "lunch",
+    "text": "queijo coalho, macaxeira e vinagrete",
+    "expected_items": ["queijo coalho", "macaxeira", "vinagrete"],
+    "expected_unresolved": [],
+    "confidence_range": { "min": 0.68, "max": 0.72 },
+    "calories_kcal_range": { "min": 330, "max": 420 }
+  },
+  {
+    "id": "ptbr-churrasco-009",
+    "category": "churrasco",
+    "meal_type": "lunch",
+    "text": "picanha, farofa e maionese da tia",
+    "expected_items": ["picanha", "farofa"],
+    "expected_unresolved": ["maionese da tia"],
+    "confidence_range": { "min": 0.5, "max": 0.56 },
+    "calories_kcal_range": { "min": 550, "max": 680 }
+  },
+  {
+    "id": "ptbr-churrasco-010",
+    "category": "churrasco",
+    "meal_type": "lunch",
+    "text": "linguiça artesanal, picanha e vinagrete",
+    "expected_items": ["picanha", "vinagrete"],
+    "expected_unresolved": ["linguiça artesanal"],
+    "confidence_range": { "min": 0.5, "max": 0.56 },
+    "calories_kcal_range": { "min": 405, "max": 510 }
+  },
+  {
+    "id": "ptbr-unresolved-001",
+    "category": "snack",
+    "meal_type": "snack",
+    "text": "suco verde misterioso, bolo fit da academia, banana",
+    "expected_items": ["banana"],
+    "expected_unresolved": ["suco verde misterioso", "bolo fit da academia"],
+    "confidence_range": { "min": 0.34, "max": 0.4 },
+    "calories_kcal_range": { "min": 85, "max": 130 },
+    "large_unresolved_share": true
+  },
+  {
+    "id": "ptbr-unresolved-002",
+    "category": "dinner",
+    "meal_type": "dinner",
+    "text": "pizza da firma, cuscuz e café",
+    "expected_items": ["cuscuz", "black coffee"],
+    "expected_unresolved": ["pizza da firma"],
+    "confidence_range": { "min": 0.5, "max": 0.56 },
+    "calories_kcal_range": { "min": 145, "max": 205 }
+  }
+]
