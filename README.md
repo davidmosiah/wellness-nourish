@@ -95,6 +95,32 @@ Nourish exposes food search, barcode lookup (text + image), photo-assisted meal 
 - **Data providers & attribution (USDA, Open Food Facts, ZXing)** → [`docs/providers.md`](docs/providers.md)
 - **pt-BR meal-estimator eval set (52 examples)** → [`docs/evals/pt-br-meal-estimator.json`](docs/evals/pt-br-meal-estimator.json)
 
+### Food photo decision tree
+
+Agents should route Telegram/Hermes/OpenClaw food photos by the strongest signal they can extract:
+
+1. Barcode is visible and image bytes are available: call `nourish_lookup_barcode_image`.
+2. Barcode is blurry or no product is found: ask for sharper barcode digits, or call `nourish_analyze_food_image` with `barcode_observation` plus any OCR/meal clues.
+3. Nutrition facts are readable: OCR the label and call `nourish_analyze_food_image` with `product_name` and `nutrition_label_text`.
+4. It is a plate or unpackaged food: describe visible foods/portions and call `nourish_analyze_food_image` with `detected_items` or `image_description`.
+5. Never log from an image response until the user confirms the product or meal, serving size and save intent.
+
+Image tools accept exactly one of these input forms:
+
+```json
+{ "image_path": "/tmp/telegram-food-photo.jpg" }
+```
+
+```json
+{ "image_base64": "<base64 image bytes>", "image_mime_type": "image/jpeg" }
+```
+
+```json
+{ "image_data_uri": "data:image/jpeg;base64,<base64 image bytes>" }
+```
+
+If barcode decoding fails, the response includes `fallback` and `next_actions` so the agent can ask the user for the typed digits, OCR the nutrition label, or route the photo as a meal without silently inventing a food.
+
 <p align="center">
   <img src="assets/telegram-nourish-demo.svg" alt="Wellness Nourish Telegram and Hermes nutrition workflow demo" width="92%" />
 </p>

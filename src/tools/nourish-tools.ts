@@ -492,6 +492,8 @@ export function registerNourishTools(server: McpServer): void {
             provider: "open_food_facts" as const,
             decode,
             lookup: null,
+            ...(decode.fallback === undefined ? {} : { fallback: decode.fallback }),
+            ...(decode.next_actions === undefined ? {} : { next_actions: decode.next_actions }),
             warnings: decode.warnings,
           };
 
@@ -1892,6 +1894,7 @@ function barcodeDecodeMarkdown(result: Awaited<ReturnType<typeof decodeBarcodeIm
       ok: result.ok,
       source: result.image.source,
       warnings: result.warnings,
+      next_actions: result.next_actions,
     });
   }
 
@@ -1908,12 +1911,14 @@ function barcodeLookupImageMarkdown(result: {
   ok: boolean;
   barcode?: Awaited<ReturnType<typeof decodeBarcodeImage>>["barcodes"][number];
   lookup: Awaited<ReturnType<typeof lookupOpenFoodFactsBarcode>> | null;
+  next_actions?: string[];
   warnings: string[];
 }): string {
   if (!result.ok || result.lookup === null) {
     return bulletList("Barcode Image Lookup", {
       ok: false,
       warnings: result.warnings,
+      next_actions: result.next_actions,
     });
   }
 

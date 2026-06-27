@@ -383,6 +383,7 @@ export const PhotoMealEstimateInputSchema = z
 export const FoodImageAnalysisInputSchema = z
   .object({
     image_description: z.string().trim().min(1).optional(),
+    barcode_observation: z.string().trim().min(1).optional(),
     barcode: z.string().trim().regex(/^[0-9]{6,18}$/).optional(),
     detected_barcodes: z.array(z.string().trim().regex(/^[0-9]{6,18}$/)).max(10).default([]),
     detected_items: z.array(PhotoMealDetectedItemSchema).max(25).default([]),
@@ -396,6 +397,7 @@ export const FoodImageAnalysisInputSchema = z
   .superRefine((input, ctx) => {
     const hasAnyInput =
       input.image_description !== undefined ||
+      input.barcode_observation !== undefined ||
       input.barcode !== undefined ||
       input.detected_barcodes.length > 0 ||
       input.detected_items.length > 0 ||
@@ -404,7 +406,7 @@ export const FoodImageAnalysisInputSchema = z
     if (!hasAnyInput) {
       ctx.addIssue({
         code: "custom",
-        message: "Provide barcode, detected_barcodes, detected_items, nutrition_label_text, or image_description.",
+        message: "Provide barcode, detected_barcodes, barcode_observation, detected_items, nutrition_label_text, or image_description.",
         path: ["image_description"],
       });
     }

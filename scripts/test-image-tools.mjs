@@ -1,14 +1,19 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { writeFile, unlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 execFileSync("npm", ["run", "build"], { stdio: "inherit" });
 
 const { decodeBarcodeImage } = await import("../dist/services/image-decoder.js");
+const { analyzeFoodImage } = await import("../dist/services/food-image-analysis.js");
 const { estimateMealFromPhotoObservation } = await import("../dist/services/photo-meal-estimator.js");
 
 const barcode = "4006381333931";
+const barcodeSvg = ean13Svg(barcode);
 const decoded = await decodeBarcodeImage({
-  image_base64: Buffer.from(ean13Svg(barcode)).toString("base64"),
+  image_base64: Buffer.from(barcodeSvg).toString("base64"),
   image_mime_type: "image/svg+xml",
 });
 
@@ -18,6 +23,29 @@ assert.equal(decoded.barcodes[0]?.format, "EAN_13");
 assert.equal(decoded.image.source, "base64");
 assert.equal(decoded.warnings.length, 0);
 
+const dataUriDecoded = await decodeBarcodeImage({
+  image_data_uri: `data:image/svg+xml;base64,${Buffer.from(barcodeSvg).toString("base64")}`,
+});
+
+assert.equal(dataUriDecoded.ok, true);
+assert.equal(dataUriDecoded.barcodes[0]?.text, barcode);
+assert.equal(dataUriDecoded.image.source, "data_uri");
+
+const imagePath = join(tmpdir(), `wellness-nourish-barcode-${process.pid}.svg`);
+await writeFile(imagePath, barcodeSvg);
+try {
+  const pathDecoded = await decodeBarcodeImage({
+    image_path: imagePath,
+    image_mime_type: "image/svg+xml",
+  });
+
+  assert.equal(pathDecoded.ok, true);
+  assert.equal(pathDecoded.barcodes[0]?.text, barcode);
+  assert.equal(pathDecoded.image.source, "path");
+} finally {
+  await unlink(imagePath);
+}
+
 const noBarcode = await decodeBarcodeImage({
   image_base64: Buffer.from(blankSvg()).toString("base64"),
   image_mime_type: "image/svg+xml",
@@ -26,6 +54,44 @@ const noBarcode = await decodeBarcodeImage({
 assert.equal(noBarcode.ok, false);
 assert.deepEqual(noBarcode.barcodes, []);
 assert.ok(noBarcode.warnings.some((warning) => /No barcode/i.test(warning)));
+assert.equal(noBarcode.fallback?.reason, "barcode_not_decoded");
+assert.ok(noBarcode.next_actions?.some((action) => /type the digits/i.test(action)));
+assert.ok(noBarcode.fallback?.accepted_alternatives.includes("product_name plus nutrition_label_text"));
+
+await assert.rejects(
+  () => decodeBarcodeImage({
+    image_base64: Buffer.from("not an image").toString("base64"),
+    image_mime_type: "image/png",
+  }),
+  /could not be decoded as an image/i,
+);
+
+const blurryBarcode = await analyzeFoodImage({
+  barcode_observation: "barcode appears on the package but is blurry and the digits are unreadable",
+  locale: "pt-BR",
+  meal_type: "snack",
+});
+
+assert.equal(blurryBarcode.route, "needs_more_detail");
+assert.equal(blurryBarcode.requires_confirmation, true);
+assert.equal(blurryBarcode.suggested_log_intake, undefined);
+assert.ok(Array.isArray(blurryBarcode.next_actions));
+assert.ok(blurryBarcode.next_actions.some((action) => /type the digits/i.test(action)));
+assert.ok(blurryBarcode.fallback_options.includes("product_name plus nutrition_label_text"));
+
+const labelOnly = await analyzeFoodImage({
+  product_name: "Iogurte Proteico",
+  nutrition_label_text: "Porção 170g Valor energético 120 kcal Carboidratos 8g Proteínas 15g Gorduras totais 2g",
+  locale: "pt-BR",
+  meal_type: "snack",
+});
+
+assert.equal(labelOnly.route, "nutrition_label");
+assert.equal(labelOnly.requires_confirmation, true);
+assert.equal(labelOnly.label_food.name, "Iogurte Proteico");
+assert.equal(labelOnly.label_food.nutrients_per_serving.protein_g, 15);
+assert.equal(labelOnly.suggested_log_intake.explicit_user_intent, false);
+assert.ok(labelOnly.next_actions.some((action) => /confirm/i.test(action)));
 
 const meal = await estimateMealFromPhotoObservation({
   image_description: "Telegram photo appears to show a lunch plate with white rice and grilled chicken.",

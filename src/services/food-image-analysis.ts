@@ -6,6 +6,7 @@ import type { FoodItem, MealType, NutrientMap } from "../types.js";
 
 export interface FoodImageAnalysisInput {
   image_description?: string | undefined;
+  barcode_observation?: string | undefined;
   detected_barcodes?: string[] | undefined;
   barcode?: string | undefined;
   detected_items?: PhotoMealDetectedItem[] | undefined;
@@ -28,10 +29,29 @@ function hasMeaningfulNutrients(nutrients: NutrientMap): boolean {
   );
 }
 
+function confirmBeforeLoggingAction(): string {
+  return "Ask the user to confirm the product, serving size, and save intent before calling nourish_log_intake.";
+}
+
+function barcodeFallbackActions(barcode?: string): string[] {
+  const retry = barcode === undefined
+    ? "Ask the user for a sharper, flatter barcode photo with the full barcode and printed digits visible."
+    : `Barcode ${barcode} did not resolve. Ask the user to confirm the printed digits or provide a sharper product photo.`;
+  return [
+    retry,
+    "If the barcode remains unreadable, ask the user to type the digits and call nourish_lookup_barcode.",
+    "If a nutrition label is readable, OCR it and call nourish_analyze_food_image with product_name and nutrition_label_text.",
+    "If this is an unpackaged meal, describe visible foods and portions, then call nourish_analyze_food_image with detected_items or image_description.",
+    confirmBeforeLoggingAction(),
+  ];
+}
+
 export async function analyzeFoodImage(input: FoodImageAnalysisInput): Promise<Record<string, unknown>> {
   const barcode = input.barcode ?? input.detected_barcodes?.[0];
   const hasLabelText =
     input.nutrition_label_text !== undefined && input.nutrition_label_text.trim().length > 0;
+  const hasBarcodeObservation =
+    input.barcode_observation !== undefined && input.barcode_observation.trim().length > 0;
   const detectedItems = input.detected_items ?? [];
   const hasMealHint = detectedItems.length > 0 || input.image_description !== undefined;
 
@@ -56,6 +76,9 @@ export async function analyzeFoodImage(input: FoodImageAnalysisInput): Promise<R
         warnings: [
           "Confirm the product and serving size before logging.",
         ],
+        next_actions: [
+          confirmBeforeLoggingAction(),
+        ],
       };
     } catch (error) {
       // N-008 fix: barcode lookup failed but the agent gave us OCR or meal
@@ -70,7 +93,12 @@ export async function analyzeFoodImage(input: FoodImageAnalysisInput): Promise<R
         return {
           ...result,
           barcode_attempted: barcode,
+          fallback_used: "nutrition_label_text",
           warnings: [...fallbackWarnings, ...((result.warnings as string[] | undefined) ?? [])],
+          next_actions: [
+            ...(((result.next_actions as string[] | undefined) ?? [])),
+            "Tell the user the barcode lookup failed, so the estimate is coming from OCR label text.",
+          ],
         };
       }
 
@@ -79,7 +107,12 @@ export async function analyzeFoodImage(input: FoodImageAnalysisInput): Promise<R
         return {
           ...result,
           barcode_attempted: barcode,
+          fallback_used: "meal_photo",
           warnings: [...fallbackWarnings, ...((result.warnings as string[] | undefined) ?? [])],
+          next_actions: [
+            ...(((result.next_actions as string[] | undefined) ?? [])),
+            "Tell the user the barcode lookup failed, so the estimate is coming from visible meal items.",
+          ],
         };
       }
 
@@ -88,20 +121,59 @@ export async function analyzeFoodImage(input: FoodImageAnalysisInput): Promise<R
         route: "needs_more_detail" satisfies FoodImageRoute,
         requires_confirmation: true,
         barcode_attempted: barcode,
+        fallback_options: [
+          "typed barcode digits",
+          "product_name plus nutrition_label_text",
+          "detected_items with portions",
+          "image_description for a meal photo",
+        ],
         warnings: [
           ...fallbackWarnings,
           "Provide nutrition_label_text, detected_items, or image_description so the agent can fall back when the barcode lookup is down.",
         ],
+        next_actions: barcodeFallbackActions(barcode),
       };
     }
   }
 
   if (hasLabelText) {
-    return nutritionLabelRoute(input);
+    const result = nutritionLabelRoute(input);
+    return hasBarcodeObservation
+      ? {
+          ...result,
+          barcode_observation: input.barcode_observation,
+          fallback_used: "nutrition_label_text",
+        }
+      : result;
   }
 
   if (hasMealHint) {
-    return mealPhotoRoute(input, detectedItems);
+    const result = await mealPhotoRoute(input, detectedItems);
+    return hasBarcodeObservation
+      ? {
+          ...result,
+          barcode_observation: input.barcode_observation,
+          fallback_used: "meal_photo",
+        }
+      : result;
+  }
+
+  if (hasBarcodeObservation) {
+    return {
+      route: "needs_more_detail" satisfies FoodImageRoute,
+      requires_confirmation: true,
+      barcode_observation: input.barcode_observation,
+      fallback_options: [
+        "typed barcode digits",
+        "product_name plus nutrition_label_text",
+        "detected_items with portions",
+        "image_description for a meal photo",
+      ],
+      warnings: [
+        "Barcode was observed but could not be read from the image.",
+      ],
+      next_actions: barcodeFallbackActions(),
+    };
   }
 
   return {
@@ -110,6 +182,7 @@ export async function analyzeFoodImage(input: FoodImageAnalysisInput): Promise<R
     warnings: [
       "Provide a barcode, nutrition label OCR text, detected meal items, or an image description.",
     ],
+    next_actions: barcodeFallbackActions(),
   };
 }
 
@@ -132,6 +205,10 @@ function nutritionLabelRoute(input: FoodImageAnalysisInput): Record<string, unkn
         "Nutrition label OCR did not yield any usable nutrient values — refine the OCR text or provide nutrients explicitly before logging.",
         "No suggested_log_intake was emitted because logging an entry with empty nutrients would corrupt the daily summary.",
       ],
+      next_actions: [
+        "Ask for a sharper nutrition facts photo or rerun OCR with calories, serving size, protein, carbs, fat and sodium visible.",
+        "Do not call nourish_log_intake until nutrition values are parseable and the user confirms saving.",
+      ],
     };
   }
 
@@ -147,6 +224,9 @@ function nutritionLabelRoute(input: FoodImageAnalysisInput): Record<string, unkn
     },
     warnings: [
       "Nutrition label OCR can be imperfect; confirm serving size and nutrients before logging.",
+    ],
+    next_actions: [
+      confirmBeforeLoggingAction(),
     ],
   };
 }
@@ -168,6 +248,9 @@ async function mealPhotoRoute(
     meal_estimate: estimate,
     suggested_log_intake: estimate.suggested_log_intake,
     warnings: estimate.warnings,
+    next_actions: [
+      "Ask the user to confirm visible foods, portions, and save intent before logging.",
+    ],
   };
 }
 

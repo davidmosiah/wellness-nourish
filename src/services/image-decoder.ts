@@ -42,6 +42,14 @@ export interface DecodeBarcodeImageResult {
   };
   barcodes: DecodedBarcode[];
   warnings: string[];
+  fallback?: ImageFallbackGuidance;
+  next_actions?: string[];
+}
+
+export interface ImageFallbackGuidance {
+  reason: "barcode_not_decoded";
+  agent_next_steps: string[];
+  accepted_alternatives: string[];
 }
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -62,25 +70,33 @@ export async function decodeBarcodeImage(input: ImageInput): Promise<DecodeBarco
   const image = await loadImage(input);
   const warnings: string[] = [];
 
-  for (const rotation of [0, 90, 180, 270]) {
-    const raster = await rasterize(image.buffer, rotation);
-    const decoded = tryDecode(raster.data, raster.width, raster.height, rotation);
-    if (decoded !== undefined) {
-      return {
-        ok: true,
-        image: {
-          source: image.source,
-          ...(image.mime_type === undefined ? {} : { mime_type: image.mime_type }),
-          width: raster.width,
-          height: raster.height,
-        },
-        barcodes: [decoded],
-        warnings,
-      };
+  try {
+    for (const rotation of [0, 90, 180, 270]) {
+      const raster = await rasterize(image.buffer, rotation);
+      const decoded = tryDecode(raster.data, raster.width, raster.height, rotation);
+      if (decoded !== undefined) {
+        return {
+          ok: true,
+          image: {
+            source: image.source,
+            ...(image.mime_type === undefined ? {} : { mime_type: image.mime_type }),
+            width: raster.width,
+            height: raster.height,
+          },
+          barcodes: [decoded],
+          warnings,
+        };
+      }
     }
+  } catch (error) {
+    throw new Error(
+      `Image input could not be decoded as an image: ${(error as Error).message}. ` +
+        "Provide a valid image_path, image_base64, or image_data_uri containing PNG, JPEG, WebP, or SVG image bytes.",
+    );
   }
 
-  warnings.push("No barcode could be decoded from the image. Ask for a sharper, flatter photo with the full barcode visible.");
+  const fallback = barcodeImageFallbackGuidance();
+  warnings.push("No barcode could be decoded from the image. Ask for a sharper, flatter photo with the full barcode and printed digits visible.");
   return {
     ok: false,
     image: {
@@ -89,6 +105,26 @@ export async function decodeBarcodeImage(input: ImageInput): Promise<DecodeBarco
     },
     barcodes: [],
     warnings,
+    fallback,
+    next_actions: fallback.agent_next_steps,
+  };
+}
+
+export function barcodeImageFallbackGuidance(): ImageFallbackGuidance {
+  return {
+    reason: "barcode_not_decoded",
+    agent_next_steps: [
+      "Ask the user for a sharper, flatter photo where the full barcode and printed digits are visible.",
+      "If the barcode remains unreadable, ask the user to type the digits and call nourish_lookup_barcode.",
+      "If only the front label or nutrition facts are readable, OCR them and call nourish_analyze_food_image with product_name and nutrition_label_text.",
+      "For unpackaged meals, describe visible foods and portions, then call nourish_analyze_food_image with detected_items or image_description.",
+    ],
+    accepted_alternatives: [
+      "typed barcode digits",
+      "product_name plus nutrition_label_text",
+      "detected_items with portions",
+      "image_description for a meal photo",
+    ],
   };
 }
 

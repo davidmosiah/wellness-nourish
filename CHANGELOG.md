@@ -6,6 +6,18 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.10] - 2026-06-27
+
+### Added
+
+- `nourish_analyze_food_image` now accepts `barcode_observation` for photos where a barcode is visible but unreadable. The response keeps `requires_confirmation: true`, omits log suggestions when detail is insufficient, and returns structured `fallback_options` / `next_actions` so agents can ask for typed digits, OCR a label, or route the photo as a meal.
+- Barcode-image decode failures now include structured `fallback` and `next_actions`, and invalid image bytes produce an actionable image-decoding error.
+- README now documents the photo-to-barcode, photo-to-label and photo-to-meal decision tree, including `image_path`, `image_base64` and `image_data_uri` examples.
+
+### Tests
+
+- Expanded `test:image-tools` with image path, base64 and data URI coverage plus invalid image input, blurry barcode observation and label-only OCR observation regressions.
+
 ## [0.6.9] - 2026-06-27
 
 ### Added
