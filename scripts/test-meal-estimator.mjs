@@ -134,14 +134,27 @@ assert.deepEqual(unknownBrazilianBread.items.map((item) => item.name), ["banana"
 assert.deepEqual(unknownBrazilianBread.unresolved, ["pão de batata"]);
 assert.ok(unknownBrazilianBread.confidence <= 0.45);
 
-const unknownFoodsStartingWithQuantityLetters = await estimateMeal({
+// abacate + atum now resolve via the TACO 4 subset (they used to be unresolved).
+const tacoCoveredFoods = await estimateMeal({
   text: "abacate e atum",
   meal_type: "snack",
   locale: "pt-BR",
 });
 
-assert.deepEqual(unknownFoodsStartingWithQuantityLetters.items, []);
-assert.deepEqual(unknownFoodsStartingWithQuantityLetters.unresolved, ["abacate", "atum"]);
+assert.equal(tacoCoveredFoods.items.length, 2, "abacate e atum devem resolver via TACO");
+assert.deepEqual(tacoCoveredFoods.unresolved, []);
+
+// Regression for the quantity-letter parse: a STILL-unknown food that begins
+// with a quantity letter ("a"/"um") must not lose its first letter during
+// unresolved cleanup (turning "acerola"/"umbu" into "cerola"/"mbu").
+const unknownQuantityLetterFood = await estimateMeal({
+  text: "acerola e umbu",
+  meal_type: "snack",
+  locale: "pt-BR",
+});
+
+assert.deepEqual(unknownQuantityLetterFood.items, []);
+assert.deepEqual(unknownQuantityLetterFood.unresolved, ["acerola", "umbu"]);
 
 const brazilianSnack = await estimateMeal({
   text: "1 tapioca com queijo minas, 1 coxinha, 1 brigadeiro e açaí",

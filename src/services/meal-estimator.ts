@@ -1,3 +1,4 @@
+import { TACO_FOODS } from "../data/taco-foods.js";
 import type { MealType, NutrientMap } from "../types.js";
 import { addNutrients } from "./nutrients.js";
 import { gramsForQuantity, nutrientsForGrams } from "./portion-engine.js";
@@ -538,9 +539,50 @@ const SIMPLE_FOODS: readonly SimpleFood[] = [
   },
 ];
 
-const FOOD_BY_ALIAS = new Map<string, SimpleFood>(
-  SIMPLE_FOODS.flatMap((food) => food.aliases.map((alias) => [normalizeAlias(alias), food] as const)),
-);
+const FOOD_BY_ALIAS = buildFoodIndex();
+
+function buildFoodIndex(): Map<string, SimpleFood> {
+  // Curated foods first: preserves current behaviour (incl. last-wins among
+  // curated entries) and gives them precedence over TACO on any alias clash —
+  // their pt-BR serving sizes are hand-tuned.
+  const index = new Map<string, SimpleFood>(
+    SIMPLE_FOODS.flatMap((food) => food.aliases.map((alias) => [normalizeAlias(alias), food] as const)),
+  );
+  // Fold the curated TACO 4 (UNICAMP/NEPA) subset into the SAME alias index so
+  // it reuses the existing quantity/unit/clause matcher. TACO only fills gaps —
+  // it never overrides a curated alias — adding ~137 staple Brazilian foods
+  // (and sodium/fiber the curated defaults lacked).
+  for (const food of tacoFoodsAsSimpleFoods()) {
+    for (const alias of food.aliases) {
+      const key = normalizeAlias(alias);
+      if (!index.has(key)) index.set(key, food);
+    }
+  }
+  return index;
+}
+
+function tacoFoodsAsSimpleFoods(): SimpleFood[] {
+  return TACO_FOODS.map((food) => {
+    const aliasSet = new Set<string>();
+    for (const alias of food.aliases) {
+      const trimmed = alias.trim();
+      if (trimmed.length < 2) continue;
+      aliasSet.add(trimmed);
+      aliasSet.add(stripDiacritics(trimmed));
+    }
+    return {
+      canonical: food.name_pt,
+      displayNamePtBr: food.name_pt,
+      aliases: [...aliasSet],
+      servingGrams: food.common_serving.grams,
+      nutrientsPer100g: food.nutrients_per_100g,
+    };
+  });
+}
+
+function stripDiacritics(value: string): string {
+  return value.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
 
 export function listSimpleFoods(): readonly SimpleFood[] {
   return SIMPLE_FOODS;
@@ -668,6 +710,13 @@ export async function estimateMeal(input: {
       continue;
     }
     if (isAmbiguousBreadFalsePositive(input.text, match)) {
+      continue;
+    }
+    // A food that comes right after "pão de …" is part of a compound bread name
+    // (pão de batata, pão de ló, pão de mel), NOT the standalone ingredient. The
+    // curated full aliases (e.g. "pão de queijo") still win because the matcher
+    // tries longest aliases first; this only guards ingredients TACO newly added.
+    if (isBreadCompoundIngredient(input.text, match)) {
       continue;
     }
 
@@ -836,6 +885,11 @@ function isAmbiguousBreadFalsePositive(text: string, match: RegExpExecArray): bo
 
   const after = text.slice((match.index ?? 0) + match[0].length);
   return /^\s+de\s+\p{L}/iu.test(after);
+}
+
+function isBreadCompoundIngredient(text: string, match: RegExpExecArray): boolean {
+  const before = text.slice(0, match.index ?? 0);
+  return /(?:pães|paes|pão|pao)\s+de\s+$/iu.test(before);
 }
 
 function escapeRegExp(value: string): string {
