@@ -494,10 +494,10 @@
     "category": "churrasco",
     "meal_type": "lunch",
     "text": "linguiça artesanal, picanha e vinagrete",
-    "expected_items": ["picanha", "vinagrete"],
-    "expected_unresolved": ["linguiça artesanal"],
-    "confidence_range": { "min": 0.5, "max": 0.56 },
-    "calories_kcal_range": { "min": 405, "max": 510 }
+    "expected_items": ["Linguiça, suína, frita", "picanha", "vinagrete"],
+    "expected_unresolved": ["artesanal"],
+    "confidence_range": { "min": 0.54, "max": 0.6 },
+    "calories_kcal_range": { "min": 600, "max": 720 }
   },
   {
     "id": "ptbr-unresolved-001",
@@ -515,9 +515,9 @@
     "category": "dinner",
     "meal_type": "dinner",
     "text": "pizza da firma, cuscuz e café",
-    "expected_items": ["cuscuz", "black coffee"],
-    "expected_unresolved": ["pizza da firma"],
-    "confidence_range": { "min": 0.5, "max": 0.56 },
-    "calories_kcal_range": { "min": 145, "max": 205 }
+    "expected_items": ["Pizza, mussarela", "cuscuz", "black coffee"],
+    "expected_unresolved": ["da firma"],
+    "confidence_range": { "min": 0.54, "max": 0.6 },
+    "calories_kcal_range": { "min": 440, "max": 560 }
   }
 ]
