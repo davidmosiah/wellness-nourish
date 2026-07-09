@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/davidmosiah-wellness-nourish-badge.png)](https://mseep.ai/app/davidmosiah-wellness-nourish)
+
 <!-- delx-wellness header v2 -->
 <h1 align="center">Wellness Nourish</h1>
 
