@@ -6,6 +6,21 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-06
+
+### Added
+
+- **TACO 4 meal estimator for pt-BR.** Route meal estimation through a curated
+  subset of the Brazilian TACO 4 food composition table so common Brazilian
+  meals resolve with local nutrients instead of silent English fallbacks.
+- `npm run test:taco-estimator` regression gate for TACO-backed estimates.
+- Smithery config so agents can discover and install Nourish via Smithery.
+
+### Changed
+
+- Meal estimator prefers TACO matches for Brazilian Portuguese food phrases
+  while keeping USDA / Open Food Facts paths for the rest of the catalog.
+
 ## [0.6.11] - 2026-06-27
 
 ### Added

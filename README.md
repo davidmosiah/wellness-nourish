@@ -14,6 +14,7 @@
   <a href="https://www.npmjs.com/package/wellness-nourish"><img src="https://img.shields.io/npm/v/wellness-nourish?style=for-the-badge&labelColor=0F172A&color=10B981&logo=npm&logoColor=white" alt="npm version" /></a>
   <a href="https://github.com/davidmosiah/wellness-nourish/releases/latest"><img src="https://img.shields.io/github/v/release/davidmosiah/wellness-nourish?style=for-the-badge&labelColor=0F172A&color=2563EB&logo=github" alt="GitHub release" /></a>
   <a href="https://www.npmjs.com/package/wellness-nourish"><img src="https://img.shields.io/npm/dm/wellness-nourish?style=for-the-badge&labelColor=0F172A&color=0EA5A3&logo=npm&logoColor=white" alt="npm downloads" /></a>
+  <a href="https://github.com/davidmosiah/wellness-nourish/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/davidmosiah/wellness-nourish/ci.yml?branch=main&style=for-the-badge&labelColor=0F172A&label=CI" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-22C55E?style=for-the-badge&labelColor=0F172A" alt="License MIT" /></a>
   <a href="https://wellness.delx.ai/nutrition"><img src="https://img.shields.io/badge/SITE-wellness.delx.ai-0EA5A3?style=for-the-badge&labelColor=0F172A" alt="Site" /></a>
 </p>
@@ -39,6 +40,8 @@
 > Both preconfigure this connector and the full Delx Wellness stack into a dedicated profile. Or wire it standalone into Claude Desktop / Cursor / ChatGPT Desktop &mdash; see the install section below.
 >
 > Want runnable agent examples? Use the [Delx Agent Workbench](https://github.com/davidmosiah/delx-agent-workbench) for prompt packs, MCP client configs and local-first workflow templates.
+
+> **What's new in 0.7.0:** Brazilian **TACO 4** meal estimator for pt-BR foods (cafezinho, feijão, concha, churrasco-style meals) plus Smithery install. Offline demo: `NOURISH_FIXTURE_MODE=1 npx -y wellness-nourish doctor`. Notes: [CHANGELOG.md](CHANGELOG.md) · eval: [`docs/evals/pt-br-meal-estimator.json`](docs/evals/pt-br-meal-estimator.json) (52 cases).
 
 > **Public proof:** Nourish is tracked in the Delx [Open Source Growth Snapshot](https://github.com/davidmosiah/delx-wellness/blob/main/docs/open-source-growth-snapshot.md) alongside downloads, stars and next-action priorities. If this saves you setup time, star this repo so other agent builders can find the local-first nutrition path faster.
 
