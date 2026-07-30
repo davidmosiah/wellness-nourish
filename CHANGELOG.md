@@ -1,5 +1,12 @@
 ## 0.7.2 - 2026-07-30
 
+
+## 0.7.3 - 2026-07-30
+
+### Fixed
+
+- `privacy_mode=summary` now redacts free-text food labels from list_intake and entry detail on daily_summary payloads (not schema-only).
+
 ### Added
 
 - Optional `privacy_mode` (`summary` | `structured` | `raw`) on read input schemas so agents can request non-sensitive responses (mcp-scorecard privacy check).

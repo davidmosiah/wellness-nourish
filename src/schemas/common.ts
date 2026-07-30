@@ -164,6 +164,7 @@ export const DailySummaryInputSchema = z
       .describe(
         "Optional baseline to add a `comparison` block: 'yesterday' = previous day, '7d_avg' = average of the prior 7 days. 'none' (default) skips the comparison.",
       ),
+    privacy_mode: PrivacyModeSchema.optional(),
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();

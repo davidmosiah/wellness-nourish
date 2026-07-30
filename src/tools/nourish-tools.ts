@@ -48,6 +48,11 @@ import {
 } from "../services/carbon-enrichment.js";
 import { lookupOpenFoodFactsBarcode, searchOpenFoodFactsByName } from "../providers/open-food-facts.js";
 import { buildAgentManifest } from "../services/agent-manifest.js";
+import {
+  redactIntakeListForPrivacy,
+  redactSummaryForPrivacy,
+  resolvePrivacyMode,
+} from "../services/privacy.js";
 import { buildCapabilities } from "../services/capabilities.js";
 import { buildNutritionCoach, type CoachMode } from "../services/coach.js";
 import { buildConnectionStatus } from "../services/connection-status.js";
@@ -851,12 +856,21 @@ export function registerNourishTools(server: McpServer): void {
           entries = entries.slice(0, params.limit);
         }
 
-        const markdown = compactIntakeTable(entries);
+        const privacyMode = resolvePrivacyMode(params.privacy_mode);
+        const safeEntries = redactIntakeListForPrivacy(
+          entries as unknown as Record<string, unknown>[],
+          privacyMode,
+        );
+        const markdown =
+          privacyMode === "summary"
+            ? `# Intake list (summary)\n\n- **count**: ${safeEntries.length}\n- Free-text food labels redacted (privacy_mode=summary).`
+            : compactIntakeTable(entries);
 
         return toolResponse(
           makeResponse(
             {
-              entries,
+              entries: safeEntries,
+              privacy_mode: privacyMode,
               applied_filters: {
                 date: params.date,
                 since: params.since,
@@ -867,7 +881,7 @@ export function registerNourishTools(server: McpServer): void {
                 min_confidence: params.min_confidence,
                 limit: params.limit,
               },
-              count: entries.length,
+              count: safeEntries.length,
             },
             params.response_format,
             markdown,
@@ -1342,6 +1356,7 @@ export function registerNourishTools(server: McpServer): void {
     async (input) => {
       try {
         const params = DailySummaryInputSchema.parse(input);
+        const privacyMode = resolvePrivacyMode(params.privacy_mode);
         const summary = await buildDailySummary(params.date);
 
         let comparison: Record<string, unknown> | undefined;
@@ -1367,7 +1382,8 @@ export function registerNourishTools(server: McpServer): void {
           };
         }
 
-        const payload = comparison === undefined ? summary : { ...summary, comparison };
+        const base = comparison === undefined ? summary : { ...summary, comparison };
+        const payload = redactSummaryForPrivacy(base as unknown as Record<string, unknown>, privacyMode);
         return toolResponse(
           makeResponse(payload, params.response_format, dailySummaryMarkdown(summary, comparison)),
         );
@@ -1491,9 +1507,14 @@ export function registerNourishTools(server: McpServer): void {
     async (input) => {
       try {
         const params = WeeklySummaryInputSchema.parse(input);
+        const privacyMode = resolvePrivacyMode(params.privacy_mode);
         const summary = await buildWeeklySummary(params.start_date);
+        const payload = redactSummaryForPrivacy(
+          summary as unknown as Record<string, unknown>,
+          privacyMode,
+        );
 
-        return toolResponse(makeResponse(summary, params.response_format));
+        return toolResponse(makeResponse(payload, params.response_format));
       } catch (error) {
         return toolError(error);
       }
