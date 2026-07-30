@@ -6,6 +6,17 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-07-30
+
+### Fixed
+
+- Ship the offline `fixtures/` directory in the npm package and resolve the
+  default fixture path from the package root (not `process.cwd()`), so the
+  README demo `NOURISH_FIXTURE_MODE=1 npx wellness-nourish search banana`
+  works after install without a local checkout.
+- Metadata gate now requires `fixtures` in `package.json#files`, the banana /
+  barcode fixture files on disk, and `SERVER_VERSION` matching package version.
+
 ## [0.7.0] - 2026-07-06
 
 ### Added

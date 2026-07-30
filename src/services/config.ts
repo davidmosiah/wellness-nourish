@@ -2,7 +2,8 @@
 
 import { mkdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { LOCAL_DIR_NAME } from "../constants.js";
 import type { NourishConfig } from "../types.js";
@@ -37,8 +38,22 @@ export function getConfig(): NourishConfig {
   return config;
 }
 
+/**
+ * Resolve the offline fixture directory.
+ *
+ * Defaults to the package-bundled `fixtures/` next to the installed package
+ * root (not process.cwd()), so `NOURISH_FIXTURE_MODE=1 npx wellness-nourish
+ * search banana` works after install. Override with NOURISH_FIXTURE_DIR.
+ */
 export function getFixtureDir(): string {
-  return process.env.NOURISH_FIXTURE_DIR ?? "fixtures";
+  const override = process.env.NOURISH_FIXTURE_DIR;
+  if (override !== undefined && override.trim() !== "") {
+    return isAbsolute(override) ? override : resolve(process.cwd(), override);
+  }
+
+  // dist/services/config.js or src/services/config.ts → package root is ../..
+  const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+  return join(packageRoot, "fixtures");
 }
 
 function expandHome(path: string): string {

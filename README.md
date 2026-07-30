@@ -41,7 +41,7 @@
 >
 > Want runnable agent examples? Use the [Delx Agent Workbench](https://github.com/davidmosiah/delx-agent-workbench) for prompt packs, MCP client configs and local-first workflow templates.
 
-> **What's new in 0.7.0:** Brazilian **TACO 4** meal estimator for pt-BR foods (cafezinho, feijão, concha, churrasco-style meals) plus Smithery install. Offline demo: `NOURISH_FIXTURE_MODE=1 npx -y wellness-nourish doctor`. Notes: [CHANGELOG.md](CHANGELOG.md) · eval: [`docs/evals/pt-br-meal-estimator.json`](docs/evals/pt-br-meal-estimator.json) (52 cases).
+> **What's new in 0.7.1:** Offline fixture demo works from the published npm package (fixtures shipped + path resolved from package root). **0.7.0:** Brazilian **TACO 4** meal estimator for pt-BR foods (cafezinho, feijão, concha, churrasco-style meals) plus Smithery install. Offline demo: `NOURISH_FIXTURE_MODE=1 npx -y wellness-nourish search banana`. Notes: [CHANGELOG.md](CHANGELOG.md) · eval: [`docs/evals/pt-br-meal-estimator.json`](docs/evals/pt-br-meal-estimator.json) (52 cases).
 
 > **Public proof:** Nourish is tracked in the Delx [Open Source Growth Snapshot](https://github.com/davidmosiah/delx-wellness/blob/main/docs/open-source-growth-snapshot.md) alongside downloads, stars and next-action priorities. If this saves you setup time, star this repo so other agent builders can find the local-first nutrition path faster.
 
