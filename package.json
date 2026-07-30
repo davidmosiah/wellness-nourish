@@ -1,6 +1,6 @@
 {
   "name": "wellness-nourish",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Local-first nutrition MCP server for AI agents: food search, barcode lookup, meal photos, hydration, goals and safe intake logging.",
   "license": "MIT",
   "funding": {
@@ -43,9 +43,10 @@
     "test:security": "node scripts/test-security-and-locks.mjs",
     "test:ux-tools": "node scripts/test-ux-tools.mjs",
     "test:coach-wearable": "node scripts/test-coach-wearable.mjs",
-    "test": "npm run typecheck && npm run build && npm run test:normalization && npm run test:providers && npm run test:intake-store && npm run test:hydration-goals && npm run test:goal-progress && npm run test:meal-estimator && npm run test:taco-estimator && npm run test:pt-br-meal-eval && npm run test:display-names && npm run test:image-tools && npm run test:demo-capture && npm run test:summary && npm run test:privacy && npm run test:http-helper && npm run test:local-date && npm run test:carbon && npm run test:security && npm run test:ux-tools && npm run test:coach-wearable && npm run smoke && npm run smoke:http && npm run test:cli-ux && npm run test:agent-readiness && npm run test:hermes-agent && npm run prepack && npm run test:metadata",
+    "test": "npm run typecheck && npm run build && npm run test:normalization && npm run test:providers && npm run test:intake-store && npm run test:hydration-goals && npm run test:goal-progress && npm run test:meal-estimator && npm run test:taco-estimator && npm run test:pt-br-meal-eval && npm run test:display-names && npm run test:image-tools && npm run test:demo-capture && npm run test:summary && npm run test:privacy && npm run test:http-helper && npm run test:local-date && npm run test:carbon && npm run test:security && npm run test:ux-tools && npm run test:coach-wearable && npm run smoke && npm run smoke:http && npm run test:cli-ux && npm run test:agent-readiness && npm run test:hermes-agent && npm run prepack && npm run test:metadata && npm run test:privacy-mode-schema",
     "test:metadata": "node scripts/metadata-check.mjs",
-    "prepublishOnly": "npm test"
+    "prepublishOnly": "npm test",
+    "test:privacy-mode-schema": "node scripts/test-privacy-mode-schema.mjs"
   },
   "engines": {
     "node": ">=20"

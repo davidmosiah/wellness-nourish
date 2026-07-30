@@ -38,14 +38,24 @@ const CustomFoodSchema = z
   })
   .passthrough();
 
+/** Agent-facing privacy modes for read tools (local-first nutrition data). */
+export const PrivacyModeSchema = z
+  .enum(["summary", "structured", "raw"])
+  .default("structured")
+  .describe(
+    "summary = high-level totals without item detail; structured = default full JSON-friendly fields; raw = same as structured for this local store (parity).",
+  );
+
 export const ResponseOnlyInputSchema = z
   .object({
     response_format: ResponseFormatSchema.default("json"),
+    privacy_mode: PrivacyModeSchema.optional(),
   })
   .strict();
 
 export const IntakeListInputSchema = z
   .object({
+    privacy_mode: PrivacyModeSchema.optional(),
     date: DateSchema.optional().describe("Single-day filter. Mutually exclusive with since/until."),
     since: DateSchema.optional().describe("Start of date range (inclusive). Use with `until` for multi-day queries."),
     until: DateSchema.optional().describe("End of date range (inclusive)."),
@@ -290,6 +300,7 @@ export const FoodSearchInputSchema = z
     query: z.string().trim().min(1),
     limit: z.number().int().min(1).max(25).default(10),
     provider: z.enum(["usda", "open_food_facts", "br_local", "taco", "all"]).default("usda"),
+    privacy_mode: PrivacyModeSchema.optional(),
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
@@ -503,6 +514,7 @@ export const IntakeDeleteInputSchema = z
 export const SummaryInputSchema = z
   .object({
     date: DateSchema.optional(),
+    privacy_mode: PrivacyModeSchema.optional(),
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
@@ -510,6 +522,7 @@ export const SummaryInputSchema = z
 export const WeeklySummaryInputSchema = z
   .object({
     start_date: DateSchema.optional(),
+    privacy_mode: PrivacyModeSchema.optional(),
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();

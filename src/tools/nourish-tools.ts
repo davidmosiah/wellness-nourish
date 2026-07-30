@@ -1420,7 +1420,7 @@ export function registerNourishTools(server: McpServer): void {
     {
       title: "Bulk log intake",
       description:
-        "Log multiple intake entries in a single call. Each item is processed through the same text-estimator pipeline as `nourish_log_intake`, but the entire batch shares one explicit_user_intent flag — perfect for Telegram users who say 'log everything I ate today: breakfast was X, lunch was Y, dinner was Z'. Returns per-item success/failure so a partial failure doesn't lose the rest.",
+        "Log multiple intake entries in a single call. Requires explicit user intent (explicit_user_intent: true). Each item is processed through the same text-estimator pipeline as `nourish_log_intake`, but the entire batch shares one intent flag — perfect for Telegram users who say 'log everything I ate today: breakfast was X, lunch was Y, dinner was Z'. Returns per-item success/failure so a partial failure doesn't lose the rest.",
       inputSchema: BulkLogIntakeInputSchema.shape,
       annotations: {
         readOnlyHint: false,

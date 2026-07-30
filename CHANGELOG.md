@@ -1,3 +1,14 @@
+## 0.7.2 - 2026-07-30
+
+### Added
+
+- Optional `privacy_mode` (`summary` | `structured` | `raw`) on read input schemas so agents can request non-sensitive responses (mcp-scorecard privacy check).
+
+### Fixed
+
+- `nourish_bulk_log_intake` description documents the explicit user intent gate for agent-readiness scoring.
+
+
 # Changelog
 
 All notable changes to `wellness-nourish` are documented here.
