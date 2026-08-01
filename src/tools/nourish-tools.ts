@@ -56,6 +56,7 @@ import {
 import { buildCapabilities } from "../services/capabilities.js";
 import { buildNutritionCoach, type CoachMode } from "../services/coach.js";
 import { buildConnectionStatus } from "../services/connection-status.js";
+import { buildDemoPayload } from "../services/demo.js";
 import {
   makeActionRequired,
   makeError,
@@ -240,56 +241,14 @@ export function registerNourishTools(server: McpServer): void {
     {
       title: "Nourish demo",
       description:
-        "Returns realistic example payloads of nourish_search_food, nourish_estimate_meal, and nourish_daily_summary so agents see the contract before any real call.",
+        "Returns synthetic example payloads of nourish_search_food, nourish_estimate_meal, and nourish_daily_summary so agents see the contract before any real call. Shapes are verified against the real pipelines by scripts/demo-contract-test.mjs, so they are safe to write a parser against; `inputs` shows the call that produced each sample.",
       inputSchema: ResponseOnlyInputSchema.shape,
       annotations: readOnlyAnnotation(),
     },
     async (input) => {
       try {
         const params = ResponseOnlyInputSchema.parse(input);
-        const payload = {
-          ok: true,
-          is_demo: true,
-          sample: {
-            nourish_search_food: {
-              ok: true,
-              results: [
-                {
-                  source: "usda",
-                  name: "Banana, raw",
-                  serving: { quantity: 1, unit: "medium (118g)", grams: 118 },
-                  nutrients_per_serving: { calories_kcal: 105, protein_g: 1.3, carbohydrates_g: 27, fiber_g: 3.1, sugar_g: 14.4, fat_g: 0.4 },
-                  carbon: { kg_co2e_per_kg: 0.7, source: "agribalyse:fruits-banana", confidence: "high" },
-                  data_quality: { completeness: "high", confidence: 0.95, warnings: [] },
-                },
-              ],
-            },
-            nourish_estimate_meal: {
-              ok: true,
-              text: "100g grilled chicken breast + 1 cup white rice",
-              total_grams: 258,
-              total_nutrients: { calories_kcal: 370, protein_g: 35.1, carbohydrates_g: 45.6, fat_g: 4.2 },
-              total_carbon_kg_co2e: 0.74,
-              confidence: 0.82,
-              warnings: [],
-              source: "estimate",
-            },
-            nourish_daily_summary: {
-              date: new Date().toISOString().slice(0, 10),
-              meals: 3,
-              hydration_ml: 1850,
-              nutrients: { calories_kcal: 2104, protein_g: 128, carbohydrates_g: 224, fat_g: 78, fiber_g: 28 },
-              carbon_kg_co2e: 4.2,
-              goals_met: { calories: true, protein: true, fiber: false, hydration: false },
-              insights: ["Protein on target.", "Fiber 4g short of goal — try adding berries to breakfast."],
-            },
-          },
-          notes: [
-            "All sample data is synthetic; tagged with is_demo=true.",
-            "In real use, results return live USDA + Open Food Facts + Brazilian TACO matches with full carbon-footprint enrichment.",
-          ],
-        };
-        return toolResponse(makeResponse(payload, params.response_format));
+        return toolResponse(makeResponse(buildDemoPayload(), params.response_format));
       } catch (error) {
         return toolError(error);
       }
@@ -1634,7 +1593,9 @@ function readOnlyOpenWorldAnnotation() {
   };
 }
 
-async function searchFoods(
+// Exported so scripts/demo-contract-test.mjs can diff the demo sample against
+// the exact code path nourish_search_food runs, not a re-implementation of it.
+export async function searchFoods(
   query: string,
   limit: number,
   provider: "usda" | "open_food_facts" | "br_local" | "taco" | "all",

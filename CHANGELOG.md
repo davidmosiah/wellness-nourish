@@ -1,3 +1,22 @@
+## 0.8.0 - 2026-08-01
+
+### Fixed
+
+- `nourish_demo` returned examples that no tool in this server has ever produced. An agent that read the demo first — which is the tool's entire stated purpose — built the wrong parser. Measured against the real pipelines: **42 key paths invented, 133 real key paths hidden, out of 142 that actually exist.**
+  - `nourish_daily_summary` advertised `goals_met: { calories, protein, fiber, hydration }` as ready-made booleans. There is no `goals_met`. Goal state lives in `goal_progress`, keyed by the full nutrient name (`calories_kcal`, not `calories`), and each entry is `{ actual, goal, percent }`. This is the field that made an agent answer "you hit your protein goal" confidently and wrongly instead of failing loudly. Also invented: `meals`, `nutrients`, `hydration_ml`, `carbon_kg_co2e`, `insights`. Hidden: `entry_count`, `total_nutrients`, `by_meal` (all five buckets), the whole `hydration` block with its entries, `goal_progress`, `confidence`, `source_coverage`, `privacy_mode`.
+  - `nourish_search_food` advertised `{ ok, results[] }`. It returns `{ provider, foods[] }` — a different top-level key, so a parser written from the demo read `undefined`. Hidden: `nutrients_per_100g`, `available_portions`, `license`, `id`, `source_id`, `source_url`, `locale`.
+  - `nourish_estimate_meal` advertised `total_grams`, `total_carbon_kg_co2e`, `source` and `ok` — none exist. Hidden: the entire `items[]` breakdown, `locale`, `meal_type`, `unresolved` (the field that tells an agent to ask a question instead of guessing), `requested_text` and `personal_memory`.
+
+### Added
+
+- `scripts/demo-contract-test.mjs`, wired into `npm test`: runs the real search / estimate / daily-summary pipelines offline (fixture mode plus a throwaway local store) and fails the build in **both** directions — a key the demo invents, and a contract key the demo omits. 142 key paths verified. This class of drift cannot ship silently again.
+- `nourish_demo` now returns an `inputs` block naming the exact call that produced each sample, so the shapes are reproducible by hand and by the gate.
+
+### Changed
+
+- Demo examples moved from an inline literal in `src/tools/nourish-tools.ts` to `src/services/demo.ts`, and use Brazilian food (TACO rice, arroz + feijão + frango) instead of the previous US placeholders.
+
+
 ## 0.7.2 - 2026-07-30
 
 
