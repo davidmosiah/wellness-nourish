@@ -61,13 +61,22 @@ Local-first nutrition MCP for AI agents — food search, barcode lookup, photo-a
 ## Quickstart (60 seconds)
 
 ```bash
-npx -y wellness-nourish doctor
-npx -y wellness-nourish search banana
-npx -y wellness-nourish barcode 0000000000000
-npx -y wellness-nourish log --preview "2 ovos, banana e café preto"
+npx -y wellness-nourish@0.8.0 doctor
+npx -y wellness-nourish@0.8.0 search banana
+npx -y wellness-nourish@0.8.0 barcode 0000000000000
+npx -y wellness-nourish@0.8.0 log --preview "2 ovos, banana e café preto"
 ```
 
 `doctor` checks readiness, `search`/`barcode` hit the food providers, and `log --preview` estimates a meal locally without writing anything.
+
+### How you can help
+
+| Action | Link |
+| --- | --- |
+| Star if it earned it | [stargazers](https://github.com/davidmosiah/wellness-nourish/stargazers) |
+| Docs GFI — first meal in 2 minutes | [#25](https://github.com/davidmosiah/wellness-nourish/issues/25) |
+| File a real bug / pt-BR food miss | [issues](https://github.com/davidmosiah/wellness-nourish/issues) |
+| Full wellness hub | [`delx-wellness`](https://github.com/davidmosiah/delx-wellness) |
 
 ### Zero-secret demo (offline, no API key)
 
