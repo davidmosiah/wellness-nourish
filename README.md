@@ -200,3 +200,6 @@ Nutrition estimates are approximate and intended for personal tracking and agent
 - 🐛 **Bug reports / feature requests** — [GitHub Issues](https://github.com/davidmosiah/wellness-nourish/issues)
 - 🐦 **Updates** — [@delx369](https://x.com/delx369) on X
 - 🌐 **Site** — [wellness.delx.ai](https://wellness.delx.ai)
+
+**First meal in 2 minutes:** [docs/first-meal-2-minutes.md](docs/first-meal-2-minutes.md)
+

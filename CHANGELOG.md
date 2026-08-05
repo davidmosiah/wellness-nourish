@@ -1,3 +1,4 @@
+## Unreleased\n\n### Added\n- docs/first-meal-2-minutes.md agent-first path (#25).\n\n
 ## 0.8.0 - 2026-08-01
 
 ### Fixed
