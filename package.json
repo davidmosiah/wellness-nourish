@@ -1,6 +1,6 @@
 {
   "name": "wellness-nourish",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Local-first nutrition MCP server for AI agents: food search, barcode lookup, meal photos, hydration, goals and safe intake logging.",
   "license": "MIT",
   "funding": {
@@ -96,11 +96,11 @@
   "mcpName": "io.github.davidmosiah/wellness-nourish",
   "overrides": {
     "qs": "6.15.2",
-    "hono": "4.12.27",
+    "hono": "4.13.1",
     "fast-uri": "3.1.5",
     "ip-address": "10.4.0",
     "esbuild": "0.28.1",
-    "@hono/node-server": "2.0.12",
+    "@hono/node-server": "2.1.0",
     "body-parser": "2.3.0"
   },
   "publishConfig": {
