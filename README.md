@@ -204,3 +204,5 @@ Nutrition estimates are approximate and intended for personal tracking and agent
 
 **First meal in 2 minutes:** [docs/first-meal-2-minutes.md](docs/first-meal-2-minutes.md)
 
+**Wearable context fields (no invention):** [docs/wearable-context-schema.md](docs/wearable-context-schema.md)
+
