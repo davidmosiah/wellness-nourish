@@ -197,6 +197,7 @@ Nutrition estimates are approximate and intended for personal tracking and agent
 ## 📧 Contact & Support
 
 - 📨 **support@delx.ai** — general questions, integration help, partnerships
+- 🤝 **Code of Conduct** — [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - 🐛 **Bug reports / feature requests** — [GitHub Issues](https://github.com/davidmosiah/wellness-nourish/issues)
 - 🐦 **Updates** — [@delx369](https://x.com/delx369) on X
 - 🌐 **Site** — [wellness.delx.ai](https://wellness.delx.ai)
