@@ -47,6 +47,19 @@
 
 ---
 
+## HTTP (v2 stateless)
+
+Default is **stdio**. Optional Streamable HTTP — no session id, JSON responses, loopback only:
+
+```bash
+npx -y wellness-nourish --http
+# GET  http://127.0.0.1:3000/health
+# POST http://127.0.0.1:3000/mcp   (sessionless)
+```
+
+Env: `NOURISH_MCP_HOST`, `NOURISH_MCP_PORT`, `NOURISH_MCP_TRANSPORT=http`.
+
+
 <!-- /delx-wellness header v2 -->
 
 Local-first nutrition MCP for AI agents — food search, barcode lookup, photo-assisted meal estimation, intake logging, hydration, goals and coach-style workflows. No OAuth, no hosted account.
