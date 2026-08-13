@@ -39,7 +39,7 @@
 >
 > Both preconfigure this connector and the full Delx Wellness stack into a dedicated profile. Or wire it standalone into Claude Desktop / Cursor / ChatGPT Desktop &mdash; see the install section below.
 >
-> Want runnable agent examples? Use the [Delx Agent Workbench](https://github.com/davidmosiah/delx-agent-workbench) for prompt packs, MCP client configs and local-first workflow templates.
+> Want runnable agent examples? Use the [Delx Wellness hub](https://github.com/davidmosiah/delx-wellness#run-it-in-your-agent) for prompt packs, MCP client configs and local-first workflow templates.
 
 > **What's new in 0.7.1:** Offline fixture demo works from the published npm package (fixtures shipped + path resolved from package root). **0.7.0:** Brazilian **TACO 4** meal estimator for pt-BR foods (cafezinho, feijão, concha, churrasco-style meals) plus Smithery install. Offline demo: `NOURISH_FIXTURE_MODE=1 npx -y wellness-nourish search banana`. Notes: [CHANGELOG.md](CHANGELOG.md) · eval: [`docs/evals/pt-br-meal-estimator.json`](docs/evals/pt-br-meal-estimator.json) (52 cases).
 
