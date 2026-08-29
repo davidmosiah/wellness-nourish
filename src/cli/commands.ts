@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { lookupOpenFoodFactsBarcode } from "../providers/open-food-facts.js";
 import { searchUsdaFoods } from "../providers/usda.js";
 import { NPM_PACKAGE_NAME, SERVER_VERSION } from "../constants.js";
+import { runToolCall } from "./tool-calls.js";
 import {
   getOnboardingFlow,
   getProfile,
@@ -47,7 +48,7 @@ import { estimateMeal } from "../services/meal-estimator.js";
 import { buildDailySummary, buildWeeklySummary, type DailySummary, type WeeklySummary } from "../services/summary.js";
 import type { IntakeEntry, MealType, NourishGoals, NutrientMap } from "../types.js";
 
-const COMMANDS = new Set([
+const COMMANDS = new Set(["call", 
   "status",
   "doctor",
   "setup",
@@ -89,6 +90,8 @@ export async function runCliCommand(args: string[]): Promise<number> {
 
   try {
     switch (command) {
+      case "call":
+        return runToolCall(rest);
       case "status":
         return printStatus();
       case "doctor":

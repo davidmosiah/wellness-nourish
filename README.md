@@ -219,3 +219,12 @@ Nutrition estimates are approximate and intended for personal tracking and agent
 
 **Wearable context fields (no invention):** [docs/wearable-context-schema.md](docs/wearable-context-schema.md)
 
+## Skill or MCP
+
+Same package, two doors. MCP registers tools on stdio/HTTP. The [skill](skill/SKILL.md) can drive the **same** tools through the CLI when the client has no MCP:
+
+```bash
+npx -y wellness-nourish call nourish_connection_status --json '{}'
+```
+
+Copy `skill/SKILL.md` into your agent skills dir.
