@@ -44,13 +44,14 @@
     "test:security": "node scripts/test-security-and-locks.mjs",
     "test:ux-tools": "node scripts/test-ux-tools.mjs",
     "test:coach-wearable": "node scripts/test-coach-wearable.mjs",
-    "test": "npm run typecheck && npm run build && npm run test:normalization && npm run test:providers && npm run test:intake-store && npm run test:hydration-goals && npm run test:goal-progress && npm run test:meal-estimator && npm run test:taco-estimator && npm run test:pt-br-meal-eval && npm run test:display-names && npm run test:image-tools && npm run test:demo-capture && npm run test:demo-contract && npm run test:summary && npm run test:privacy && npm run test:http-helper && npm run test:local-date && npm run test:carbon && npm run test:security && npm run test:ux-tools && npm run test:coach-wearable && npm run smoke && npm run smoke:http && npm run test:cli-ux && npm run test:agent-readiness && npm run test:hermes-agent && npm run prepack && npm run test:metadata && npm run test:privacy-mode-schema && npm run test:privacy-enforcement && npm run test:skill-surface && npm run test:http-redaction",
+    "test": "npm run typecheck && npm run build && npm run test:normalization && npm run test:providers && npm run test:intake-store && npm run test:hydration-goals && npm run test:goal-progress && npm run test:meal-estimator && npm run test:taco-estimator && npm run test:pt-br-meal-eval && npm run test:display-names && npm run test:image-tools && npm run test:demo-capture && npm run test:demo-contract && npm run test:summary && npm run test:privacy && npm run test:http-helper && npm run test:local-date && npm run test:carbon && npm run test:security && npm run test:ux-tools && npm run test:coach-wearable && npm run smoke && npm run smoke:http && npm run test:cli-ux && npm run test:agent-readiness && npm run test:hermes-agent && npm run prepack && npm run test:metadata && npm run test:privacy-mode-schema && npm run test:privacy-enforcement && npm run test:skill-surface && npm run test:http-redaction && npm run test:input-limits",
     "test:metadata": "node scripts/metadata-check.mjs",
     "prepublishOnly": "npm test",
     "test:privacy-mode-schema": "node scripts/test-privacy-mode-schema.mjs",
     "test:privacy-enforcement": "node scripts/test-privacy-enforcement.mjs",
     "test:skill-surface": "node scripts/test-skill-surface.mjs",
-    "test:http-redaction": "node scripts/test-http-redaction.mjs"
+    "test:http-redaction": "node scripts/test-http-redaction.mjs",
+    "test:input-limits": "node scripts/input-limits-test.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -81,12 +82,12 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.7.2",
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@zxing/library": "^0.21.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "sharp": "^0.35.3",
-    "zod": "^4.4.3"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -97,13 +98,13 @@
   },
   "mcpName": "io.github.davidmosiah/wellness-nourish",
   "overrides": {
-    "qs": "6.15.2",
-    "hono": "4.13.1",
-    "fast-uri": "3.1.5",
-    "ip-address": "10.4.0",
+    "qs": "6.16.1",
+    "hono": "4.13.11",
+    "fast-uri": "3.1.9",
+    "ip-address": "10.7.4",
     "esbuild": "0.28.1",
-    "@hono/node-server": "2.1.0",
-    "body-parser": "2.3.0"
+    "@hono/node-server": "2.1.3",
+    "body-parser": "2.4.0"
   },
   "publishConfig": {
     "access": "public"
