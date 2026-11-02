@@ -23,6 +23,7 @@
  *   }
  */
 import { getConfig } from "./config.js";
+import { sanitizeHttpDiagnostics } from "./http-redaction.js";
 
 export type NourishHttpErrorKind =
   | "timeout"
@@ -46,10 +47,11 @@ export class NourishHttpError extends Error {
     status?: number;
     attempts: number;
   }) {
-    super(input.message);
+    const safe = sanitizeHttpDiagnostics(input.url, input.message);
+    super(safe.message);
     this.name = "NourishHttpError";
     this.kind = input.kind;
-    this.url = input.url;
+    this.url = safe.url;
     this.attempts = input.attempts;
     if (input.status !== undefined) {
       this.status = input.status;

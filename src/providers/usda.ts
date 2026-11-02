@@ -95,7 +95,7 @@ async function fetchJson<T>(path: string, params: Record<string, string>): Promi
             ? `${err.status} server error after ${err.attempts} attempt(s)`
             : err.kind === "network"
               ? "network failure"
-              : `${err.status} ${err.message}`;
+              : `HTTP ${err.status ?? "error"}`;
       throw new Error(`USDA request failed: ${detail}`);
     }
     throw err;
