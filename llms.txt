@@ -20,4 +20,4 @@ Safety:
 - Treat outputs as operational context, not medical, legal or financial advice unless the repo explicitly supports that domain.
 
 Skill (same gates, no MCP client required): skill/SKILL.md
-npx -y wellness-nourish call <tool> --json '{...}'
+npx -y wellness-nourish@0.9.0 call <tool> --json '{...}'

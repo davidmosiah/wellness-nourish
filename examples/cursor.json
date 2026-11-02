@@ -2,7 +2,7 @@
   "mcpServers": {
     "nourish": {
       "command": "npx",
-      "args": ["-y", "wellness-nourish"],
+      "args": ["-y", "wellness-nourish@0.9.0"],
       "env": {
         "FDC_API_KEY": "${FDC_API_KEY}",
         "NOURISH_OFF_ENABLED": "1",

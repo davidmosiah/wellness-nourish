@@ -3,8 +3,8 @@
 For personal Hermes + Telegram usage, let the package write the MCP config and skill:
 
 ```bash
-npx -y wellness-nourish setup --client hermes --profile david --local-dir /root/.hermes/nourish/david
-npx -y wellness-nourish doctor --client hermes --json
+npx -y wellness-nourish@0.9.0 setup --client hermes --profile david --local-dir /root/.hermes/nourish/david
+npx -y wellness-nourish@0.9.0 doctor --client hermes --json
 hermes mcp test nourish
 ```
 

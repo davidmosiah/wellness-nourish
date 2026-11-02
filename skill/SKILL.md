@@ -14,7 +14,7 @@ Same binary either way. Do not duplicate the API client.
 **MCP** — tools appear natively after stdio/HTTP config:
 
 ```json
-{ "mcpServers": { "nourish": { "command": "npx", "args": ["-y", "wellness-nourish"] } } }
+{ "mcpServers": { "nourish": { "command": "npx", "args": ["-y", "wellness-nourish@0.9.0"] } } }
 ```
 
 Do not put mutation flags in that snippet.
@@ -22,7 +22,7 @@ Do not put mutation flags in that snippet.
 **Skill / CLI** — no MCP client required. Same tools:
 
 ```bash
-npx -y wellness-nourish call nourish_connection_status --json '{}'
+npx -y wellness-nourish@0.9.0 call nourish_connection_status --json '{}'
 ```
 
 If MCP tools named `nourish_*` are already available, use them. Do not also shell out.

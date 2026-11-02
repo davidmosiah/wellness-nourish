@@ -1,3 +1,14 @@
+## 0.9.0 — candidate (2026-11-02)
+
+This is a release candidate, not evidence of an npm publication. Existing installations are not updated automatically.
+
+### Migration and security boundaries
+
+- HTTP transport accepts loopback only. LAN addresses and wildcard binds are rejected; use stdio or a local loopback client instead.
+- Wellness profiles are validated, limited to 256 KiB, and protected with a cooperative lock. Oversized or invalid existing profiles must be corrected before use. Symbolic links, including dangling links and legacy profile paths, are rejected. These checks do not guarantee safety against a hostile local filesystem or non-cooperating processes.
+- MCP inputs have a 10,000-element budget and HTTP bodies are limited to 1 MiB; compressed request bodies are rejected. Previously accepted oversized requests may now fail; reduce request sizes rather than disabling validation.
+- Dependency fixes are included. Upgrade explicitly after publication and restart the connector; old installations retain their previous behavior.
+
 ## 0.8.3 - 2026-08-29
 
 Skill layer ships in-package (`skill/SKILL.md`). Agents can use MCP tools **or** `call <tool> --json` on the same binary; mutation gates stay identical.
