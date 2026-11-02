@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { localHttpHost, formatLocalHttpOrigin } from "./services/local-http-host.js";
 
 import http from "node:http";
 
@@ -90,9 +91,11 @@ async function startStdio(): Promise<void> {
 }
 
 async function startHttp(): Promise<void> {
-  const host = process.env.NOURISH_MCP_HOST ?? DEFAULT_HOST;
+  const configuredHost = process.env.NOURISH_MCP_HOST ?? DEFAULT_HOST;
+  const host = localHttpHost(configuredHost);
+  const originHost = configuredHost.toLowerCase() === "localhost" ? "localhost" : host;
   const port = parsePort(process.env.NOURISH_MCP_PORT);
-  const allowedOrigin = process.env.NOURISH_MCP_ALLOWED_ORIGIN ?? `http://${host}:${port}`;
+  const allowedOrigin = process.env.NOURISH_MCP_ALLOWED_ORIGIN ?? formatLocalHttpOrigin(originHost, port);
   const app = express();
 
   app.use(
