@@ -41,7 +41,7 @@
 >
 > Want runnable agent examples? Use the [Delx Wellness hub](https://github.com/davidmosiah/delx-wellness#run-it-in-your-agent) for prompt packs, MCP client configs and local-first workflow templates.
 
-> **What's new in 0.7.1:** Offline fixture demo works from the published npm package (fixtures shipped + path resolved from package root). **0.7.0:** Brazilian **TACO 4** meal estimator for pt-BR foods (cafezinho, feijão, concha, churrasco-style meals) plus Smithery install. Offline demo: `NOURISH_FIXTURE_MODE=1 npx -y wellness-nourish search banana`. Notes: [CHANGELOG.md](CHANGELOG.md) · eval: [`docs/evals/pt-br-meal-estimator.json`](docs/evals/pt-br-meal-estimator.json) (52 cases).
+> **What's new in 0.7.1:** Offline fixture demo works from the published npm package (fixtures shipped + path resolved from package root). **0.7.0:** Brazilian **TACO 4** meal estimator for pt-BR foods (cafezinho, feijão, concha, churrasco-style meals) plus Smithery install. Offline demo: `NOURISH_FIXTURE_MODE=1 npx -y wellness-nourish@0.9.0 search banana`. Notes: [CHANGELOG.md](CHANGELOG.md) · eval: [`docs/evals/pt-br-meal-estimator.json`](docs/evals/pt-br-meal-estimator.json) (52 cases).
 
 > **Public proof:** Nourish is tracked in the Delx [Open Source Growth Snapshot](https://github.com/davidmosiah/delx-wellness/blob/main/docs/open-source-growth-snapshot.md) alongside downloads, stars and next-action priorities. If this saves you setup time, star this repo so other agent builders can find the local-first nutrition path faster.
 
@@ -52,7 +52,7 @@
 Default is **stdio**. Optional Streamable HTTP — no session id, JSON responses, loopback only:
 
 ```bash
-npx -y wellness-nourish --http
+npx -y wellness-nourish@0.9.0 --http
 # GET  http://127.0.0.1:3000/health
 # POST http://127.0.0.1:3000/mcp   (sessionless)
 ```
@@ -66,7 +66,7 @@ Local-first nutrition MCP for AI agents — food search, barcode lookup, photo-a
 
 ## Front door
 
-- **Install one connector** — `npx -y wellness-nourish setup --client claude`
+- **Install one connector** — `npx -y wellness-nourish@0.9.0 setup --client claude`
 - **Run it in** Claude · Cursor · ChatGPT · Hermes · OpenClaw — see the [client examples](https://github.com/davidmosiah/delx-wellness#run-it-in-your-agent).
 - **Local-first** — your tokens and food logs never leave your machine ([privacy](#privacy--what-runs-offline)).
 - **Which connector should I use?** — see the [front-door guide](https://github.com/davidmosiah/delx-wellness#which-connector-should-i-use).
@@ -74,10 +74,10 @@ Local-first nutrition MCP for AI agents — food search, barcode lookup, photo-a
 ## Quickstart (60 seconds)
 
 ```bash
-npx -y wellness-nourish@0.8.0 doctor
-npx -y wellness-nourish@0.8.0 search banana
-npx -y wellness-nourish@0.8.0 barcode 0000000000000
-npx -y wellness-nourish@0.8.0 log --preview "2 ovos, banana e café preto"
+npx -y wellness-nourish@0.9.0 doctor
+npx -y wellness-nourish@0.9.0 search banana
+npx -y wellness-nourish@0.9.0 barcode 0000000000000
+npx -y wellness-nourish@0.9.0 log --preview "2 ovos, banana e café preto"
 ```
 
 `doctor` checks readiness, `search`/`barcode` hit the food providers, and `log --preview` estimates a meal locally without writing anything.
@@ -224,7 +224,18 @@ Nutrition estimates are approximate and intended for personal tracking and agent
 Same package, two doors. MCP registers tools on stdio/HTTP. The [skill](skill/SKILL.md) can drive the **same** tools through the CLI when the client has no MCP:
 
 ```bash
-npx -y wellness-nourish call nourish_connection_status --json '{}'
+npx -y wellness-nourish@0.9.0 call nourish_connection_status --json '{}'
 ```
 
 Copy `skill/SKILL.md` into your agent skills dir.
+
+## 0.9.0 — candidate (2026-11-02)
+
+This is a release candidate, not evidence of an npm publication. Existing installations are not updated automatically.
+
+### Migration and security boundaries
+
+- HTTP transport accepts loopback only. LAN addresses and wildcard binds are rejected; use stdio or a local loopback client instead.
+- Wellness profiles are validated, limited to 256 KiB, and protected with a cooperative lock. Oversized or invalid existing profiles must be corrected before use. Symbolic links, including dangling links and legacy profile paths, are rejected. These checks do not guarantee safety against a hostile local filesystem or non-cooperating processes.
+- MCP inputs have a 10,000-element budget and HTTP bodies are limited to 1 MiB; compressed request bodies are rejected. Previously accepted oversized requests may now fail; reduce request sizes rather than disabling validation.
+- Dependency fixes are included. Upgrade explicitly after publication and restart the connector; old installations retain their previous behavior.
