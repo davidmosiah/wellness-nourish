@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "nourish": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "wellness-nourish@0.9.0"
+      ],
+      "cwd": "${PLUGIN_DATA}"
+    }
+  }
+}

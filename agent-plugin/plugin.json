@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "wellness-nourish",
+  "version": "0.9.0",
+  "description": "Search foods, estimate and log meals and water, and track nutrition goals with the local nourish MCP server (USDA FoodData Central, Open Food Facts barcodes, local SQLite diary).",
+  "author": {
+    "name": "David Mosiah",
+    "url": "https://github.com/davidmosiah"
+  },
+  "homepage": "https://github.com/davidmosiah/wellness-nourish",
+  "repository": "https://github.com/davidmosiah/wellness-nourish",
+  "license": "MIT",
+  "keywords": [
+    "ai-agents",
+    "barcode",
+    "calorie-tracker",
+    "food-log",
+    "hermes",
+    "hydration",
+    "mcp",
+    "model-context-protocol",
+    "nutrition"
+  ]
+}
