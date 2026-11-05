@@ -740,6 +740,9 @@ export function registerNourishTools(server: McpServer): void {
     async (input) => {
       try {
         const params = IntakeUpdateInputSchema.parse(input);
+        if (params.explicit_user_intent !== true) {
+          return explicitIntentRequired("explicit_user_intent must be true to update intake.", params.response_format);
+        }
         const patch: Parameters<typeof updateIntakeEntry>[1] = {};
         if (params.meal_type !== undefined) {
           patch.meal_type = params.meal_type;
@@ -868,6 +871,9 @@ export function registerNourishTools(server: McpServer): void {
     async (input) => {
       try {
         const params = IntakeDeleteInputSchema.parse(input);
+        if (params.explicit_user_intent !== true) {
+          return explicitIntentRequired("explicit_user_intent must be true to delete intake.", params.response_format);
+        }
         const deleted = await deleteIntakeEntry(params.id);
 
         return toolResponse(makeResponse({ ok: true, deleted, id: params.id }, params.response_format));

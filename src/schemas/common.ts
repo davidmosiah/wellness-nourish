@@ -494,6 +494,7 @@ function requireExactlyOneImageInput(
 export const IntakeUpdateInputSchema = z
   .object({
     id: z.string().trim().min(1),
+    explicit_user_intent: ExplicitUserIntentSchema,
     meal_type: z.enum(["breakfast", "lunch", "dinner", "snack", "other"]).optional(),
     quantity: z.number().positive().optional(),
     unit: z.string().trim().min(1).optional(),
@@ -508,6 +509,7 @@ export const IntakeUpdateInputSchema = z
 export const IntakeDeleteInputSchema = z
   .object({
     id: z.string().trim().min(1),
+    explicit_user_intent: ExplicitUserIntentSchema,
     response_format: ResponseFormatSchema.default("json"),
   })
   .strict();
