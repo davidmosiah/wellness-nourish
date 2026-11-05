@@ -19,7 +19,7 @@ Requires Node.js 20+ (`npx` on PATH). The skill loads as `wellness-nourish:welln
 npx -y wellness-nourish@0.9.0 doctor
 ```
 
-Works without setup. For higher USDA rate limits the user can add a free FoodData Central key (fdc.nal.usda.gov) to their environment as FDC_API_KEY before starting Hermes.
+Works without setup. For higher USDA rate limits the user can add a free FoodData Central key (fdc.nal.usda.gov) to their environment as `FDC_API_KEY` (or the supported alias `USDA_FDC_API_KEY`) before starting Hermes. The plugin explicitly forwards these optional credentials; unset or empty values are omitted by Hermes, preserving the default DEMO_KEY fallback. If both are set, `FDC_API_KEY` takes precedence.
 
 ## Disclosure
 
