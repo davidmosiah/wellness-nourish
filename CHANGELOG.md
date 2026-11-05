@@ -1,3 +1,8 @@
+## Unreleased — explicit intake mutation intent
+
+- `nourish_update_intake` and `nourish_delete_intake` now require `explicit_user_intent: true`, consistent with their documented contract and the other mutation tools. Omitting the flag or passing `false` returns `USER_ACTION_REQUIRED` without changing stored entries. Clients must pass `true` only after the user requests that specific change; do not add it automatically to retries. Successful response shapes are unchanged.
+- This source change does not update existing npm installations; a separately verified release is required.
+
 ## 0.9.0 — candidate (2026-11-02)
 
 This is a release candidate, not evidence of an npm publication. Existing installations are not updated automatically.

@@ -289,9 +289,26 @@ async function assertUpdateQuantityRescalesNutrients() {
   assert.equal(entry.nutrients.calories_kcal, 130);
   assert.equal(entry.grams_estimate, 100);
 
+  // Missing/false intent must not mutate persistent values.
+  for (const intent of [undefined, false]) {
+    for (const name of ["nourish_update_intake", "nourish_delete_intake"]) {
+      const args = { id: entry.id };
+      if (name === "nourish_update_intake") args.quantity = 9;
+      if (intent !== undefined) args.explicit_user_intent = intent;
+      const rejected = JSON.parse(textFromToolResult(await client.callTool({ name, arguments: args })));
+      assert.equal(rejected.error?.code, "USER_ACTION_REQUIRED");
+      assert.equal(rejected.action_required, true);
+      const listed = JSON.parse(textFromToolResult(await client.callTool({ name: "nourish_list_intake", arguments: {} })));
+      const unchanged = listed.entries.find((item) => item.id === entry.id);
+      assert.ok(unchanged, "intent rejection must not delete entry");
+      assert.equal(unchanged.quantity, entry.quantity);
+      assert.deepEqual(unchanged.nutrients, entry.nutrients);
+    }
+  }
+
   const updated = await client.callTool({
     name: "nourish_update_intake",
-    arguments: {
+    arguments: { explicit_user_intent: true,
       id: entry.id,
       quantity: 2,
     },
@@ -301,6 +318,13 @@ async function assertUpdateQuantityRescalesNutrients() {
   assert.equal(payload.quantity, 2);
   assert.equal(payload.grams_estimate, 200);
   assert.equal(payload.nutrients.calories_kcal, 260);
+  const deleted = JSON.parse(textFromToolResult(await client.callTool({
+    name: "nourish_delete_intake",
+    arguments: { id: entry.id, explicit_user_intent: true },
+  })));
+  assert.equal(deleted.deleted, true);
+  const afterDelete = JSON.parse(textFromToolResult(await client.callTool({ name: "nourish_list_intake", arguments: {} })));
+  assert.ok(!afterDelete.entries.some((item) => item.id === entry.id));
 }
 
 async function assertBrazilianLocalSearchWorks() {
@@ -483,7 +507,7 @@ async function assertExplicitNutrientsBeatText() {
   // Cleanup
   await client.callTool({
     name: "nourish_delete_intake",
-    arguments: { id: payload.id },
+    arguments: { explicit_user_intent: true, id: payload.id },
   });
 }
 
@@ -531,7 +555,7 @@ async function assertCustomFoodScalesByGrams() {
   // Cleanup
   await client.callTool({
     name: "nourish_delete_intake",
-    arguments: { id: payload.id },
+    arguments: { explicit_user_intent: true, id: payload.id },
   });
 }
 
@@ -632,7 +656,7 @@ async function assertHydrationDeleteAndClear() {
   if (intakePayload?.id !== undefined) {
     await client.callTool({
       name: "nourish_delete_intake",
-      arguments: { id: intakePayload.id },
+      arguments: { explicit_user_intent: true, id: intakePayload.id },
     });
   }
 }
@@ -864,7 +888,7 @@ async function assertTacoProviderReturnsBrazilianFoods() {
 
   await client.callTool({
     name: "nourish_delete_intake",
-    arguments: { id: loggedPayload.id },
+    arguments: { explicit_user_intent: true, id: loggedPayload.id },
   });
 }
 
@@ -987,11 +1011,11 @@ async function assertCarbonSummaryWorks() {
   } finally {
     await client.callTool({
       name: "nourish_delete_intake",
-      arguments: { id: oldBeefPayload.id },
+      arguments: { explicit_user_intent: true, id: oldBeefPayload.id },
     });
     await client.callTool({
       name: "nourish_delete_intake",
-      arguments: { id: todayRicePayload.id },
+      arguments: { explicit_user_intent: true, id: todayRicePayload.id },
     });
   }
 }
